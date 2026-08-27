@@ -1,0 +1,176 @@
+Error while trying to use the following icon from the Manifest: https://smartwash.zishot.com/logo.png (Download error or resource isn't a valid image)
+index-DosPRuLp.js:545 
+ GET https://smartwashapi.zishot.com/api/t/sdfbdb/branches?onlyActive=true 404 (Not Found)
+index-DosPRuLp.js:545 
+ GET https://smartwashapi.zishot.com/api/t/sdfbdb/onboarding/state 404 (Not Found)
+index-DosPRuLp.js:545 
+ GET https://smartwashapi.zishot.com/api/t/sdfbdb/me/tenant 404 (Not Found)
+index-DosPRuLp.js:545 
+ GET https://smartwashapi.zishot.com/api/t/sdfbdb/onboarding/state 404 (Not Found)
+index-DosPRuLp.js:545 
+ GET https://smartwashapi.zishot.com/api/t/sdfbdb/bays?onlyActive=false 404 (Not Found)
+o	@	index-DosPRuLp.js:545
+Gu	@	index-DosPRuLp.js:545
+get	@	index-DosPRuLp.js:545
+list	@	index-DosPRuLp.js:545
+(anonymous)	@	index-DosPRuLp.js:545
+setInterval		
+(anonymous)	@	index-DosPRuLp.js:545
+Lh	@	index-DosPRuLp.js:40
+ql	@	index-DosPRuLp.js:40
+(anonymous)	@	index-DosPRuLp.js:40
+N	@	index-DosPRuLp.js:25
+z	@	index-DosPRuLp.js:25
+postMessage		
+B	@	index-DosPRuLp.js:25
+z	@	index-DosPRuLp.js:25
+postMessage		
+B	@	index-DosPRuLp.js:25
+U	@	index-DosPRuLp.js:25
+e.unstable_scheduleCallback	@	index-DosPRuLp.js:25
+kP	@	index-DosPRuLp.js:40
+Nn	@	index-DosPRuLp.js:40
+Aa	@	index-DosPRuLp.js:40
+Yh	@	index-DosPRuLp.js:40
+Qh.render.Wy.render	@	index-DosPRuLp.js:40
+(anonymous)	@	index-DosPRuLp.js:636
+index-DosPRuLp.js:545 
+ GET https://smartwashapi.zishot.com/api/t/sdfbdb/orders?pageSize=200&page=1 404 (Not Found)
+o	@	index-DosPRuLp.js:545
+Gu	@	index-DosPRuLp.js:545
+get	@	index-DosPRuLp.js:545
+search	@	index-DosPRuLp.js:545
+(anonymous)	@	index-DosPRuLp.js:545
+setInterval		
+(anonymous)	@	index-DosPRuLp.js:545
+Lh	@	index-DosPRuLp.js:40
+ql	@	index-DosPRuLp.js:40
+(anonymous)	@	index-DosPRuLp.js:40
+N	@	index-DosPRuLp.js:25
+z	@	index-DosPRuLp.js:25
+postMessage		
+B	@	index-DosPRuLp.js:25
+z	@	index-DosPRuLp.js:25
+postMessage		
+B	@	index-DosPRuLp.js:25
+U	@	index-DosPRuLp.js:25
+e.unstable_scheduleCallback	@	index-DosPRuLp.js:25
+kP	@	index-DosPRuLp.js:40
+Nn	@	index-DosPRuLp.js:40
+Aa	@	index-DosPRuLp.js:40
+Yh	@	index-DosPRuLp.js:40
+Qh.render.Wy.render	@	index-DosPRuLp.js:40
+(anonymous)	@	index-DosPRuLp.js:636
+index-DosPRuLp.js:545 
+ GET https://smartwashapi.zishot.com/api/t/sdfbdb/notifications?page=1&pageSize=50 404 (Not Found)
+o	@	index-DosPRuLp.js:545
+Gu	@	index-DosPRuLp.js:545
+get	@	index-DosPRuLp.js:545
+list	@	index-DosPRuLp.js:545
+(anonymous)	@	index-DosPRuLp.js:545
+setInterval		
+(anonymous)	@	index-DosPRuLp.js:545
+Lh	@	index-DosPRuLp.js:40
+ql	@	index-DosPRuLp.js:40
+(anonymous)	@	index-DosPRuLp.js:40
+N	@	index-DosPRuLp.js:25
+z	@	index-DosPRuLp.js:25
+postMessage		
+B	@	index-DosPRuLp.js:25
+z	@	index-DosPRuLp.js:25
+postMessage		
+B	@	index-DosPRuLp.js:25
+U	@	index-DosPRuLp.js:25
+e.unstable_scheduleCallback	@	index-DosPRuLp.js:25
+kP	@	index-DosPRuLp.js:40
+Nn	@	index-DosPRuLp.js:40
+Aa	@	index-DosPRuLp.js:40
+Yh	@	index-DosPRuLp.js:40
+Qh.render.Wy.render	@	index-DosPRuLp.js:40
+(anonymous)	@	index-DosPRuLp.js:636
+index-DosPRuLp.js:545 
+ GET https://smartwashapi.zishot.com/api/t/sdfbdb/bays?onlyActive=false 404 (Not Found)
+index-DosPRuLp.js:545 
+ GET https://smartwashapi.zishot.com/api/t/sdfbdb/notifications?page=1&pageSize=50 404 (Not Found)
+index-DosPRuLp.js:545 
+ GET https://smartwashapi.zishot.com/api/t/sdfbdb/orders?pageSize=200&page=1 404 (Not Found)
+index-DosPRuLp.js:545 
+ GET https://smartwashapi.zishot.com/api/t/sdfbdb/bays?onlyActive=false 404 (Not Found)
+index-DosPRuLp.js:545 
+ GET https://smartwashapi.zishot.com/api/t/sdfbdb/orders?pageSize=200&page=1 404 (Not Found)
+index-DosPRuLp.js:545 
+ GET https://smartwashapi.zishot.com/api/t/sdfbdb/notifications?page=1&pageSize=50 404 (Not Found)
+index-DosPRuLp.js:545 
+ POST https://smartwashapi.zishot.com/api/t/sdfbdb/branches 404 (Not Found)
+o	@	index-DosPRuLp.js:545
+Gu	@	index-DosPRuLp.js:545
+post	@	index-DosPRuLp.js:545
+create	@	index-DosPRuLp.js:545
+S	@	index-DosPRuLp.js:636
+X	@	index-DosPRuLp.js:37
+Re	@	index-DosPRuLp.js:37
+$e	@	index-DosPRuLp.js:37
+H5	@	index-DosPRuLp.js:37
+K5	@	index-DosPRuLp.js:37
+(anonymous)	@	index-DosPRuLp.js:37
+$y	@	index-DosPRuLp.js:40
+Gt	@	index-DosPRuLp.js:37
+$g	@	index-DosPRuLp.js:37
+vg	@	index-DosPRuLp.js:37
+D8	@	index-DosPRuLp.js:37
+index-DosPRuLp.js:545 
+ GET https://smartwashapi.zishot.com/api/t/sdfbdb/bays?onlyActive=false 404 (Not Found)
+o	@	index-DosPRuLp.js:545
+Gu	@	index-DosPRuLp.js:545
+get	@	index-DosPRuLp.js:545
+list	@	index-DosPRuLp.js:545
+(anonymous)	@	index-DosPRuLp.js:545
+setInterval		
+(anonymous)	@	index-DosPRuLp.js:545
+Lh	@	index-DosPRuLp.js:40
+ql	@	index-DosPRuLp.js:40
+(anonymous)	@	index-DosPRuLp.js:40
+N	@	index-DosPRuLp.js:25
+z	@	index-DosPRuLp.js:25
+postMessage		
+B	@	index-DosPRuLp.js:25
+z	@	index-DosPRuLp.js:25
+postMessage		
+B	@	index-DosPRuLp.js:25
+U	@	index-DosPRuLp.js:25
+e.unstable_scheduleCallback	@	index-DosPRuLp.js:25
+kP	@	index-DosPRuLp.js:40
+Nn	@	index-DosPRuLp.js:40
+Aa	@	index-DosPRuLp.js:40
+Yh	@	index-DosPRuLp.js:40
+Qh.render.Wy.render	@	index-DosPRuLp.js:40
+(anonymous)	@	index-DosPRuLp.js:636
+index-DosPRuLp.js:545 
+ GET https://smartwashapi.zishot.com/api/t/sdfbdb/orders?pageSize=200&page=1 404 (Not Found)
+index-DosPRuLp.js:545 
+ GET https://smartwashapi.zishot.com/api/t/sdfbdb/notifications?page=1&pageSize=50 404 (Not Found)
+o	@	index-DosPRuLp.js:545
+Gu	@	index-DosPRuLp.js:545
+get	@	index-DosPRuLp.js:545
+list	@	index-DosPRuLp.js:545
+(anonymous)	@	index-DosPRuLp.js:545
+setInterval		
+(anonymous)	@	index-DosPRuLp.js:545
+Lh	@	index-DosPRuLp.js:40
+ql	@	index-DosPRuLp.js:40
+(anonymous)	@	index-DosPRuLp.js:40
+N	@	index-DosPRuLp.js:25
+z	@	index-DosPRuLp.js:25
+postMessage		
+B	@	index-DosPRuLp.js:25
+z	@	index-DosPRuLp.js:25
+postMessage		
+B	@	index-DosPRuLp.js:25
+U	@	index-DosPRuLp.js:25
+e.unstable_scheduleCallback	@	index-DosPRuLp.js:25
+kP	@	index-DosPRuLp.js:40
+Nn	@	index-DosPRuLp.js:40
+Aa	@	index-DosPRuLp.js:40
+Yh	@	index-DosPRuLp.js:40
+Qh.render.Wy.render	@	index-DosPRuLp.js:40
+(anonymous)	@	index-DosPRuLp.js:636

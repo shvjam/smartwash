@@ -1,0 +1,109 @@
+PS D:\Shiva\Projects\Zi^Crat-Morannext\Carwash\V2\frontend> 
+PS D:\Shiva\Projects\Zigorat-Morannext\Carwash\V2\frontend> pnpm install
+[WARN] The "pnpm" field in package.json is no longer read by pnpm. The following keys were ignored: "pnpm.overrides". See https://pnpm.io/settings for the new home of each setting.
+? Verifying lockfile against supply-chain policies (697 entries)...
+
+   ╭──────────────────────────────────────────╮
+   │                                          │
+   │   Update available! 11.18.0 → 11.22.0.   │
+   │   Changelog: https://pnpm.io/v/11.22.0   │
+   │     To update, run: pnpm add -g pnpm     │
+✓ Lockfile passes supply-chain policies (697 entries in 31.7s)
+   ╰──────────────────────────────────────────╯
+
+[WARN] Request took 10718ms: https://registry.npmjs.org/@radix-ui%2Freact-hover-card
+[WARN] Request took 10696ms: https://registry.npmjs.org/@tailwindcss%2Foxide-freebsd-x64
+[WARN] Request took 14919ms: https://registry.npmjs.org/electron-to-chromium
+[WARN] Request took 14252ms: https://registry.npmjs.org/react
+[WARN] Request took 17275ms: https://registry.npmjs.org/hls.js
+[WARN] 3 other warnings
+[WARN] deprecated recharts@2.15.2: 1.x and 2.x branches are no longer active. Bump to Recharts v3 to receive latest features and bugfixes. See https://github.com/recharts/recharts/wiki/3.0-migration-guide
+[WARN] 2 deprecated subdependencies found: glob@11.1.0, three-mesh-bvh@0.7.8
+Packages: +636
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Packages are hard linked from the content-addressable store to the virtual store.
+  Content-addressable store is at: D:\.pnpm-store\v11
+  Virtual store is at:             node_modules/.pnpm
+Progress: resolved 750, reused 635, downloaded 1, added 636, done
+[WARN] Issues with peer dependencies found. Run "pnpm peers check" to list them.
+
+dependencies:
++ @emotion/react 11.14.0
++ @emotion/styled 11.14.1
++ @mui/icons-material 7.3.5 (9.3.1 is available)
++ @mui/material 7.3.5 (9.3.1 is available)
++ @popperjs/core 2.11.8
++ @radix-ui/react-accordion 1.2.3 (1.2.20 is available)
++ @radix-ui/react-alert-dialog 1.1.6 (1.1.23 is available)
++ @radix-ui/react-aspect-ratio 1.1.2 (1.1.15 is available)
++ @radix-ui/react-avatar 1.1.3 (1.2.6 is available)
++ @radix-ui/react-checkbox 1.1.4 (1.3.11 is available)
++ @radix-ui/react-collapsible 1.1.3 (1.1.20 is available)
++ @radix-ui/react-context-menu 2.2.6 (2.3.7 is available)
++ @radix-ui/react-dialog 1.1.6 (1.1.23 is available)
++ @radix-ui/react-dropdown-menu 2.1.6 (2.1.24 is available)
++ @radix-ui/react-hover-card 1.1.6 (1.1.23 is available)
++ @radix-ui/react-label 2.1.2 (2.1.15 is available)
++ @radix-ui/react-menubar 1.1.6 (1.1.24 is available)
++ @radix-ui/react-navigation-menu 1.2.5 (1.2.22 is available)
++ @radix-ui/react-popover 1.1.6 (1.1.23 is available)
++ @radix-ui/react-progress 1.1.2 (1.1.16 is available)
++ @radix-ui/react-radio-group 1.2.3 (1.4.7 is available)
++ @radix-ui/react-scroll-area 1.2.3 (1.2.18 is available)
++ @radix-ui/react-select 2.1.6 (2.3.7 is available)
++ @radix-ui/react-separator 1.1.2 (1.1.15 is available)
++ @radix-ui/react-slider 1.2.3 (1.4.7 is available)
++ @radix-ui/react-slot 1.1.2 (1.3.3 is available)
++ @radix-ui/react-switch 1.1.3 (1.3.7 is available)
++ @radix-ui/react-tabs 1.1.3 (1.1.21 is available)
++ @radix-ui/react-toggle 1.1.2 (1.1.18 is available)
++ @radix-ui/react-toggle-group 1.1.2 (1.1.19 is available)
++ @radix-ui/react-tooltip 1.1.8 (1.2.16 is available)
++ @react-three/drei 9.122.0 (10.7.8 is available)
++ @react-three/fiber 8.18.0 (9.7.0 is available)
++ @react-three/postprocessing 2.19.1 (3.0.5 is available)
++ canvas-confetti 1.9.4
++ class-variance-authority 0.7.1
++ clsx 2.1.1
++ cmdk 1.1.1
++ date-fns 3.6.0 (4.4.0 is available)
++ embla-carousel-react 8.6.0
++ input-otp 1.4.2 (1.5.0 is available)
++ lucide-react 0.487.0 (1.31.0 is available)
++ motion 12.23.24 (13.1.0 is available)
++ next-themes 0.4.6
++ react 18.3.1 (19.2.8 is available)
++ react-day-picker 8.10.1 (10.0.1 is available)
++ react-dnd 16.0.1
++ react-dnd-html5-backend 16.0.1
++ react-dom 18.3.1 (19.2.8 is available)
++ react-hook-form 7.55.0 (7.85.0 is available)
++ react-popper 2.3.0
++ react-reconciler 0.29.2 (0.33.0 is available)
++ react-resizable-panels 2.1.7 (4.12.3 is available)
++ react-responsive-masonry 2.7.1 (2.7.2 is available)
++ react-router 7.13.0 (8.3.0 is available)
++ react-slick 0.31.0
++ recharts 2.15.2 (3.10.1 is available) deprecated
++ sonner 2.0.3 (2.0.8 is available)
++ tailwind-merge 3.2.0 (3.6.0 is available)
++ three 0.169.0 (0.185.1 is available)
++ three-stdlib 2.36.1
++ tw-animate-css 1.3.8 (1.4.0 is available)
++ vaul 1.1.2
+
+devDependencies:
++ @resvg/resvg-js 2.6.2
++ @tailwindcss/vite 4.1.12 (4.3.3 is available)
++ @types/react 18.3.12 (19.2.18 is available)
++ @types/react-dom 18.3.1 (19.2.4 is available)
++ @vitejs/plugin-react 4.7.0 (6.0.5 is available)
++ tailwindcss 4.1.12 (4.3.3 is available)
++ vite 6.3.5 (8.2.1 is available)
++ vite-plugin-pwa 0.20.5 (1.3.0 is available)
++ workbox-window 7.3.0 (7.4.1 is available)
+
+[ERR_PNPM_IGNORED_BUILDS] Ignored build scripts: @tailwindcss/oxide@4.1.12, esbuild@0.25.12
+
+Run "pnpm approve-builds" to pick which dependencies should be allowed to run scripts.
+PS D:\Shiva\Projects\Zigorat-Morannext\Carwash\V2\frontend> 

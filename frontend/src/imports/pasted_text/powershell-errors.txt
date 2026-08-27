@@ -1,0 +1,75 @@
+**********************************************************************
+** Visual Studio 2022 Developer PowerShell v17.14.29
+** Copyright (c) 2025 Microsoft Corporation
+**********************************************************************
+PS E:\زیگورات\زیگورات - مورانکست\کارواش\Project\Mordad\version3\backend> Get-ChildItem -Recurse -Filter *.txt | ForEach-Object { $target = $_.FullName -replace '\.txt$','' Copy-Item $_.FullName $target -Force Remove-Item $_.FullName }
+At line:1 char:100
++ ... Object { $target = $_.FullName -replace '\.txt$','' Copy-Item $_.Full ...
++                                                         ~~~~~~~~~
+Unexpected token 'Copy-Item' in expression or statement.
+    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
+    + FullyQualifiedErrorId : UnexpectedToken
+
+PS E:\زیگورات\زیگورات - مورانکست\کارواش\Project\Mordad\version3\backend> dotnet restore
+E:\زیگورات\زیگورات - مورانکست\کارواش\Project\Mordad\version3\backend\src\SmartWash.Infrastructure\SmartWash.Infrastructure.csproj : error MSB4025: The project file could not be loaded. Root eleme
+nt is missing.
+E:\زیگورات\زیگورات - مورانکست\کارواش\Project\Mordad\version3\backend\src\SmartWash.Domain\SmartWash.Domain.csproj : error MSB4025: The project file could not be loaded. Root element is missing.
+E:\زیگورات\زیگورات - مورانکست\کارواش\Project\Mordad\version3\backend\src\SmartWash.Shared\SmartWash.Shared.csproj : error MSB4025: The project file could not be loaded. Root element is missing.
+E:\زیگورات\زیگورات - مورانکست\کارواش\Project\Mordad\version3\backend\src\SmartWash.Application\SmartWash.Application.csproj : error MSB4025: The project file could not be loaded. Root element is
+missing.
+PS E:\زیگورات\زیگورات - مورانکست\کارواش\Project\Mordad\version3\backend> ^C
+PS E:\زیگورات\زیگورات - مورانکست\کارواش\Project\Mordad\version3\backend> Get-ChildItem -Recurse -Filter *.txt | ForEach-Object { $t = $_.FullName -replace '\.txt$',''; Copy-Item $_.FullName $t -Force; Remove-Item $_.FullName }
+PS E:\زیگورات\زیگورات - مورانکست\کارواش\Project\Mordad\version3\backend> dotnet restore
+E:\زیگورات\زیگورات - مورانکست\کارواش\Project\Mordad\version3\backend\src\SmartWash.Shared\SmartWash.Shared.csproj : error MSB4025: The project file could not be loaded. Root element is missing.
+E:\زیگورات\زیگورات - مورانکست\کارواش\Project\Mordad\version3\backend\src\SmartWash.Application\SmartWash.Application.csproj : error MSB4025: The project file could not be loaded. Root element is
+missing.
+E:\زیگورات\زیگورات - مورانکست\کارواش\Project\Mordad\version3\backend\src\SmartWash.Domain\SmartWash.Domain.csproj : error MSB4025: The project file could not be loaded. Root element is missing.
+E:\زیگورات\زیگورات - مورانکست\کارواش\Project\Mordad\version3\backend\src\SmartWash.Infrastructure\SmartWash.Infrastructure.csproj : error MSB4025: The project file could not be loaded. Root eleme
+nt is missing.
+PS E:\زیگورات\زیگورات - مورانکست\کارواش\Project\Mordad\version3\backend> Get-ChildItem -Recurse -Include *.sln,*.json,*.csproj,*.props,*.config | Where-Object Length -eq 0 | Select-Object FullName
+
+FullName
+--------
+E:\زیگورات\زیگورات - مورانکست\کارواش\Project\Mordad\version3\backend\src\SmartWash.Api\Properties\launchSettings.json
+E:\زیگورات\زیگورات - مورانکست\کارواش\Project\Mordad\version3\backend\src\SmartWash.Api\appsettings.Development.json
+E:\زیگورات\زیگورات - مورانکست\کارواش\Project\Mordad\version3\backend\src\SmartWash.Api\appsettings.json
+E:\زیگورات\زیگورات - مورانکست\کارواش\Project\Mordad\version3\backend\src\SmartWash.Api\appsettings.Production.json
+E:\زیگورات\زیگورات - مورانکست\کارواش\Project\Mordad\version3\backend\src\SmartWash.Api\web.config
+E:\زیگورات\زیگورات - مورانکست\کارواش\Project\Mordad\version3\backend\src\SmartWash.Application\SmartWash.Application.csproj
+E:\زیگورات\زیگورات - مورانکست\کارواش\Project\Mordad\version3\backend\src\SmartWash.Domain\SmartWash.Domain.csproj
+E:\زیگورات\زیگورات - مورانکست\کارواش\Project\Mordad\version3\backend\src\SmartWash.Infrastructure\SmartWash.Infrastructure.csproj
+E:\زیگورات\زیگورات - مورانکست\کارواش\Project\Mordad\version3\backend\src\SmartWash.Shared\SmartWash.Shared.csproj
+
+
+PS E:\زیگورات\زیگورات - مورانکست\کارواش\Project\Mordad\version3\backend> dotnet restore
+E:\زیگورات\زیگورات - مورانکست\کارواش\Project\Mordad\version3\backend\src\SmartWash.Infrastructure\SmartWash.Infrastructure.csproj : error MSB4025: The project file could not be loaded. Root eleme
+nt is missing.
+E:\زیگورات\زیگورات - مورانکست\کارواش\Project\Mordad\version3\backend\src\SmartWash.Application\SmartWash.Application.csproj : error MSB4025: The project file could not be loaded. Root element is
+missing.
+E:\زیگورات\زیگورات - مورانکست\کارواش\Project\Mordad\version3\backend\src\SmartWash.Shared\SmartWash.Shared.csproj : error MSB4025: The project file could not be loaded. Root element is missing.
+E:\زیگورات\زیگورات - مورانکست\کارواش\Project\Mordad\version3\backend\src\SmartWash.Domain\SmartWash.Domain.csproj : error MSB4025: The project file could not be loaded. Root element is missing.
+PS E:\زیگورات\زیگورات - مورانکست\کارواش\Project\Mordad\version3\backend> ^C
+PS E:\زیگورات\زیگورات - مورانکست\کارواش\Project\Mordad\version3\backend> Get-ChildItem -Recurse -Include *.sln,*.json,*.csproj,*.props,*.config | Where-Object Length -eq 0 | Select-Object FullName
+
+
+FullName
+--------
+E:\زیگورات\زیگورات - مورانکست\کارواش\Project\Mordad\version3\backend\src\SmartWash.Api\Properties\launchSettings.json
+E:\زیگورات\زیگورات - مورانکست\کارواش\Project\Mordad\version3\backend\src\SmartWash.Api\appsettings.Development.json
+E:\زیگورات\زیگورات - مورانکست\کارواش\Project\Mordad\version3\backend\src\SmartWash.Api\appsettings.json
+E:\زیگورات\زیگورات - مورانکست\کارواش\Project\Mordad\version3\backend\src\SmartWash.Api\appsettings.Production.json
+E:\زیگورات\زیگورات - مورانکست\کارواش\Project\Mordad\version3\backend\src\SmartWash.Api\web.config
+E:\زیگورات\زیگورات - مورانکست\کارواش\Project\Mordad\version3\backend\src\SmartWash.Application\SmartWash.Application.csproj
+E:\زیگورات\زیگورات - مورانکست\کارواش\Project\Mordad\version3\backend\src\SmartWash.Domain\SmartWash.Domain.csproj
+E:\زیگورات\زیگورات - مورانکست\کارواش\Project\Mordad\version3\backend\src\SmartWash.Infrastructure\SmartWash.Infrastructure.csproj
+E:\زیگورات\زیگورات - مورانکست\کارواش\Project\Mordad\version3\backend\src\SmartWash.Shared\SmartWash.Shared.csproj
+
+
+PS E:\زیگورات\زیگورات - مورانکست\کارواش\Project\Mordad\version3\backend> dotnet restore
+E:\زیگورات\زیگورات - مورانکست\کارواش\Project\Mordad\version3\backend\src\SmartWash.Domain\SmartWash.Domain.csproj : error MSB4025: The project file could not be loaded. Root element is missing.
+E:\زیگورات\زیگورات - مورانکست\کارواش\Project\Mordad\version3\backend\src\SmartWash.Shared\SmartWash.Shared.csproj : error MSB4025: The project file could not be loaded. Root element is missing.
+E:\زیگورات\زیگورات - مورانکست\کارواش\Project\Mordad\version3\backend\src\SmartWash.Infrastructure\SmartWash.Infrastructure.csproj : error MSB4025: The project file could not be loaded. Root eleme
+nt is missing.
+E:\زیگورات\زیگورات - مورانکست\کارواش\Project\Mordad\version3\backend\src\SmartWash.Application\SmartWash.Application.csproj : error MSB4025: The project file could not be loaded. Root element is
+missing.
+PS E:\زیگورات\زیگورات - مورانکست\کارواش\Project\Mordad\version3\backend>

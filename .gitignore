@@ -1,0 +1,24 @@
+# Build outputs are reproducible; never commit them.
+**/bin/
+**/obj/
+node_modules/
+dist/
+build/
+
+# Runtime data written by the API on the host: logs and tenant uploads.
+# App_Data/.gitkeep is tracked so the directory survives a clean checkout.
+**/App_Data/logs/
+**/App_Data/uploads/
+*.log
+
+# Secrets are injected as host environment variables, never committed.
+.env*
+*.pfx
+secrets.json
+
+# Editor / OS noise
+.vs/
+.idea/
+*.user
+Thumbs.db
+desktop.ini

@@ -1,0 +1,8 @@
+overrides:
+  vite: 6.3.5
+  react-reconciler: 0.29.2
+  rollup: npm:@rollup/wasm-node@4.62.3
+
+onlyBuiltDependencies:
+  - '@tailwindcss/oxide'
+  - esbuild

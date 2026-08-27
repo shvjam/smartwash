@@ -1,0 +1,131 @@
+/logo.png:1 
+ GET https://smartwash.zishot.com/logo.png net::ERR_NAME_NOT_RESOLVED
+bays:1 Error while trying to use the following icon from the Manifest: https://smartwash.zishot.com/logo.png (Download error or resource isn't a valid image)
+/favicon.ico:1 
+ GET https://smartwash.zishot.com/favicon.ico net::ERR_NAME_NOT_RESOLVED
+index-DNVxvP0s.js:605 
+ POST https://smartwashapi.zishot.com/api/t/demo-carwash/orders/b596cbbe-790c-4368-bbf4-dbf907c9cc29/lines 500 (Internal Server Error)
+index-DNVxvP0s.js:605 
+ POST https://smartwashapi.zishot.com/api/t/demo-carwash/orders/b596cbbe-790c-4368-bbf4-dbf907c9cc29/lines 500 (Internal Server Error)
+index-DNVxvP0s.js:605 
+ POST https://smartwashapi.zishot.com/api/t/demo-carwash/orders/b596cbbe-790c-4368-bbf4-dbf907c9cc29/lines 500 (Internal Server Error)
+index-DNVxvP0s.js:605 
+ POST https://smartwashapi.zishot.com/api/t/demo-carwash/orders/b596cbbe-790c-4368-bbf4-dbf907c9cc29/lines 500 (Internal Server Error)
+index-DNVxvP0s.js:605 
+ POST https://smartwashapi.zishot.com/api/t/demo-carwash/orders/b596cbbe-790c-4368-bbf4-dbf907c9cc29/lines 500 (Internal Server Error)
+index-DNVxvP0s.js:605 
+ POST https://smartwashapi.zishot.com/api/t/demo-carwash/orders/fc3503d1-4da9-4880-8df8-9736332fac1d/lines 500 (Internal Server Error)
+8
+Error handling response: TypeError: Cannot read properties of undefined (reading 'direction')
+    at l (<URL>)
+    at <URL>
+bays:1 Error handling response: TypeError: Cannot read properties of undefined (reading 'direction')
+    at l (chrome-extension://aggiiclaiamajehmlfpkjmlbadmkledi/contentscript.js:26:100009)
+    at chrome-extension://aggiiclaiamajehmlfpkjmlbadmkledi/contentscript.js:35:41
+bays:1 Error handling response: TypeError: Cannot read properties of undefined (reading 'direction')
+    at l (chrome-extension://aggiiclaiamajehmlfpkjmlbadmkledi/contentscript.js:26:100009)
+    at chrome-extension://aggiiclaiamajehmlfpkjmlbadmkledi/contentscript.js:35:41
+bays:1 Error handling response: TypeError: Cannot read properties of undefined (reading 'direction')
+    at l (chrome-extension://aggiiclaiamajehmlfpkjmlbadmkledi/contentscript.js:26:100009)
+    at chrome-extension://aggiiclaiamajehmlfpkjmlbadmkledi/contentscript.js:35:41
+orders/fc3503d1-4da9…8df8-9736332fac1d:1 Error handling response: TypeError: Cannot read properties of undefined (reading 'direction')
+    at l (chrome-extension://aggiiclaiamajehmlfpkjmlbadmkledi/contentscript.js:26:100009)
+    at chrome-extension://aggiiclaiamajehmlfpkjmlbadmkledi/contentscript.js:35:41
+orders/fc3503d1-4da9…8df8-9736332fac1d:1 Error handling response: TypeError: Cannot read properties of undefined (reading 'direction')
+    at l (chrome-extension://aggiiclaiamajehmlfpkjmlbadmkledi/contentscript.js:26:100009)
+    at chrome-extension://aggiiclaiamajehmlfpkjmlbadmkledi/contentscript.js:35:41
+orders/fc3503d1-4da9…8df8-9736332fac1d:1 Error handling response: TypeError: Cannot read properties of undefined (reading 'direction')
+    at l (chrome-extension://aggiiclaiamajehmlfpkjmlbadmkledi/contentscript.js:26:100009)
+    at chrome-extension://aggiiclaiamajehmlfpkjmlbadmkledi/contentscript.js:35:41
+orders/fc3503d1-4da9…8df8-9736332fac1d:1 Error handling response: TypeError: Cannot read properties of undefined (reading 'direction')
+    at l (chrome-extension://aggiiclaiamajehmlfpkjmlbadmkledi/contentscript.js:26:100009)
+    at chrome-extension://aggiiclaiamajehmlfpkjmlbadmkledi/contentscript.js:35:41
+orders/fc3503d1-4da9…8df8-9736332fac1d:1 Error handling response: TypeError: Cannot read properties of undefined (reading 'direction')
+    at l (chrome-extension://aggiiclaiamajehmlfpkjmlbadmkledi/contentscript.js:26:100009)
+    at chrome-extension://aggiiclaiamajehmlfpkjmlbadmkledi/contentscript.js:35:41
+index-DNVxvP0s.js:605 
+ POST https://smartwashapi.zishot.com/api/t/demo-carwash/orders/fc3503d1-4da9-4880-8df8-9736332fac1d/complete 500 (Internal Server Error)
+c	@	index-DNVxvP0s.js:605
+ud	@	index-DNVxvP0s.js:605
+post	@	index-DNVxvP0s.js:605
+complete	@	index-DNVxvP0s.js:605
+(anonymous)	@	index-DNVxvP0s.js:605
+Promise.then		
+R	@	index-DNVxvP0s.js:605
+_e	@	index-DNVxvP0s.js:605
+onClick	@	index-DNVxvP0s.js:624
+Q	@	index-DNVxvP0s.js:37
+Me	@	index-DNVxvP0s.js:37
+De	@	index-DNVxvP0s.js:37
+A5	@	index-DNVxvP0s.js:37
+C5	@	index-DNVxvP0s.js:37
+(anonymous)	@	index-DNVxvP0s.js:37
+ny	@	index-DNVxvP0s.js:40
+Zt	@	index-DNVxvP0s.js:37
+nx	@	index-DNVxvP0s.js:37
+zg	@	index-DNVxvP0s.js:37
+R8	@	index-DNVxvP0s.js:37
+/favicon.ico:1 
+ GET https://smartwash.zishot.com/favicon.ico net::ERR_NAME_NOT_RESOLVED
+/favicon.ico:1 
+ GET https://smartwash.zishot.com/favicon.ico net::ERR_NAME_NOT_RESOLVED
+index-DNVxvP0s.js:605 
+ POST https://smartwashapi.zishot.com/api/t/demo-carwash/orders/fc3503d1-4da9-4880-8df8-9736332fac1d/payments 500 (Internal Server Error)
+c	@	index-DNVxvP0s.js:605
+ud	@	index-DNVxvP0s.js:605
+post	@	index-DNVxvP0s.js:605
+addPayment	@	index-DNVxvP0s.js:605
+(anonymous)	@	index-DNVxvP0s.js:696
+V	@	index-DNVxvP0s.js:696
+onClick	@	index-DNVxvP0s.js:696
+Q	@	index-DNVxvP0s.js:37
+Me	@	index-DNVxvP0s.js:37
+De	@	index-DNVxvP0s.js:37
+A5	@	index-DNVxvP0s.js:37
+C5	@	index-DNVxvP0s.js:37
+(anonymous)	@	index-DNVxvP0s.js:37
+ny	@	index-DNVxvP0s.js:40
+Zt	@	index-DNVxvP0s.js:37
+nx	@	index-DNVxvP0s.js:37
+zg	@	index-DNVxvP0s.js:37
+R8	@	index-DNVxvP0s.js:37
+index-DNVxvP0s.js:605 
+ POST https://smartwashapi.zishot.com/api/t/demo-carwash/orders/fc3503d1-4da9-4880-8df8-9736332fac1d/payments 500 (Internal Server Error)
+c	@	index-DNVxvP0s.js:605
+ud	@	index-DNVxvP0s.js:605
+post	@	index-DNVxvP0s.js:605
+addPayment	@	index-DNVxvP0s.js:605
+(anonymous)	@	index-DNVxvP0s.js:696
+V	@	index-DNVxvP0s.js:696
+onClick	@	index-DNVxvP0s.js:696
+Q	@	index-DNVxvP0s.js:37
+Me	@	index-DNVxvP0s.js:37
+De	@	index-DNVxvP0s.js:37
+A5	@	index-DNVxvP0s.js:37
+C5	@	index-DNVxvP0s.js:37
+(anonymous)	@	index-DNVxvP0s.js:37
+ny	@	index-DNVxvP0s.js:40
+Zt	@	index-DNVxvP0s.js:37
+nx	@	index-DNVxvP0s.js:37
+zg	@	index-DNVxvP0s.js:37
+R8	@	index-DNVxvP0s.js:37
+index-DNVxvP0s.js:605 
+ POST https://smartwashapi.zishot.com/api/t/demo-carwash/orders/fc3503d1-4da9-4880-8df8-9736332fac1d/complete 500 (Internal Server Error)
+c	@	index-DNVxvP0s.js:605
+ud	@	index-DNVxvP0s.js:605
+post	@	index-DNVxvP0s.js:605
+complete	@	index-DNVxvP0s.js:605
+(anonymous)	@	index-DNVxvP0s.js:696
+V	@	index-DNVxvP0s.js:696
+onClick	@	index-DNVxvP0s.js:696
+Q	@	index-DNVxvP0s.js:37
+Me	@	index-DNVxvP0s.js:37
+De	@	index-DNVxvP0s.js:37
+A5	@	index-DNVxvP0s.js:37
+C5	@	index-DNVxvP0s.js:37
+(anonymous)	@	index-DNVxvP0s.js:37
+ny	@	index-DNVxvP0s.js:40
+Zt	@	index-DNVxvP0s.js:37
+nx	@	index-DNVxvP0s.js:37
+zg	@	index-DNVxvP0s.js:37
+R8	@	index-DNVxvP0s.js:37

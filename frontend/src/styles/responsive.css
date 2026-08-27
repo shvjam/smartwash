@@ -1,0 +1,70 @@
+/* Mobile ergonomics shared by all product, public and platform screens. */
+@media (max-width: 639px) {
+  :root {
+    --mobile-control-height: 2.875rem;
+  }
+
+  /* Avoid iOS viewport zoom and make touch controls comfortable. */
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  select,
+  textarea {
+    font-size: 1rem;
+  }
+
+  form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  form select,
+  form textarea {
+    min-height: var(--mobile-control-height);
+  }
+
+  form button:not([data-compact-control]),
+  [data-slot="dialog-footer"] > button {
+    min-height: var(--mobile-control-height);
+  }
+
+  /* Tables retain their columns on small screens and scroll inside their own card. */
+  [data-slot="table-container"],
+  .overflow-x-auto,
+  .overflow-hidden:has(> table),
+  .overflow-hidden:has(table) {
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+
+  [data-slot="table-container"] > table,
+  .overflow-x-auto > table,
+  .overflow-hidden > table,
+  .overflow-hidden > div > table {
+    min-width: 38rem;
+  }
+
+  /* Keep controls from forcing horizontal page overflow when headers wrap. */
+  [data-page-header-actions] {
+    width: 100%;
+  }
+
+  [data-page-header-actions] > * {
+    flex: 1 1 auto;
+  }
+
+  [data-page-header-actions] button,
+  [data-page-header-actions] a {
+    justify-content: center;
+  }
+
+  /* Native date/time inputs follow Persian UI direction but keep values legible. */
+  input[type="date"],
+  input[type="time"],
+  input[type="datetime-local"] {
+    min-width: 0;
+  }
+}
+
+@media (max-width: 374px) {
+  [data-slot="table-container"] > table,
+  .overflow-x-auto > table,
+  .overflow-hidden > table,
+  .overflow-hidden > div > table {
+    min-width: 34rem;
+  }
+}

@@ -1,0 +1,3 @@
+# .NET build and restore outputs are reproducible; do not export or commit them.
+**/bin/
+**/obj/

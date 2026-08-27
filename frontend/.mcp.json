@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "higgsfield__7faab178": {
+      "type": "http",
+      "url": "${MCP_PROXY_BASE_URL}/proxy/7faab178-4abb-44a7-a810-3e5c4b59774c",
+      "headers": {
+        "Authorization": "Bearer ${MCP_PROXY_AUTH_TOKEN}"
+      }
+    }
+  }
+}
