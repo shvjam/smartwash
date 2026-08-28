@@ -96,7 +96,7 @@ export const Contact = () => {
 
           <div className="space-y-3">
             <InfoCard icon={Phone} title="تلفن" value="۰۲۱-۹۱۰۰۰۰۰۰" hint="روزهای کاری ۹ تا ۱۸" />
-            <InfoCard icon={Mail} title="ایمیل" value="hello@smartwash.ir" hint="پاسخ‌گویی ۲۴ ساعته" />
+            <InfoCard icon={Mail} title="ایمیل" value="hello@appsmartwash.com" hint="پاسخ‌گویی ۲۴ ساعته" />
             <InfoCard icon={MessageSquare} title="تلگرام" value="@smartwash_support" hint="چت سریع با تیم پشتیبانی" />
             <InfoCard icon={MapPin} title="دفتر مرکزی" value="تهران، خیابان آزادی، پلاک ۲۲" />
           </div>

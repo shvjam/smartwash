@@ -751,7 +751,7 @@ export const Landing: React.FC = () => {
             <div className="ftr-col">
               <div className="ftr-col-ttl">تماس</div>
               <a href="tel:09000000000">۰۹۰۰ ۰۰۰ ۰۰۰۰</a>
-              <a href="mailto:info@smartwash.ir">info@smartwash.ir</a>
+              <a href="mailto:info@appsmartwash.com">info@appsmartwash.com</a>
               <span>تهران، ایران</span>
               <span>appsmartwash.com</span>
             </div>
