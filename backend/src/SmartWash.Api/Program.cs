@@ -45,8 +45,17 @@ builder.Services.AddControllers();
 builder.Services.AddProblemDetails();
 builder.Services.AddScoped<CronAuthFilter>();
 
-// سرویس پس‌زمینه — اجرای خودکار cron jobs داخلی
-builder.Services.AddHostedService<SmartWash.Api.BackgroundServices.CronSchedulerService>();
+// سرویس پس‌زمینه — اجرای خودکار cron jobs داخلی.
+//
+// Turn this off (Cron__UseInternalScheduler=false) wherever an external scheduler calls the
+// /api/cron/* endpoints instead — shared hosting, where the app pool sleeps and takes the
+// background service with it, is the usual reason. The two must not both be live: CronJobRun
+// only records that a job ran and enforces nothing, so a concurrent daily-billing on both
+// paths would bill the same subscription twice.
+if (builder.Configuration.GetValue("Cron:UseInternalScheduler", true))
+{
+    builder.Services.AddHostedService<SmartWash.Api.BackgroundServices.CronSchedulerService>();
+}
 
 var healthChecks = builder.Services.AddHealthChecks();
 // اگر connection string واقعی تنظیم نشده باشد، ثبت health-checkِ SqlServer نباید
