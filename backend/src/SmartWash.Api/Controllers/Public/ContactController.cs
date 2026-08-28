@@ -7,6 +7,9 @@ namespace SmartWash.Api.Controllers.Public;
 [Route("api/public/contact")]
 public sealed class ContactController : ControllerBase
 {
+    /// <summary>Used only when Support:InboxEmail is absent, so the form never drops a message.</summary>
+    private const string DefaultSupportInbox = "info@appsmartwash.com";
+
     private readonly IEmailSender _email;
     private readonly IConfiguration _config;
     private readonly ILogger<ContactController> _logger;
@@ -35,7 +38,11 @@ public sealed class ContactController : ControllerBase
             return BadRequest(new { code = "Validation.Required", message = "نام، ایمیل و متن پیام الزامی است." });
         }
 
-        var supportEmail = _config["Smtp:From"] ?? "info@appsmartwash.com";
+        // This is the recipient, not the sender. It used to read Smtp:From — a key no
+        // appsettings file defines (the SMTP sender is Smtp:FromAddress), so the fallback
+        // below always won and setting Smtp:FromAddress silently failed to redirect
+        // contact mail. Override with Support__InboxEmail.
+        var supportEmail = _config["Support:InboxEmail"] ?? DefaultSupportInbox;
 
         var html = $"""
             <div dir="rtl" style="font-family: Tahoma, sans-serif; font-size: 14px; color: #333;">
