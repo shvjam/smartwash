@@ -35,7 +35,7 @@ public sealed class ContactController : ControllerBase
             return BadRequest(new { code = "Validation.Required", message = "نام، ایمیل و متن پیام الزامی است." });
         }
 
-        var supportEmail = _config["Smtp:From"] ?? "info@smartwash.zishot.com";
+        var supportEmail = _config["Smtp:From"] ?? "info@appsmartwash.com";
 
         var html = $"""
             <div dir="rtl" style="font-family: Tahoma, sans-serif; font-size: 14px; color: #333;">

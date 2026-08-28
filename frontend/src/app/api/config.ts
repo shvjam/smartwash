@@ -1,5 +1,5 @@
 export const API_CONFIG = {
-  baseUrl: (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/$/, '') || 'https://smartwashapi.zishot.com',
+  baseUrl: (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/$/, '') || 'https://api.appsmartwash.com',
   tenantSlugStorageKey: 'sw_tenant_slug',
   accessTokenStorageKey: 'sw_access',
   refreshTokenStorageKey: 'sw_refresh',

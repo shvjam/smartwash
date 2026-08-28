@@ -32,7 +32,7 @@ public sealed class PaymentCallbackController : ControllerBase
         var frontendBase = _config["Frontend:BaseUrl"]
                            ?? _config.GetSection("Cors:AllowedOrigins")
                                .Get<string[]>()?.FirstOrDefault()
-                           ?? "https://smartwash.zishot.com";
+                           ?? "https://appsmartwash.com";
         var resultBase = $"{frontendBase}/app/billing/result?paymentId={paymentId}";
 
         // لغو پرداخت توسط کاربر

@@ -13,11 +13,11 @@
 
 .EXAMPLE
     .\e2e-test.ps1
-    .\e2e-test.ps1 -BaseUrl "https://smartwashapi.zishot.com" -Verbose
+    .\e2e-test.ps1 -BaseUrl "https://api.appsmartwash.com" -Verbose
 #>
 [CmdletBinding()]
 param(
-    [string]$BaseUrl        = "https://smartwashapi.zishot.com",
+    [string]$BaseUrl        = "https://api.appsmartwash.com",
     [string]$TenantSlug     = "demo-carwash",
     [string]$OwnerEmail     = "owner@smartwash.com",
     [string]$OwnerPassword  = "Test@1234",

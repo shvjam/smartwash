@@ -89,7 +89,7 @@ ASPNETCORE_DETAILEDERRORS=false
 ConnectionStrings__Default=<production SQL connection string>
 Jwt__SigningKey=<new random key, at least 64 characters>
 Cron__Secret=<new random secret, at least 32 characters>
-Cors__AllowedOrigins__0=https://smartwash.zishot.com
+Cors__AllowedOrigins__0=https://appsmartwash.com
 ```
 
 در صورت استفاده از سرویس‌های فعال، کلیدهای `Sms__ApiKey` و کلیدهای payment نیز فقط از secret store تزریق شوند. کلیدهای JWT و Cron که پیش‌تر در repository یا سرور بوده‌اند **فوراً rotate** شوند؛ تعویض فایل بدون rotate کردن مقدارِ قبلی کافی نیست. پس از deploy بررسی کنید که `/swagger` پاسخ 404 می‌دهد و پاسخ خطای ۵۰۰ هیچ stack trace یا جزئیات داخلی ندارد.

@@ -28,12 +28,12 @@ export default defineConfig({
         // Use external logo URL instead of local files
         icons: [
           {
-            src: 'https://smartwash.zishot.com/logo.png',
+            src: 'https://appsmartwash.com/logo.png',
             sizes: '192x192',
             type: 'image/png',
           },
           {
-            src: 'https://smartwash.zishot.com/logo.png',
+            src: 'https://appsmartwash.com/logo.png',
             sizes: '512x512',
             type: 'image/png',
           },

@@ -753,7 +753,7 @@ export const Landing: React.FC = () => {
               <a href="tel:09000000000">۰۹۰۰ ۰۰۰ ۰۰۰۰</a>
               <a href="mailto:info@smartwash.ir">info@smartwash.ir</a>
               <span>تهران، ایران</span>
-              <span>smartwash.zishot.com</span>
+              <span>appsmartwash.com</span>
             </div>
           </div>
           <div className="ftr-bottom">
