@@ -101,7 +101,7 @@ public sealed class DatabaseSeeder
 
         var slug = section["Slug"]?.Trim().ToLowerInvariant() ?? "demo-carwash";
         var displayName = section["DisplayName"] ?? "کارواش آزمایشی SmartWash";
-        var email = section["Email"] ?? "demo@smartwash.com";
+        var email = section["Email"] ?? "demo@appsmartwash.com";
         var password = section["Password"] ?? "Demo@1234";
         var ownerName = section["OwnerDisplayName"] ?? "مدیر کارواش آزمایشی";
         var phone = section["Phone"] ?? "09120000000";

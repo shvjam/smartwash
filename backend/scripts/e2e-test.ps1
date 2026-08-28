@@ -19,9 +19,9 @@
 param(
     [string]$BaseUrl        = "https://api.appsmartwash.com",
     [string]$TenantSlug     = "demo-carwash",
-    [string]$OwnerEmail     = "owner@smartwash.com",
+    [string]$OwnerEmail     = "owner@appsmartwash.com",
     [string]$OwnerPassword  = "Test@1234",
-    [string]$TenantEmail    = "demo@smartwash.com",
+    [string]$TenantEmail    = "demo@appsmartwash.com",
     [string]$TenantPassword = "Demo@1234",
     # پاک‌سازی: سفارش‌های ساخته‌شده‌ی آزمون در پایان لغو می‌شوند.
     [switch]$KeepTestData

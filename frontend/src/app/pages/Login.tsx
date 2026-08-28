@@ -7,7 +7,7 @@ import { auth, API_CONFIG } from '../api';
 import { Logo, BRAND_NAME, BRAND_TAGLINE } from '../components/Logo';
 
 const DEMO_ACCOUNT = {
-  email: 'demo@smartwash.com',
+  email: 'demo@appsmartwash.com',
   password: 'Demo@1234',
   slug: 'demo-carwash',
 };
