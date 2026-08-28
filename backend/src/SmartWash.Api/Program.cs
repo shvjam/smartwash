@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using SmartWash.Api.Authorization;
 using SmartWash.Api.Configuration;
 using SmartWash.Api.Identity;
@@ -122,6 +123,7 @@ app.MapGet("/", () => Results.Ok(new { name = "SmartWash API", version = "0.1.0"
 // account with a credential that is committed to the repository.
 app.ValidateSecrets();
 
+await MigrateAsync(app);
 await SeedAsync(app);
 
 try
@@ -136,6 +138,45 @@ catch (Exception ex)
 finally
 {
     Log.CloseAndFlush();
+}
+
+/// <summary>
+/// Applies pending EF migrations, but only when explicitly asked to.
+///
+/// The schema is normally created by running sql/migration.sql against the database, which
+/// keeps schema changes reviewable and separate from a deploy. Shared hosting can leave no
+/// way to do that: no remote SQL access, and newer Plesk no longer ships a web SQL client.
+/// This switch is the escape hatch for exactly that case — turn it on for one restart, watch
+/// the log, then turn it off again, the same discipline as Seed:RunOnStartup.
+///
+/// Leaving it on is a standing risk: the next deploy carrying a migration would alter the
+/// production schema the moment the app pool recycles, with no review and no backup taken.
+/// </summary>
+static async Task MigrateAsync(WebApplication app)
+{
+    if (!app.Configuration.GetValue("Database:MigrateOnStartup", false)) return;
+    try
+    {
+        using var scope = app.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SmartWash.Infrastructure.Persistence.AppDbContext>();
+
+        var pending = (await db.Database.GetPendingMigrationsAsync()).ToArray();
+        if (pending.Length == 0)
+        {
+            Log.Information("Database:MigrateOnStartup is on, but the schema is already up to date.");
+            return;
+        }
+
+        Log.Warning("Applying {Count} pending migration(s): {Migrations}", pending.Length, string.Join(", ", pending));
+        await db.Database.MigrateAsync();
+        Log.Warning("Migrations applied. Set Database__MigrateOnStartup back to false and restart.");
+    }
+    catch (Exception ex)
+    {
+        // Same reasoning as the seed below: crashing here produces an opaque HTTP 500.30
+        // under IIS and hides the real cause. Come up, fail every request, and say why.
+        Log.Error(ex, "Applying migrations on startup failed. The schema is unchanged.");
+    }
 }
 
 static async Task SeedAsync(WebApplication app)
