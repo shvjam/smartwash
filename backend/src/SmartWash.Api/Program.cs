@@ -109,6 +109,10 @@ app.MapHealthChecks("/health", new HealthCheckOptions
 app.MapHealthChecks("/health/live", new HealthCheckOptions { Predicate = _ => false });
 app.MapGet("/", () => Results.Ok(new { name = "SmartWash API", version = "0.1.0", status = "running", utc = DateTime.UtcNow }));
 
+// Must run before SeedAsync: seeding a placeholder password creates the platform owner
+// account with a credential that is committed to the repository.
+app.ValidateSecrets();
+
 await SeedAsync(app);
 
 try
