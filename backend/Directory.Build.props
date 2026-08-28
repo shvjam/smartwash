@@ -1,0 +1,17 @@
+<Project>
+  <PropertyGroup>
+    <!--
+      The projects target net8.0 but are built with whatever SDK the machine has, and this
+      one is .NET 10. C# 13 added implicit array-to-ReadOnlySpan conversion for extension
+      method receivers, which makes `someArray.Contains(x)` bind to
+      MemoryExtensions.Contains(ReadOnlySpan<T>, T) instead of Enumerable.Contains.
+      Inside a LINQ expression tree EF then fails to evaluate the parameter and throws
+      "GenericArguments[1], 'System.ReadOnlySpan`1[...]' violates the constraint of type
+      'TRet'" at runtime — a 500 on any query filtering by an array of ids.
+
+      Pinning the language to C# 12, the default for net8.0, keeps overload resolution
+      matching the target framework no matter which SDK performs the build.
+    -->
+    <LangVersion>12.0</LangVersion>
+  </PropertyGroup>
+</Project>

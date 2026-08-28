@@ -1,5 +1,6 @@
 using System.Linq.Expressions;
 using System.Reflection;
+using Microsoft.EntityFrameworkCore.Metadata;
 using SmartWash.Application.Abstractions.Identity;
 using SmartWash.Application.Abstractions.Multitenancy;
 using SmartWash.Application.Abstractions.Persistence;
@@ -78,7 +79,34 @@ public class AppDbContext : DbContext, IAppDbContext
     {
         base.OnModelCreating(modelBuilder);
         modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
+        UseClientGeneratedGuidKeys(modelBuilder);
         ApplyGlobalQueryFilters(modelBuilder);
+    }
+
+    /// <summary>
+    /// Every aggregate and child entity assigns its own <c>Id = Guid.NewGuid()</c> in its
+    /// constructor, but EF's convention for a Guid key is <c>ValueGeneratedOnAdd</c>. That
+    /// combination breaks child entities added through a navigation collection: when
+    /// DetectChanges discovers the new entity, EF decides whether it is new by asking
+    /// whether the key is set. The constructor has already set it, so EF concludes the row
+    /// exists, tracks it as Modified and issues an UPDATE against a row that was never
+    /// inserted. The update matches nothing and surfaces as a DbUpdateConcurrencyException,
+    /// which retrying cannot fix because every retry builds another pre-keyed entity.
+    ///
+    /// Aggregate roots escaped this only because handlers call Add() explicitly, which
+    /// forces the Added state. Declaring the keys client-generated makes both paths agree.
+    /// </summary>
+    private static void UseClientGeneratedGuidKeys(ModelBuilder modelBuilder)
+    {
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+        {
+            var key = entityType.FindPrimaryKey();
+            if (key is null || key.Properties.Count != 1) continue;
+
+            var property = key.Properties[0];
+            if (property.ClrType == typeof(Guid))
+                property.ValueGenerated = ValueGenerated.Never;
+        }
     }
 
     private void ApplyGlobalQueryFilters(ModelBuilder modelBuilder)
