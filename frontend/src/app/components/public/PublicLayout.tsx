@@ -146,7 +146,7 @@ export const PublicLayout = () => {
             <div className="font-bold text-white mb-4 text-sm">ارتباط</div>
             <ul className="space-y-2 text-sm">
               <li className="flex items-center gap-2"><Phone size={14} /><span dir="ltr">۰۲۱-۹۱۰۰۰۰۰۰</span></li>
-              <li className="flex items-center gap-2"><Mail size={14} /><span dir="ltr">hello@appsmartwash.com</span></li>
+              <li className="flex items-center gap-2"><Mail size={14} /><span dir="ltr">info@appsmartwash.com</span></li>
               <li className="flex items-center gap-2"><MapPin size={14} /><span>تهران، خیابان آزادی</span></li>
               <li className="flex items-center gap-3 pt-2">
                 <a href="#" className="p-2 rounded-full bg-white/5 hover:bg-white/10 transition-colors"><Instagram size={16} /></a>
