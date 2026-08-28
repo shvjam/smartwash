@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     آزمون سرتاسری (end-to-end) پلتفرم SmartWash — با دسترسی «مالک پلتفرم» و «کارواش دمو».
 
@@ -62,10 +62,14 @@ function Invoke-Api {
     catch {
         $resp   = $_.Exception.Response
         $status = if ($resp) { [int]$resp.StatusCode } else { 0 }
-        $raw    = ''
-        try { $raw = $_.ErrorDetails.Message } catch { }
+        # NOTE: do not name this $raw. PowerShell variable names are case-insensitive,
+        # so it would target the [switch]$Raw parameter and the assignment itself throws
+        # "Cannot convert the \"\" value ... to type SwitchParameter" — inside the catch,
+        # which silently broke every step that expects a failure response.
+        $errorBody = ''
+        try { $errorBody = $_.ErrorDetails.Message } catch { }
         if ($Raw) { throw }
-        return [pscustomobject]@{ Ok = $false; Status = $status; Data = $null; Error = $raw }
+        return [pscustomobject]@{ Ok = $false; Status = $status; Data = $null; Error = $errorBody }
     }
 }
 
@@ -171,7 +175,7 @@ Test-Step 'Authz' 'اسلاگ ناموجود باید ۴۰۴ بدهد' -ExpectSt
     Invoke-Api GET '/api/t/no-such-tenant/orders' -Token $tenantToken
 }
 Test-Step 'Authz' 'اندپوینت cron بدون سکرت باید رد شود' -ExpectStatus 401 {
-    Invoke-Api GET '/api/cron/subscriptions/renew'
+    Invoke-Api GET '/api/cron/expire-overdue-subscriptions'
 }
 
 # ─────────────────────────── ۳) خواندن پنل پلتفرم ───────────────────────────
@@ -199,21 +203,21 @@ foreach ($e in $platformReads) {
 Write-Section 'پنل کارواش (خواندن)'
 
 $tenantReads = @(
-    @{ n = 'من کی هستم';        p = '/auth/me' },
+    @{ n = 'من کی هستم';        p = '/me' },
     @{ n = 'تنظیمات کارواش';    p = '/settings' },
     @{ n = 'شعبه‌ها';           p = '/branches' },
     @{ n = 'جایگاه‌ها';          p = '/bays' },
     @{ n = 'خدمات';             p = '/services' },
     @{ n = 'مشتریان';           p = '/customers?page=1&pageSize=5' },
-    @{ n = 'خودروها';           p = '/vehicles?page=1&pageSize=5' },
+    @{ n = 'مستاجر من';         p = '/me/tenant' },
     @{ n = 'پرسنل';             p = '/workers' },
     @{ n = 'سفارش‌ها';           p = '/orders?page=1&pageSize=5' },
     @{ n = 'رزروها';            p = '/reservations?page=1&pageSize=5' },
-    @{ n = 'شیفت‌ها';            p = '/shifts?page=1&pageSize=5' },
-    @{ n = 'کیف پول';           p = '/wallets?page=1&pageSize=5' },
-    @{ n = 'اشتراک من';         p = '/subscription' },
+    @{ n = 'شیفت باز';          p = '/shifts/open' },
+    @{ n = 'قابلیت‌های پلن';     p = '/me/features' },
+    @{ n = 'اشتراک من';         p = '/billing/subscription' },
     @{ n = 'الگوهای پیامک من';   p = '/sms/templates' },
-    @{ n = 'داشبورد';           p = '/dashboard' }
+    @{ n = 'داشبورد';           p = '/reports/dashboard' }
 )
 foreach ($e in $tenantReads) {
     Test-Step 'Tenant' $e.n ([scriptblock]::Create("Invoke-Api GET '$T$($e.p)' -Token `$tenantToken"))

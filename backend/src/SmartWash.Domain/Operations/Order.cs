@@ -94,6 +94,10 @@ public sealed class Order : TenantAggregateRoot<Guid>
         if (Status != OrderStatus.InProgress)
             throw new DomainException("Order.NotEditable", "سفارش قابل ویرایش نیست.");
         if (discountRials < 0) throw new DomainException("Order.InvalidDiscount", "تخفیف نامعتبر است.");
+        // Recalculate clamps TotalRials at zero, so an oversized discount is invisible on the
+        // invoice while DiscountRials keeps the inflated figure and feeds it to the reports.
+        if (discountRials > SubtotalRials)
+            throw new DomainException("Order.DiscountExceedsTotal", "تخفیف نمی‌تواند از مبلغ سفارش بیشتر باشد.");
         DiscountRials = discountRials;
         Recalculate();
     }
