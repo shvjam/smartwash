@@ -1,6 +1,8 @@
 # Build outputs are reproducible; never commit them.
 **/bin/
 **/obj/
+publish/
+*.publish.zip
 node_modules/
 dist/
 build/
@@ -22,3 +24,7 @@ secrets.json
 *.user
 Thumbs.db
 desktop.ini
+
+# Server files downloaded for diagnosis — may contain host config and paths.
+files on server/
+remote-listing.txt
