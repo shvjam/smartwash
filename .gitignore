@@ -2,6 +2,7 @@
 **/bin/
 **/obj/
 publish/
+api-root/
 *.publish.zip
 node_modules/
 dist/
