@@ -18,6 +18,7 @@ build/
 .env*
 web.config.filled
 cron-bat/
+cron-bat-local/
 *.pfx
 secrets.json
 
