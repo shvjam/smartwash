@@ -17,6 +17,7 @@ build/
 # Secrets are injected as host environment variables, never committed.
 .env*
 web.config.filled
+cron-bat/
 *.pfx
 secrets.json
 
