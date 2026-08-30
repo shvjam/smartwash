@@ -1,0 +1,15 @@
+﻿=== / ===
+STATUS: 500 Internal Server Error
+BODY:
+
+
+=== /health/live ===
+STATUS: 500 Internal Server Error
+BODY:
+
+
+=== /api/public/plans ===
+STATUS: 500 Internal Server Error
+BODY:
+
+

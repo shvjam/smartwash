@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  TEMPORARY — swap this in only to find out why the app will not start, then put
+  web.config.plesk back. errorMode="Detailed" makes IIS send the full error page to a
+  remote client instead of a blank 500, which is the only way to see the substatus
+  (500.19 config, 500.30 startup, 500.31/500.32 runtime, 500.34/500.35 hosting model).
+  Note there is no existingResponse="PassThrough" here: that setting is what blanked
+  the body, so the diagnostic copy deliberately leaves it out.
+-->
+<configuration>
+  <location path="." inheritInChildApplications="false">
+    <system.webServer>
+      <handlers>
+        <add name="aspNetCore" path="*" verb="*" modules="AspNetCoreModuleV2" resourceType="Unspecified" />
+      </handlers>
+
+      <aspNetCore processPath=".\SmartWash.Api.exe"
+                  stdoutLogEnabled="true"
+                  stdoutLogFile=".\App_Data\logs\stdout"
+                  hostingModel="inprocess">
+        <environmentVariables>
+          <environmentVariable name="ASPNETCORE_ENVIRONMENT" value="Production" />
+          <environmentVariable name="ASPNETCORE_DETAILEDERRORS" value="true" />
+        </environmentVariables>
+      </aspNetCore>
+
+      <httpErrors errorMode="Detailed" />
+    </system.webServer>
+  </location>
+</configuration>
