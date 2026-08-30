@@ -107,6 +107,7 @@ public sealed class DatabaseSeeder
         var phone = section["Phone"] ?? "09120000000";
 
         var tenant = await _db.Tenants.FirstOrDefaultAsync(t => t.Slug == slug, ct);
+        Branch? defaultBranch = null;
         if (tenant is null)
         {
             tenant = Tenant.Create(slug, displayName, email, phone, AppConstants.TrialDays);
@@ -118,6 +119,7 @@ public sealed class DatabaseSeeder
             _db.TenantSettings.Add(settings);
 
             var branch = Branch.Create(tenant.Id, "شعبه نمونه", "تهران", phone, isDefault: true);
+            defaultBranch = branch;
             _db.Branches.Add(branch);
             _db.Bays.AddRange(
                 Bay.Create(tenant.Id, branch.Id, "جایگاه ۱", 1),
@@ -127,6 +129,28 @@ public sealed class DatabaseSeeder
                 Service.Create(tenant.Id, "شستشوی معمولی", ServiceCategory.Main, 500_000, 30, 0.10m),
                 Service.Create(tenant.Id, "شستشوی کامل", ServiceCategory.Main, 900_000, 60, 0.10m),
                 Service.Create(tenant.Id, "نظافت داخل خودرو", ServiceCategory.Interior, 700_000, 45, 0.10m));
+        }
+
+        // Staff sit outside the block above on purpose. That block only runs for a brand new
+        // tenant, so a demo carwash seeded before this existed would never gain any — and a
+        // demo with no staff cannot show commission, per-worker reports, or assigning a job.
+        // Query filters are bypassed because the seeder runs with no tenant in context, which
+        // would otherwise make every tenant-scoped row invisible.
+        var branchId = defaultBranch?.Id ?? await _db.Branches
+            .IgnoreQueryFilters()
+            .Where(b => b.TenantId == tenant.Id && !b.IsDeleted)
+            .OrderByDescending(b => b.IsDefault)
+            .Select(b => b.Id)
+            .FirstOrDefaultAsync(ct);
+
+        var hasWorkers = await _db.Workers.IgnoreQueryFilters().AnyAsync(w => w.TenantId == tenant.Id, ct);
+        if (branchId != Guid.Empty && !hasWorkers)
+        {
+            _db.Workers.AddRange(
+                Worker.Create(tenant.Id, branchId, "رضا محمدی", "شست‌وشو", "09120000101", 0.10m),
+                Worker.Create(tenant.Id, branchId, "علی کریمی", "شست‌وشو", "09120000102", 0.10m),
+                Worker.Create(tenant.Id, branchId, "سارا احمدی", "نظافت داخلی", "09120000103", 0.12m),
+                Worker.Create(tenant.Id, branchId, "مهدی نوری", "سرشیفت", "09120000104", 0.15m));
         }
 
         var normalizedEmail = email.Trim().ToUpperInvariant();
