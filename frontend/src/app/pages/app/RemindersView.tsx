@@ -30,6 +30,9 @@ export const RemindersView: React.FC = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [showCreate, setShowCreate] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [bulkNote, setBulkNote] = useState<string | null>(null);
 
   const reload = async (p = page) => {
     setLoading(true); setErr(null);
@@ -42,7 +45,40 @@ export const RemindersView: React.FC = () => {
       setErr(e instanceof ApiException ? e.message : 'خطا در بارگذاری');
     } finally { setLoading(false); }
   };
-  useEffect(() => { reload(1); }, [status]);
+  useEffect(() => { setSelected(new Set()); reload(1); }, [status]);
+
+  // Only pending reminders can be sent, so those are the only ones selectable.
+  const sendable = items.filter(r => r.status === 0);
+  const allSelected = sendable.length > 0 && sendable.every(r => selected.has(r.id));
+
+  const toggleOne = (id: string) => setSelected(prev => {
+    const next = new Set(prev);
+    next.has(id) ? next.delete(id) : next.add(id);
+    return next;
+  });
+
+  const toggleAll = () => setSelected(allSelected ? new Set() : new Set(sendable.map(r => r.id)));
+
+  const sendSelected = async () => {
+    const ids = sendable.filter(r => selected.has(r.id)).map(r => r.id);
+    if (ids.length === 0) return;
+    setBulkBusy(true); setBulkNote(null); setErr(null);
+    let sent = 0;
+    const failed: string[] = [];
+    // Sent one at a time on purpose: the SMS provider bills per message, and a partial
+    // failure should say exactly how far it got rather than leaving it ambiguous.
+    for (const id of ids) {
+      try { await remindersApi.sendNow(id); sent++; }
+      catch { failed.push(id); }
+    }
+    setSelected(new Set());
+    await reload();
+    setBulkBusy(false);
+    setBulkNote(failed.length === 0
+      ? `${sent} یادآور ارسال شد`
+      : `${sent} ارسال شد، ${failed.length} ناموفق`);
+    setTimeout(() => setBulkNote(null), 4000);
+  };
 
   const cancel = async (id: string) => {
     if (!confirm('یادآور لغو شود؟')) return;
@@ -73,6 +109,23 @@ export const RemindersView: React.FC = () => {
       />
 
       <Card>
+        {selected.size > 0 && (
+          <div className="mb-4 flex items-center justify-between gap-3 rounded-xl bg-violet-50 border border-violet-100 px-4 py-3">
+            <span className="text-sm text-violet-800 font-bold">{toFa(String(selected.size))} یادآور انتخاب شده</span>
+            <div className="flex items-center gap-2">
+              <button onClick={() => setSelected(new Set())} disabled={bulkBusy}
+                className="px-3 py-1.5 rounded-lg text-sm text-violet-700 hover:bg-violet-100 disabled:opacity-50">
+                لغو انتخاب
+              </button>
+              <button onClick={sendSelected} disabled={bulkBusy}
+                className="px-4 py-1.5 rounded-lg bg-violet-600 text-white text-sm font-bold hover:bg-violet-700 disabled:opacity-50">
+                {bulkBusy ? 'در حال ارسال…' : 'ارسال پیامک به انتخاب‌شده‌ها'}
+              </button>
+            </div>
+          </div>
+        )}
+        {bulkNote && <div className="mb-4 bg-emerald-50 text-emerald-700 text-sm px-4 py-3 rounded-xl">{bulkNote}</div>}
+
         <div className="flex gap-2 mb-4">
           {[
             { v: 0, l: 'در انتظار' },
@@ -98,6 +151,10 @@ export const RemindersView: React.FC = () => {
             <table className="w-full">
               <thead className="text-right text-gray-500 text-sm border-b">
                 <tr>
+                  <th className="py-2 px-3 w-10">
+                    <input type="checkbox" checked={allSelected} onChange={toggleAll}
+                      disabled={sendable.length === 0} title="انتخاب همه" className="cursor-pointer" />
+                  </th>
                   <th className="py-2 px-3">مشتری</th>
                   <th className="py-2 px-3">خودرو</th>
                   <th className="py-2 px-3">عنوان</th>
@@ -112,6 +169,12 @@ export const RemindersView: React.FC = () => {
                   const s = STATUS_META[r.status];
                   return (
                     <tr key={r.id} className="border-b last:border-0 hover:bg-gray-50">
+                      <td className="py-2 px-3">
+                        {r.status === 0 && (
+                          <input type="checkbox" checked={selected.has(r.id)}
+                            onChange={() => toggleOne(r.id)} className="cursor-pointer" />
+                        )}
+                      </td>
                       <td className="py-2 px-3">
                         <div>{r.customerName}</div>
                         <div className="text-xs text-gray-500">{toFa(r.customerPhone)}</div>

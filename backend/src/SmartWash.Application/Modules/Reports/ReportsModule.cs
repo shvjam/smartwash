@@ -98,7 +98,19 @@ public sealed class GetRevenueSeriesHandler : IRequestHandler<GetRevenueSeriesQu
     }
 }
 
-public sealed record WorkerPerformanceRow(Guid WorkerId, string FullName, int OrderCount, long RevenueRials, long CommissionRials);
+/// <summary>
+/// What one worker earned over the period. Commission is the tenant's share-of-service
+/// arrangement; tips are what customers added on top and are not revenue, which is why the
+/// two are reported side by side rather than summed.
+/// </summary>
+public sealed record WorkerPerformanceRow(
+    Guid WorkerId,
+    string FullName,
+    int OrderCount,
+    long RevenueRials,
+    long CommissionRials,
+    long TipsRials,
+    long EarningsRials);
 public sealed record GetWorkerPerformanceQuery(DateOnly FromDate, DateOnly ToDate) : IRequest<Result<IReadOnlyList<WorkerPerformanceRow>>>;
 public sealed class GetWorkerPerformanceHandler : IRequestHandler<GetWorkerPerformanceQuery, Result<IReadOnlyList<WorkerPerformanceRow>>>
 {
@@ -116,7 +128,10 @@ public sealed class GetWorkerPerformanceHandler : IRequestHandler<GetWorkerPerfo
             .Select(g => new WorkerPerformanceRow(g.Key.WorkerId, g.Key.WorkerName ?? "",
                 g.Select(x => x.OrderId).Distinct().Count(),
                 g.Sum(x => x.LineTotalRials),
-                g.Sum(x => x.WorkerCommissionRials)))
+                g.Sum(x => x.WorkerCommissionRials),
+                g.Sum(x => x.TipRials),
+                g.Sum(x => x.WorkerCommissionRials) + g.Sum(x => x.TipRials)))
+            .OrderByDescending(r => r.EarningsRials)
             .ToListAsync(ct);
         return Result.Success<IReadOnlyList<WorkerPerformanceRow>>(rows);
     }

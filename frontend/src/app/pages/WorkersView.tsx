@@ -1,30 +1,58 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router';
 import { motion } from 'motion/react';
-import { Trash2, UserPlus, ChevronLeft, Phone } from 'lucide-react';
+import { Trash2, UserPlus, ChevronLeft, Phone, Pencil } from 'lucide-react';
 import { useCarWash } from '../store';
 import { workersApi } from '../api';
 import { PageHeader, Card, EmptyState } from '../components/app/PageHeader';
 
 export const WorkersView = () => {
-  const { workers, addWorker, removeWorker } = useCarWash();
+  const { workers, addWorker, removeWorker, reloadAll } = useCarWash();
   const [showWorkerForm, setShowWorkerForm] = useState(false);
+  // null while adding; the worker's id while editing. The API has supported PUT all along —
+  // only the screen was missing, so a typo in a name meant deleting the person and re-adding.
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const [workerForm, setWorkerForm] = useState({ name: '', role: 'متخصص شستشو', phone: '', commissionRate: 10 });
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
 
-  const handleAddWorker = async (e: React.FormEvent) => {
+  const resetForm = () => {
+    setAvatarFile(null);
+    setWorkerForm({ name: '', role: 'متخصص شستشو', phone: '', commissionRate: 10 });
+    setEditingId(null);
+    setShowWorkerForm(false);
+  };
+
+  const startEdit = (w: { id: string; name: string; role: string; phone?: string; commissionRate?: number }) => {
+    setEditingId(w.id);
+    setWorkerForm({
+      name: w.name,
+      role: w.role,
+      phone: w.phone ?? '',
+      // Stored as a fraction, shown as a percentage.
+      commissionRate: Math.round((w.commissionRate ?? 0.1) * 100),
+    });
+    setAvatarFile(null);
+    setShowWorkerForm(true);
+  };
+
+  const handleSubmitWorker = async (e: React.FormEvent) => {
     e.preventDefault();
     const avatarUrl = avatarFile ? (await workersApi.uploadPhoto(avatarFile)).url : undefined;
-    await addWorker({
+    const payload = {
       fullName: workerForm.name,
       role: workerForm.role,
       phone: workerForm.phone.trim() || undefined,
-      commissionRate: (workerForm.commissionRate || 10) / 100, avatarUrl,
-    });
-    setAvatarFile(null);
-    setWorkerForm({ name: '', role: 'متخصص شستشو', phone: '', commissionRate: 10 });
-    setShowWorkerForm(false);
+      commissionRate: (workerForm.commissionRate || 10) / 100,
+      avatarUrl,
+    };
+    if (editingId) {
+      await workersApi.update(editingId, payload);
+      await reloadAll();
+    } else {
+      await addWorker(payload);
+    }
+    resetForm();
   };
 
 
@@ -36,7 +64,7 @@ export const WorkersView = () => {
           <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
             <h2 className="font-bold text-gray-900">پرسنل ({workers.length})</h2>
             <button
-              onClick={() => setShowWorkerForm(s => !s)}
+              onClick={() => (showWorkerForm ? resetForm() : setShowWorkerForm(true))}
               className="flex items-center gap-1.5 bg-red-50 hover:bg-red-100 text-red-600 px-3 py-1.5 rounded-xl text-xs font-bold transition-colors"
             >
               <UserPlus size={14} /> افزودن پرسنل
@@ -47,7 +75,7 @@ export const WorkersView = () => {
             <motion.form
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
-              onSubmit={handleAddWorker}
+              onSubmit={handleSubmitWorker}
               className="p-5 bg-gray-50 border-b border-gray-100 space-y-3"
             >
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -66,8 +94,8 @@ export const WorkersView = () => {
                 </div>
               </div>
               <div className="flex gap-2">
-                <button type="submit" className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2.5 rounded-xl text-sm font-bold">ذخیره</button>
-                <button type="button" onClick={() => setShowWorkerForm(false)} className="px-4 bg-gray-200 text-gray-700 py-2.5 rounded-xl text-sm">انصراف</button>
+                <button type="submit" className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2.5 rounded-xl text-sm font-bold">{editingId ? 'ذخیره تغییرات' : 'ذخیره'}</button>
+                <button type="button" onClick={resetForm} className="px-4 bg-gray-200 text-gray-700 py-2.5 rounded-xl text-sm">انصراف</button>
               </div>
             </motion.form>
           )}
@@ -90,7 +118,11 @@ export const WorkersView = () => {
                     className="text-gray-400 hover:text-red-600 p-2 rounded-xl hover:bg-red-50 transition-colors">
                     <ChevronLeft size={16} />
                   </Link>
-                  <button onClick={() => removeWorker(w.id)} className="text-gray-400 hover:text-red-500 p-2 rounded-xl hover:bg-red-50 transition-colors">
+                  <button onClick={() => startEdit(w)} title="ویرایش"
+                    className="text-gray-400 hover:text-red-600 p-2 rounded-xl hover:bg-red-50 transition-colors">
+                    <Pencil size={16} />
+                  </button>
+                  <button onClick={() => removeWorker(w.id)} title="حذف" className="text-gray-400 hover:text-red-500 p-2 rounded-xl hover:bg-red-50 transition-colors">
                     <Trash2 size={16} />
                   </button>
                 </div>

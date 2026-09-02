@@ -5,6 +5,10 @@ export type Worker = {
   name: string;
   avatar: string;
   role: string;
+  /** The list already tried to show this; it was never carried across from the API. */
+  phone?: string;
+  /** Fraction, not percent: 0.1 is a ten percent share. */
+  commissionRate: number;
 };
 
 export type Service = {

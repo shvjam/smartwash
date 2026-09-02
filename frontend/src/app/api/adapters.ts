@@ -39,6 +39,7 @@ export const fromBay = (b: BayDto): Bay => ({
 
 export const fromWorker = (w: WorkerDto): Worker => ({
   id: w.id, name: w.fullName, role: w.role, avatar: resolveUploadUrl(w.avatarUrl),
+  phone: w.phone ?? undefined, commissionRate: w.commissionRate,
 });
 
 export const fromService = (s: ServiceDto): Service => ({

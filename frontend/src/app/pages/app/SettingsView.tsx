@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Save, Palette, Award, Receipt, MessageSquare, CalendarClock, Check, Lock } from 'lucide-react';
-import { settingsApi, TenantSettingsDto, ApiException } from '../../api';
+import { Save, Palette, Award, Receipt, MessageSquare, CalendarClock, Check, Lock, Upload, X, Loader2 } from 'lucide-react';
+import { settingsApi, filesApi, TenantSettingsDto, ApiException } from '../../api';
+import { resolveUploadUrl } from '../../api/adapters';
 import { PageHeader, Card } from '../../components/app/PageHeader';
 import { clsx } from 'clsx';
 import { useFeatures } from '../../lib/features';
@@ -111,7 +112,7 @@ export const SettingsView = () => {
           <>
             {tab === 'branding' && (
               <div className="grid sm:grid-cols-2 gap-4">
-                <Input label="آدرس لوگو" value={data.logoUrl ?? ''} onChange={v => set('logoUrl', v || null)} dir="ltr" />
+                <LogoField value={data.logoUrl ?? null} onChange={v => set('logoUrl', v)} />
                 <Input label="رنگ اصلی (مثلاً #ef4444)" value={data.primaryColor ?? ''} onChange={v => set('primaryColor', v || null)} dir="ltr" />
                 <Input label="شعار برند" value={data.tagline ?? ''} onChange={v => set('tagline', v || null)} className="sm:col-span-2" />
                 <label className="block sm:col-span-2">
@@ -180,6 +181,58 @@ export const SettingsView = () => {
         )}
       </Card>
     </div>
+  );
+};
+
+/**
+ * Picks a logo file and stores the URL the upload returns.
+ *
+ * This was a plain text box asking for a URL, which meant the person had to host the image
+ * somewhere themselves and paste a link — for a field whose whole purpose is "show me your
+ * logo". The upload endpoint already existed.
+ */
+const LogoField = ({ value, onChange }: { value: string | null; onChange: (v: string | null) => void }) => {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const pick = async (file: File | undefined) => {
+    if (!file) return;
+    setBusy(true); setError(null);
+    try {
+      const { url } = await filesApi.upload(file, 'branding');
+      onChange(url);
+    } catch (e) {
+      setError(e instanceof ApiException ? e.message : 'بارگذاری لوگو ناموفق بود');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <label className="block sm:col-span-2">
+      <span className="text-xs font-medium text-gray-600 mb-2 block">لوگوی کارواش</span>
+      <div className="flex items-center gap-3 rounded-xl border border-dashed border-red-200 bg-white p-3">
+        <div className="size-14 overflow-hidden rounded-xl bg-red-50 flex items-center justify-center text-[10px] text-red-500 flex-shrink-0">
+          {value ? <img src={resolveUploadUrl(value)} alt="لوگو" className="h-full w-full object-contain" /> : 'بدون لوگو'}
+        </div>
+        <div className="flex-1 min-w-0">
+          <span className="cursor-pointer text-xs font-bold text-red-600 flex items-center gap-1.5">
+            {busy ? <Loader2 size={13} className="animate-spin" /> : <Upload size={13} />}
+            {busy ? 'در حال بارگذاری…' : value ? 'انتخاب لوگوی دیگر' : 'انتخاب فایل لوگو'}
+            <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden"
+              disabled={busy} onChange={e => pick(e.target.files?.[0])} />
+          </span>
+          <span className="mt-1 block text-[10px] text-gray-400">JPG، PNG یا WEBP تا ۵ مگابایت</span>
+          {error && <span className="mt-1 block text-[10px] text-red-600">{error}</span>}
+        </div>
+        {value && !busy && (
+          <button type="button" onClick={() => onChange(null)} title="حذف لوگو"
+            className="text-gray-400 hover:text-red-500 p-2 rounded-xl hover:bg-red-50 transition-colors flex-shrink-0">
+            <X size={15} />
+          </button>
+        )}
+      </div>
+    </label>
   );
 };
 

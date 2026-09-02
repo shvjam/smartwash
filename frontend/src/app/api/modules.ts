@@ -235,6 +235,16 @@ export const shiftsApi = {
 };
 
 // ---------- SETTINGS ----------
+export const filesApi = {
+  /** Generic image upload. Returns the public URL to store on whatever record needs it. */
+  upload: async (file: File, folder?: string) => {
+    const data = new FormData();
+    data.append('file', file);
+    const qs = folder ? `?folder=${encodeURIComponent(folder)}` : '';
+    return api.post<{ path: string; url: string; size: number; contentType: string }>(`/files/upload${qs}`, data, 'tenant');
+  },
+};
+
 export const settingsApi = {
   get: () => api.get<TenantSettingsDto>('/settings'),
   branding: (body: { logoUrl?: string | null; primaryColor?: string | null; tagline?: string | null; theme: string }) =>

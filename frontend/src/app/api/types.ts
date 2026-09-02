@@ -148,7 +148,15 @@ export type DashboardDto = {
   monthRevenueRials: number; monthOrders: number; monthExpensesRials: number; monthNetRials: number;
 };
 export type DailyRevenuePoint = { date: DateOnlyIso; revenueRials: number; orderCount: number };
-export type WorkerPerformanceRow = { workerId: Guid; fullName: string; orderCount: number; revenueRials: number; commissionRials: number };
+export type WorkerPerformanceRow = {
+  workerId: Guid; fullName: string; orderCount: number; revenueRials: number;
+  /** The tenant's share-of-service payment to the worker. */
+  commissionRials: number;
+  /** What customers added on top; not revenue, so reported separately. */
+  tipsRials: number;
+  /** commission + tips — what the worker is owed for the period. */
+  earningsRials: number;
+};
 
 // Platform: Plans / Tenants / Subscriptions
 export enum PlanBillingModel { Subscription = 0, UsageBased = 1, Hybrid = 2 }

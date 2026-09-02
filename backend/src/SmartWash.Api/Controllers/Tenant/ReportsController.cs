@@ -29,6 +29,15 @@ public sealed class ReportsController : ControllerBase
         [FromQuery] Guid? branchId = null, CancellationToken ct = default)
         => (await _sender.Send(new GetRevenueSeriesQuery(branchId, fromDate, toDate), ct)).ToActionResult();
 
+    /// <summary>
+    /// Estimated versus actual time, so the per-service duration finally answers a question
+    /// instead of only firing an overdue notification.
+    /// </summary>
+    [HttpGet("punctuality")]
+    [HasPermission(Permissions.ReportsView)]
+    public async Task<IActionResult> Punctuality([FromQuery] DateOnly fromDate, [FromQuery] DateOnly toDate, CancellationToken ct = default)
+        => (await _sender.Send(new GetPunctualityQuery(fromDate, toDate), ct)).ToActionResult();
+
     [HttpGet("worker-performance")]
     [HasPermission(Permissions.ReportsView)]
     public async Task<IActionResult> WorkerPerformance([FromQuery] DateOnly fromDate, [FromQuery] DateOnly toDate, CancellationToken ct = default)

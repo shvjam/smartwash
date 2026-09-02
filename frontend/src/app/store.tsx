@@ -42,7 +42,7 @@ type CarWashContextType = {
   addCustomer: (c: { name: string; phone: string; plate?: string }) => Promise<Customer>;
   sendCustomerMessage: (customerId: string, message: string) => Promise<void>;
 
-  createOrder: (bayId: string, plate: string, phone: string, isWalkIn: boolean) => Promise<string | undefined>;
+  createOrder: (bayId: string, plate: string, phone: string, isWalkIn: boolean, customerName?: string) => Promise<string | undefined>;
   addLineItem: (orderId: string, serviceId: string) => Promise<void>;
   removeLineItem: (orderId: string, lineId: string) => Promise<void>;
   assignLineWorker: (orderId: string, lineId: string, workerId: string) => Promise<void>;
@@ -317,7 +317,7 @@ export const CarWashProvider = ({ children }: { children: ReactNode }) => {
   };
 
   // ----- Orders -----
-  const createOrder: CarWashContextType['createOrder'] = async (bayId, plate, phone, isWalkIn) => {
+  const createOrder: CarWashContextType['createOrder'] = async (bayId, plate, phone, isWalkIn, customerName) => {
     if (!branchId) return undefined;
     // اول از state محلی جستجو می‌کنیم (سریع‌تر)
     let customer = phone ? customerByPhone(phone) : undefined;
@@ -332,10 +332,21 @@ export const CarWashProvider = ({ children }: { children: ReactNode }) => {
         }
       } catch { /* اگر جستجو fail شد، ادامه می‌دیم */ }
     }
-    if (!customer && phone) customer = await addCustomer({ name: 'مشتری جدید', phone, plate });
+    // The name the operator typed is what gets stored. Falling back to a constant here is
+    // what put "مشتری جدید" on every new record and into the SMS that greets them.
+    const typedName = customerName?.trim();
+    if (!customer && phone) customer = await addCustomer({ name: typedName || 'مشتری', phone, plate });
+    // An existing customer who was saved under the placeholder gets their real name now.
+    else if (customer && typedName && customer.name !== typedName && customer.name === 'مشتری جدید') {
+      try {
+        await customersApi.update(customer.id, { fullName: typedName, phone: customer.phone });
+        customer = { ...customer, name: typedName };
+        setCustomers(prev => prev.map(c => (c.id === customer!.id ? customer! : c)));
+      } catch { /* naming is a convenience; never block the order on it */ }
+    }
     const created = await ordersApi.create({
       branchId, bayId, customerId: customer?.id ?? null,
-      customerName: customer?.name ?? 'مشتری',
+      customerName: typedName || customer?.name || 'مشتری',
       customerPhone: phone || null,
       vehiclePlate: plate, source: isWalkIn ? OrderSource.WalkIn : OrderSource.Reservation,
       lines: [],

@@ -3,6 +3,7 @@ import { Plus, Wallet, Pencil, Trash2, X, Check } from 'lucide-react';
 import { expensesApi, type ExpenseDto, ExpenseCategory, PaymentMethod, ApiException } from '../../api';
 import { useCarWash } from '../../store';
 import { PageHeader, Card, StatCard, EmptyState } from '../../components/app/PageHeader';
+import { toJalaliLabel } from '../../lib/persian';
 
 const fmt = (n: number) => new Intl.NumberFormat('fa-IR').format(n);
 const categories: { v: ExpenseCategory; l: string }[] = [
@@ -139,6 +140,11 @@ export const ExpensesView = () => {
               <span className="text-xs font-medium text-gray-600 mb-2 block">تاریخ</span>
               <input required type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })}
                 className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-500/20" />
+              {/* The browser's picker is Gregorian and cannot be switched, so the Jalali date
+                  is echoed here — otherwise the person is converting in their head. */}
+              {form.date && (
+                <span className="mt-1.5 block text-xs font-bold text-red-600">{toJalaliLabel(form.date)}</span>
+              )}
             </label>
             <label className="block sm:col-span-2">
               <span className="text-xs font-medium text-gray-600 mb-2 block">توضیحات</span>

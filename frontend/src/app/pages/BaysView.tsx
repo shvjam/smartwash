@@ -27,6 +27,7 @@ export const BaysDashboard = () => {
   const [plate, setPlate] = useState('');
   const [phone, setPhone] = useState('');
   const [name, setName] = useState('');
+  const [knownCustomer, setKnownCustomer] = useState(false);
   const [isWalkIn, setIsWalkIn] = useState(true);
   const tomorrowDefault = () => { const d = new Date(); d.setDate(d.getDate() + 1); return d.toISOString().slice(0, 10); };
   const [resDate, setResDate] = useState<string>(tomorrowDefault());
@@ -77,14 +78,14 @@ export const BaysDashboard = () => {
     if (b.status === 'empty') setModalMode('create');
     else if (b.status === 'maintenance') setModalMode('maintenance');
     else setModalMode('manage');
-    setPlate(''); setPhone(''); setName(''); setIsWalkIn(true); setActiveLine(null);
+    setPlate(''); setPhone(''); setName(''); setKnownCustomer(false); setIsWalkIn(true); setActiveLine(null);
   };
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedBay || !plate) return;
     if (isWalkIn) {
-      await createOrder(selectedBay, plate, phone, true);
+      await createOrder(selectedBay, plate, phone, true, name);
       setSelectedBay(null);
     } else {
       const [y, m, d] = resDate.split('-').map(Number);
@@ -107,7 +108,16 @@ export const BaysDashboard = () => {
   const handlePhoneLookup = (val: string) => {
     setPhone(val);
     const c = customerByPhone(val);
-    if (c) { setPlate(c.plate); setName(c.name); }
+    if (c) {
+      setPlate(c.plate);
+      setName(c.name);
+      setKnownCustomer(true);
+    } else if (knownCustomer) {
+      // The phone was edited away from a match: clear the name it filled in, so the
+      // previous customer's name is not silently attached to a different person.
+      setName('');
+      setKnownCustomer(false);
+    }
   };
 
   const activeOrder = selectedBay ? activeOrderForBay(selectedBay) : undefined;
@@ -202,13 +212,27 @@ export const BaysDashboard = () => {
                           dir="ltr" inputMode="tel" autoComplete="tel"
                           className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-12 py-3 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all font-mono" />
                       </div>
-                      {name && (
+                      {knownCustomer && (
                         <div className="mt-2 px-3 py-2 bg-emerald-50 text-emerald-700 rounded-xl text-xs flex items-center gap-2">
                           <Check size={14} />
                           مشتری شناسایی شد: <span className="font-bold">{name}</span>
                         </div>
                       )}
                     </div>
+
+                    {/* Asked only when the phone lookup found nobody. Without it the customer was
+                        saved as «مشتری جدید» and greeted by that name in every SMS afterwards. */}
+                    {!knownCustomer && (
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-2">نام مشتری</label>
+                        <div className="relative">
+                          <UserIcon className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                          <input value={name} onChange={e => setName(e.target.value)} type="text" placeholder="نام و نام خانوادگی"
+                            autoComplete="name"
+                            className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-12 py-3 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all" />
+                        </div>
+                      </div>
+                    )}
 
                     <div>
                       <label className="block text-xs font-medium text-gray-600 mb-2">شماره پلاک</label>
