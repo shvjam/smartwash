@@ -345,3 +345,24 @@ export type SupportAgentDto = { id: Guid; displayName: string; email: string; op
 export type TicketAttachmentUpload = {
   fileName: string; path: string; url: string; contentType: string; sizeBytes: number;
 };
+
+/** One service's estimate against how long it actually takes. */
+export type ServicePunctualityRow = {
+  serviceId: Guid; serviceName: string; timesPerformed: number;
+  estimatedMinutes: number; averageActualMinutes: number;
+  onTimeCount: number; lateCount: number; onTimePercent: number;
+  averageOverrunMinutes: number;
+};
+
+export type WorkerPunctualityRow = {
+  workerId: Guid; fullName: string; orderCount: number;
+  onTimeCount: number; onTimePercent: number;
+  averageActualMinutes: number; averageOverrunMinutes: number;
+};
+
+export type PunctualityReport = {
+  completedOrders: number; onTimeOrders: number; onTimePercent: number;
+  averageEstimatedMinutes: number; averageActualMinutes: number;
+  services: ServicePunctualityRow[];
+  workers: WorkerPunctualityRow[];
+};

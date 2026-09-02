@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useCarWash } from '../store';
 import { reportsApi, type DashboardDto } from '../api';
+import { PunctualityTab } from './reports/PunctualityTab';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   LineChart, Line, PieChart, Pie, Cell, Legend, AreaChart, Area
@@ -8,7 +9,7 @@ import {
 import { motion } from 'motion/react';
 import {
   CheckCircle, Wallet, Users, DollarSign, Award,
-  Calendar, BarChart3, PieChart as PieIcon, UserCheck, Crown, ArrowUp, ArrowDown
+  Calendar, BarChart3, PieChart as PieIcon, UserCheck, Crown, ArrowUp, ArrowDown, Timer
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { PageHeader, Card, StatCard } from '../components/app/PageHeader';
@@ -22,7 +23,7 @@ const MONTH_LABELS = ['دی', 'بهمن', 'اسفند', 'فروردین', 'ار�
 
 const PIE_COLORS = ['#dc2626', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#06b6d4'];
 
-type Tab = 'overview' | 'workers' | 'customers' | 'monthly' | 'services';
+type Tab = 'overview' | 'workers' | 'punctuality' | 'customers' | 'monthly' | 'services';
 
 export const ReportsView = () => {
   const { orders, workers, services, customers, getOrderTotals, branchId } = useCarWash();
@@ -37,6 +38,15 @@ export const ReportsView = () => {
   // fallback: اگر API هنوز لود نشده، از store استفاده می‌کنیم
   const ORDERS_CACHE_LIMIT = 100;
   const isCacheLimited = orders.filter(o => o.status === 'completed').length >= ORDERS_CACHE_LIMIT;
+
+  // The punctuality report is computed server-side, so the page's range selector is
+  // translated into the from/to dates that endpoint expects.
+  const apiRange = useMemo(() => {
+    const from = new Date();
+    from.setMonth(from.getMonth() - rangeMonths);
+    const iso = (d: Date) => d.toISOString().slice(0, 10);
+    return { fromDate: iso(from), toDate: iso(new Date()) };
+  }, [rangeMonths]);
 
   const completedOrders = useMemo(() => {
     const cutoff = new Date();
@@ -207,6 +217,7 @@ export const ReportsView = () => {
           { key: 'overview' as Tab, label: 'مرور کلی', icon: BarChart3 },
           { key: 'monthly' as Tab, label: 'ماهانه', icon: Calendar },
           { key: 'workers' as Tab, label: 'پرسنل', icon: UserCheck },
+          { key: 'punctuality' as Tab, label: 'دقت زمان‌بندی', icon: Timer },
           { key: 'customers' as Tab, label: 'مشتریان', icon: Users },
           { key: 'services' as Tab, label: 'خدمات', icon: PieIcon },
         ]).map(t => {
@@ -359,6 +370,10 @@ export const ReportsView = () => {
             </Table>
           </ChartCard>
         </div>
+      )}
+
+      {tab === 'punctuality' && (
+        <PunctualityTab fromDate={apiRange.fromDate} toDate={apiRange.toDate} />
       )}
 
       {tab === 'workers' && (
