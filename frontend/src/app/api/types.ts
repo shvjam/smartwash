@@ -366,3 +366,29 @@ export type PunctualityReport = {
   services: ServicePunctualityRow[];
   workers: WorkerPunctualityRow[];
 };
+
+export type WorkerServiceMixRow = { serviceId: Guid; serviceName: string; count: number; totalMinutes: number };
+
+export type WorkerScorecardRow = {
+  workerId: Guid; fullName: string; role: string;
+  ordersCompleted: number; servicesPerformed: number;
+  /** Days the worker closed at least one order — the stand-in for attendance. */
+  activeDays: number;
+  /** Scaled by ten so one integer keeps a decimal place. */
+  ordersPerActiveDayX10: number;
+  revenueRials: number; commissionRials: number; tipsRials: number; earningsRials: number;
+  averageServiceValueRials: number;
+  averageOrderMinutes: number; onTimePercent: number; averageOverrunMinutes: number;
+  serviceMix: WorkerServiceMixRow[];
+};
+
+export type TeamAverages = {
+  ordersCompleted: number; servicesPerformed: number; activeDays: number;
+  ordersPerActiveDayX10: number; revenueRials: number; earningsRials: number;
+  averageOrderMinutes: number; onTimePercent: number;
+};
+
+export type WorkerScorecardReport = {
+  workerCount: number; totalOrders: number;
+  team: TeamAverages; workers: WorkerScorecardRow[];
+};

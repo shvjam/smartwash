@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useCarWash } from '../store';
 import { reportsApi, type DashboardDto } from '../api';
 import { PunctualityTab } from './reports/PunctualityTab';
+import { WorkerScorecards } from './reports/WorkerScorecards';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   LineChart, Line, PieChart, Pie, Cell, Legend, AreaChart, Area
@@ -9,7 +10,7 @@ import {
 import { motion } from 'motion/react';
 import {
   CheckCircle, Wallet, Users, DollarSign, Award,
-  Calendar, BarChart3, PieChart as PieIcon, UserCheck, Crown, ArrowUp, ArrowDown, Timer
+  Calendar, BarChart3, PieChart as PieIcon, UserCheck, Crown, ArrowUp, ArrowDown, Timer, ClipboardList
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { PageHeader, Card, StatCard } from '../components/app/PageHeader';
@@ -23,7 +24,7 @@ const MONTH_LABELS = ['دی', 'بهمن', 'اسفند', 'فروردین', 'ار�
 
 const PIE_COLORS = ['#dc2626', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#06b6d4'];
 
-type Tab = 'overview' | 'workers' | 'punctuality' | 'customers' | 'monthly' | 'services';
+type Tab = 'overview' | 'workers' | 'scorecards' | 'punctuality' | 'customers' | 'monthly' | 'services';
 
 export const ReportsView = () => {
   const { orders, workers, services, customers, getOrderTotals, branchId } = useCarWash();
@@ -217,6 +218,7 @@ export const ReportsView = () => {
           { key: 'overview' as Tab, label: 'مرور کلی', icon: BarChart3 },
           { key: 'monthly' as Tab, label: 'ماهانه', icon: Calendar },
           { key: 'workers' as Tab, label: 'پرسنل', icon: UserCheck },
+          { key: 'scorecards' as Tab, label: 'کارنامه پرسنل', icon: ClipboardList },
           { key: 'punctuality' as Tab, label: 'دقت زمان‌بندی', icon: Timer },
           { key: 'customers' as Tab, label: 'مشتریان', icon: Users },
           { key: 'services' as Tab, label: 'خدمات', icon: PieIcon },
@@ -370,6 +372,10 @@ export const ReportsView = () => {
             </Table>
           </ChartCard>
         </div>
+      )}
+
+      {tab === 'scorecards' && (
+        <WorkerScorecards fromDate={apiRange.fromDate} toDate={apiRange.toDate} />
       )}
 
       {tab === 'punctuality' && (

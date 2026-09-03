@@ -2,7 +2,7 @@ import { api, auth } from './client';
 import type {
   AuthResponse, BranchDto, BayDto, WorkerDto, ServiceDto, CustomerDto, CustomerVehicleDto,
   OrderDto, ReservationDto, ExpenseDto, ShiftDto, TenantSettingsDto, NotificationDto, CampaignDto,
-  DashboardDto, DailyRevenuePoint, WorkerPerformanceRow, PunctualityReport, PagedList, Guid,
+  DashboardDto, DailyRevenuePoint, WorkerPerformanceRow, PunctualityReport, WorkerScorecardReport, PagedList, Guid,
   OrderStatus, OrderSource, BayStatus, PaymentMethod, ReservationStatus, LoyaltyTier, Gender,
   ServiceCategory, ExpenseCategory, CampaignType, CampaignTarget, CampaignStatus,
   PlanDto, PlanFeatureDto, PlanBillingModel, TenantAdminDto, TenantStatus, CurrentTenantDto,
@@ -446,6 +446,8 @@ export const reportsApi = {
     api.get<WorkerPerformanceRow[]>('/reports/worker-performance', { fromDate, toDate }),
   punctuality: (fromDate: string, toDate: string) =>
     api.get<PunctualityReport>('/reports/punctuality', { fromDate, toDate }),
+  workerScorecards: (fromDate: string, toDate: string) =>
+    api.get<WorkerScorecardReport>('/reports/worker-scorecards', { fromDate, toDate }),
 };
 
 // ---------- PLATFORM SMS SERVICE ----------
