@@ -138,6 +138,11 @@
   transition: transform .18s var(--sw-ease), box-shadow .25s var(--sw-ease), background-color .2s, color .2s;
 }
 .sw-btn:active { transform: scale(0.97); }
+
+/* Tailwind hides with display:none; .sw-btn sets display later in the cascade and would
+   otherwise win, which left a button on screen that the layout had no room for. */
+.sw-btn.hidden { display: none; }
+
 .sw-btn-sm { padding: 0.55rem 0.9rem; font-size: 12px; border-radius: 0.8rem; }
 .sw-btn-lg { padding: 0.9rem 1.5rem; font-size: 14.5px; border-radius: 1rem; }
 
@@ -649,6 +654,184 @@
   backdrop-filter: blur(12px);
 }
 @media (min-width: 768px) { .sw-cta { padding: 4.5rem 3rem; } }
+
+
+/* ── Drawn scenery ─────────────────────────────────────────────────────── */
+
+.sw-hero { position: relative; overflow: hidden; padding-bottom: 2rem; }
+
+.sw-hero-scene {
+  /* The drawn bay sits under the board: the screen above, the thing it describes below,
+     reading as one object rather than a picture hidden behind a laptop. */
+  position: relative;
+  z-index: 0;
+  width: 112%;
+  margin-inline-start: -6%;
+  margin-top: -1.25rem;
+  pointer-events: none;
+}
+.sw-scene-svg { width: 100%; height: auto; display: block; filter: drop-shadow(0 26px 34px oklch(40% 0.1 25 / 0.16)); }
+
+@media (max-width: 1023px) {
+  .sw-hero-scene { width: 100%; margin-inline-start: 0; margin-top: 0.75rem; }
+}
+
+/* soap drifting up behind a section */
+.sw-bubbles { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
+.sw-bubble {
+  position: absolute;
+  bottom: -12%;
+  border-radius: 999px;
+  background: radial-gradient(circle at 32% 30%, oklch(100% 0 0 / 0.95), oklch(85% 0.06 235 / 0.35) 55%, oklch(80% 0.08 235 / 0.1));
+  box-shadow: inset 0 0 6px oklch(100% 0 0 / 0.6);
+  animation-name: sw-rise;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  opacity: 0;
+}
+@keyframes sw-rise {
+  0%   { transform: translate3d(0, 0, 0) scale(0.6); opacity: 0; }
+  12%  { opacity: 0.75; }
+  50%  { transform: translate3d(22px, -45vh, 0) scale(1); }
+  85%  { opacity: 0.5; }
+  100% { transform: translate3d(-18px, -92vh, 0) scale(1.15); opacity: 0; }
+}
+
+/* cards that lift off the hero screen */
+.sw-float-card {
+  position: absolute;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  border-radius: 1rem;
+  padding: 0.6rem 0.8rem;
+  background: oklch(100% 0 0 / 0.92);
+  box-shadow: 0 18px 40px -22px oklch(30% 0.06 260 / 0.55), 0 0 0 1px oklch(55% 0.02 260 / 0.07);
+  backdrop-filter: blur(8px);
+  animation: sw-bob 5.5s ease-in-out infinite;
+}
+.sw-float-ready { inset-inline-start: -1.5rem; top: 14%; }
+.sw-float-money { inset-inline-end: -1rem; bottom: 8%; animation-delay: 1.4s; }
+.sw-float-dot { width: 8px; height: 8px; border-radius: 999px; flex-shrink: 0; }
+@keyframes sw-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+@media (max-width: 640px) { .sw-float-card { display: none; } }
+
+/* bands of colour, so sections are not one long white page */
+.sw-band { position: relative; overflow: hidden; }
+.sw-band-sky { background: linear-gradient(180deg, oklch(98.5% 0.012 235), oklch(97% 0.025 235)); }
+.sw-band-white { background: #fff; }
+.sw-band-brand { background: linear-gradient(180deg, oklch(98% 0.012 25), oklch(97% 0.02 20)); }
+
+.sw-divider { position: relative; margin-bottom: -1px; line-height: 0; }
+.sw-divider-flip { transform: rotate(180deg); }
+
+/* the car that drives down the journey rail */
+.sw-rail-car {
+  position: absolute;
+  /* The rail is pinned to the physical right edge, so this is too: in an RTL page
+     inset-inline-end would put the car on the opposite side of the page. */
+  right: 10px;
+  z-index: 2;
+  margin-top: -10px;
+  filter: drop-shadow(0 6px 10px oklch(40% 0.1 25 / 0.35));
+}
+@media (min-width: 768px) { .sw-rail-car { right: 14px; } }
+
+/* service tiles */
+.sw-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  overflow: hidden;
+  height: 100%;
+  min-height: 190px;
+  border-radius: 1.5rem;
+  padding: 1.15rem;
+  box-shadow: 0 24px 50px -34px oklch(30% 0.06 260 / 0.6);
+}
+.sw-tile-tall { min-height: 260px; }
+.sw-tile-art { position: absolute; inset-inline-start: -8%; top: -6%; width: 78%; opacity: 0.9; }
+.sw-tile-plain {
+  background: #fff;
+  box-shadow: inset 0 0 0 1.5px oklch(55% 0.02 260 / 0.1);
+}
+
+/* devices */
+.sw-laptop { position: relative; }
+.sw-laptop-screen {
+  border-radius: 1.1rem;
+  overflow: hidden;
+  background: #fff;
+  padding: 0;
+  box-shadow:
+    0 0 0 8px oklch(96% 0.004 260),
+    0 0 0 9px oklch(55% 0.02 260 / 0.12),
+    0 50px 80px -50px oklch(30% 0.06 260 / 0.65);
+}
+.sw-laptop-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: oklch(98% 0.004 260);
+  border-bottom: 1px solid oklch(55% 0.02 260 / 0.08);
+}
+.sw-laptop-url {
+  border-radius: 999px;
+  background: oklch(100% 0 0);
+  padding: 0.15rem 0.75rem;
+  font-size: 9.5px;
+  font-weight: 700;
+  color: oklch(55% 0.02 260);
+  box-shadow: inset 0 0 0 1px oklch(55% 0.02 260 / 0.1);
+}
+.sw-laptop-body { background: oklch(99% 0.002 260); }
+.sw-laptop-base {
+  width: 112%;
+  height: 10px;
+  margin: 0 auto;
+  margin-inline-start: -6%;
+  border-radius: 0 0 14px 14px;
+  background: linear-gradient(180deg, oklch(92% 0.006 260), oklch(84% 0.008 260));
+  box-shadow: 0 14px 24px -16px oklch(30% 0.06 260 / 0.6);
+}
+
+.sw-phone {
+  position: relative;
+  width: 132px;
+  height: 268px;
+  border-radius: 1.6rem;
+  padding: 7px;
+  background: linear-gradient(160deg, oklch(30% 0.02 260), oklch(18% 0.01 260));
+  box-shadow: 0 30px 50px -26px oklch(20% 0.04 260 / 0.65);
+}
+.sw-phone-notch {
+  position: absolute;
+  top: 10px;
+  inset-inline: 0;
+  margin: 0 auto;
+  width: 44px;
+  height: 7px;
+  border-radius: 999px;
+  background: oklch(40% 0.01 260);
+  z-index: 2;
+}
+.sw-phone-screen {
+  height: 100%;
+  overflow: hidden;
+  border-radius: 1.2rem;
+  background: #fff;
+}
+.sw-pillar-phone {
+  position: absolute;
+  z-index: 20;
+  inset-inline-start: -2.75rem;
+  bottom: -1.5rem;
+}
+@media (max-width: 1279px) { .sw-pillar-phone { display: none; } }
 
 /* ── Still version ─────────────────────────────────────────────────────── */
 

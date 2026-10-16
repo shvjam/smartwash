@@ -42,7 +42,7 @@ const FAQ = [
 
 export const FaqCta = () => (
   <>
-    <section className="relative py-20 md:py-28" id="faq">
+    <section className="sw-band sw-band-sky relative py-20 md:py-28" id="faq">
       <Container className="max-w-3xl">
         <SectionHead eyebrow="سوال‌های پرتکرار" tone="emerald" title="چیزهایی که معمولاً می‌پرسند" />
 

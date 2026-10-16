@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import clsx from 'clsx';
 import { Container, Reveal, SectionHead, fa, faNum } from '../../../components/landing/kit';
+import { BrushMark, PhoneFrame } from '../../../components/landing/art';
 
 /**
  * What the product is made of, shown as four working surfaces rather than a list of nouns.
@@ -199,7 +200,7 @@ export const Pillars = () => {
   const current = PILLARS.find(p => p.key === active)!;
 
   return (
-    <section className="relative py-20 md:py-28" id="features">
+    <section className="sw-band sw-band-brand relative py-20 md:py-28" id="features">
       <Container>
         <SectionHead
           eyebrow="امکانات"
@@ -252,7 +253,21 @@ export const Pillars = () => {
             })}
           </div>
 
-          <Reveal x={-14} className="lg:sticky lg:top-24">
+          <Reveal x={-14} className="relative lg:sticky lg:top-24">
+            {/* The same screen in a hand, because this is a product used standing on a wet
+                floor far more often than sitting at a desk. */}
+            <PhoneFrame className="sw-pillar-phone">
+              <div className="flex h-full flex-col bg-gradient-to-b from-white to-slate-50 p-2">
+                <div className="mb-1.5 flex items-center justify-between px-0.5">
+                  <span className="text-[8px] font-black text-slate-700">{current.title}</span>
+                  <BrushMark size={12} className={current.accent} />
+                </div>
+                <div className="flex-1 overflow-hidden rounded-xl bg-white p-1.5 shadow-sm">
+                  <div className="origin-top scale-[0.42] [width:238%]">{PREVIEW[active]}</div>
+                </div>
+              </div>
+            </PhoneFrame>
+
             <div className="sw-preview-frame">
               <div className="sw-preview-bar">
                 <span className="flex gap-1.5">

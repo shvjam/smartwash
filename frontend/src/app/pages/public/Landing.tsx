@@ -19,6 +19,7 @@ import '../../../styles/landing.css';
  */
 
 const DayStory = lazy(() => import('./landing/DayStory').then(m => ({ default: m.DayStory })));
+const Atmosphere = lazy(() => import('./landing/Atmosphere').then(m => ({ default: m.Atmosphere })));
 const Pillars = lazy(() => import('./landing/Pillars').then(m => ({ default: m.Pillars })));
 const Payback = lazy(() => import('./landing/Payback').then(m => ({ default: m.Payback })));
 const Insight = lazy(() => import('./landing/Insight').then(m => ({ default: m.Insight })));
@@ -56,6 +57,7 @@ export const Landing: React.FC = () => {
       <main>
         <Hero />
         <Hold><DayStory /></Hold>
+        <Hold><Atmosphere /></Hold>
         <Hold><Pillars /></Hold>
         <Hold><Payback monthlyPriceRials={headline?.monthlyPriceRials} /></Hold>
         <Hold><Insight /></Hold>

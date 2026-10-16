@@ -34,7 +34,7 @@ const SCALE = [
 ];
 
 export const Insight = () => (
-  <section className="relative py-20 md:py-28" id="reports">
+  <section className="sw-band sw-band-sky relative py-20 md:py-28" id="reports">
     <Container>
       <SectionHead
         eyebrow="گزارش‌ها"

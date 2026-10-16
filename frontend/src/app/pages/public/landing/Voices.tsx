@@ -51,7 +51,7 @@ export const Voices = () => {
   }, [embla, onSelect]);
 
   return (
-    <section className="relative py-20 md:py-28" id="voices">
+    <section className="sw-band sw-band-brand relative py-20 md:py-28" id="voices">
       <Container>
         <SectionHead
           eyebrow="تجربه‌ها"
