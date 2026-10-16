@@ -833,6 +833,19 @@
 }
 @media (max-width: 1279px) { .sw-pillar-phone { display: none; } }
 
+
+/* the modelled car, standing inside the drawn bay */
+.sw-hero-car {
+  position: absolute;
+  inset-inline: 12% 12%;
+  bottom: 3%;
+  height: 64%;
+  z-index: 1;
+  pointer-events: none;
+}
+@media (max-width: 1023px) { .sw-hero-car { height: 52%; bottom: 2%; } }
+@media (max-width: 640px) { .sw-hero-car { display: none; } }
+
 /* ── Still version ─────────────────────────────────────────────────────── */
 
 @media (prefers-reduced-motion: reduce) {

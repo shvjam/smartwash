@@ -1,10 +1,14 @@
-import React from 'react';
+import React, { Suspense, lazy, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import { motion, useReducedMotion } from 'motion/react';
 import { ArrowLeft, PlayCircle, ShieldCheck, Sparkles } from 'lucide-react';
 import { Container, CountUp, Magnetic, Marquee, MeshBackdrop, Reveal, fa } from '../../../components/landing/kit';
 import { BubbleField, CarWashScene, Drop, LaptopFrame } from '../../../components/landing/art';
 import { LiveBoard } from './LiveBoard';
+
+// The 3D car is its own chunk, fetched only when the hero is actually on screen: a visitor
+// who bounces in two seconds should never pay for three.js.
+const CarModel = lazy(() => import('../../../components/landing/CarModel'));
 
 /**
  * The first screen answers one question: what is this, and does it understand my carwash?
@@ -31,6 +35,25 @@ const PROOF = [
 
 export const Hero = () => {
   const still = useReducedMotion();
+  const [showCar, setShowCar] = useState(false);
+  const [carReady, setCarReady] = useState(false);
+  const scene = useRef<HTMLDivElement>(null);
+
+  // Hold the model back until the browser is idle and the hero is in view, so the first
+  // screen paints on its own budget.
+  useEffect(() => {
+    // Only where it will actually be seen and can be afforded: the model is hidden below
+    // 640px by CSS, and three.js is a third of a megabyte that a phone on a metered
+    // connection should never be asked to download for decoration.
+    const roomy = window.matchMedia('(min-width: 1024px)').matches;
+    const thrifty = (navigator as unknown as { connection?: { saveData?: boolean } }).connection?.saveData;
+    if (!roomy || thrifty) return;
+
+    const idle = (window as unknown as { requestIdleCallback?: (cb: () => void) => number }).requestIdleCallback;
+    const start = () => setShowCar(true);
+    const id = idle ? idle(start) : window.setTimeout(start, 1200);
+    return () => { if (!idle) window.clearTimeout(id as number); };
+  }, []);
 
   return (
     <section className="sw-hero" id="hero">
@@ -105,7 +128,15 @@ export const Hero = () => {
                 </div>
               </LaptopFrame>
               {/* the bay the board is describing, drawn underneath it */}
-              <CarWashScene className="sw-hero-scene" />
+              <CarWashScene className="sw-hero-scene" withCar={!carReady} />
+
+              {/* The modelled car stands in the drawn bay, turning. It arrives after the page
+                  is usable and simply never appears if WebGL is unavailable. */}
+              {showCar && (
+                <Suspense fallback={null}>
+                  <CarModel className="sw-hero-car" onReady={() => setCarReady(true)} />
+                </Suspense>
+              )}
 
               {/* two small cards that lift off the screen, the way the product actually speaks */}
               <motion.div

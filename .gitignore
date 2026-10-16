@@ -37,3 +37,6 @@ remote-listing.txt
 final*deploy.zip
 appsettings.secrets.config
 backend/publish-fdd/
+
+# The Blender MCP server lives in its own virtual environment; it is installed, not committed.
+tools/blender/.venv/

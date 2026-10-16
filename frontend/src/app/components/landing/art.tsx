@@ -29,7 +29,7 @@ const ARCH_REAR = 'M292 150a38 38 0 0 1 76 0Z';
  * The paint is the brand's red and the water is the blue the panel uses for the washing
  * stage, so the picture and the product speak in the same colours.
  */
-export const CarWashScene = ({ className, compact = false }: { className?: string; compact?: boolean }) => {
+export const CarWashScene = ({ className, compact = false, withCar = true }: { className?: string; compact?: boolean; withCar?: boolean }) => {
   const still = useReducedMotion();
   const nozzles = [110, 170, 230, 290, 350, 410];
   const foam = [
@@ -90,6 +90,9 @@ export const CarWashScene = ({ className, compact = false }: { className?: strin
 
         <ellipse cx="260" cy="206" rx="210" ry="17" fill="url(#swFloor)" />
 
+        {/* The drawn car steps aside once the modelled one has loaded into the same bay;
+            two cars in one bay is one car too many. */}
+        {withCar && (<>
         <g>
           <ellipse cx="260" cy="192" rx="178" ry="11" fill="oklch(40% 0.06 260 / 0.16)" />
           <path d={BODY} fill="url(#swPaint)" />
@@ -109,8 +112,11 @@ export const CarWashScene = ({ className, compact = false }: { className?: strin
             {foam.map(f => (
               <motion.circle
                 key={f.cx}
-                cx={f.cx} r={f.r} fill="#fff"
-                initial={{ cy: still ? 92 : 46, opacity: still ? 0.5 : 0 }}
+                cx={f.cx} fill="#fff"
+                // Radius belongs in initial, like every other value motion writes on this
+                // element: passed as a bare attribute it was missing on the first frame and
+                // the browser rejected r="undefined" once per blob of foam.
+                initial={{ r: f.r, cy: still ? 92 : 46, opacity: still ? 0.5 : 0 }}
                 animate={still ? undefined : { cy: [46, 170], opacity: [0, 0.7, 0] }}
                 transition={{ duration: 4.2, repeat: Infinity, delay: f.d, ease: 'easeIn' }}
               />
@@ -136,6 +142,8 @@ export const CarWashScene = ({ className, compact = false }: { className?: strin
           </g>
         ))}
 
+        </>)}
+
         {/* the tunnel's two brushes, turning against the car */}
         {[38, 482].map((cx, i) => (
           <motion.g
@@ -156,7 +164,11 @@ export const CarWashScene = ({ className, compact = false }: { className?: strin
         {/* beads of water, then sparkles: the car is clean */}
         {!compact && [[116, 82], [224, 74], [320, 88], [390, 108]].map(([x, y], i) => (
           <motion.circle
-            key={`${x}-${y}`} cx={x} cy={y} r="3.5" fill="#fff" opacity="0.7"
+            key={`${x}-${y}`} cx={x} cy={y} fill="#fff"
+            // The radius is animated, so it has to start as a number motion owns. Left as a
+            // plain attribute, the first frame wrote r="undefined" and the browser complained
+            // once per bead on every load.
+            initial={{ r: 3.5, opacity: 0.7 }}
             animate={still ? undefined : { r: [3.5, 5, 3.5], opacity: [0.5, 0.9, 0.5] }}
             transition={{ duration: 2.6, repeat: Infinity, delay: i * 0.5 }}
           />
