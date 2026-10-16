@@ -252,7 +252,7 @@ export const ReservationCreateView: React.FC = () => {
       </Card>
 
       <div className="mt-5 flex items-center justify-between gap-2">
-        <button type="button" onClick={() => setStep(s => Math.max(1, (s - 1) as Step))} disabled={step === 1}
+        <button type="button" onClick={() => setStep(s => (Math.max(1, s - 1) as Step))} disabled={step === 1}
           className="px-4 py-2.5 rounded-xl border text-sm font-bold disabled:opacity-40 inline-flex items-center gap-1">
           <ChevronRight size={14} />مرحله قبل
         </button>

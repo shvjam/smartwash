@@ -39,43 +39,43 @@ const lazyPage = (load: () => Promise<Record<string, unknown>>, name: string) =>
   );
 };
 
-const Layout = lazyPage(() => import('./components/Layout'), 'Layout');
-const PlatformLayout = lazyPage(() => import('./components/platform/PlatformLayout'), 'PlatformLayout');
-const BaysDashboard = lazyPage(() => import('./pages/BaysView'), 'BaysDashboard');
-const CRMView = lazyPage(() => import('./pages/CRMView'), 'CRMView');
-const ReportsView = lazyPage(() => import('./pages/ReportsView'), 'ReportsView');
-const WorkersView = lazyPage(() => import('./pages/WorkersView'), 'WorkersView');
-const ReservationsView = lazyPage(() => import('./pages/ReservationsView'), 'ReservationsView');
-const BranchesView = lazyPage(() => import('./pages/app/BranchesView'), 'BranchesView');
-const UsersView = lazyPage(() => import('./pages/app/UsersView'), 'UsersView');
-const ShiftsView = lazyPage(() => import('./pages/app/ShiftsView'), 'ShiftsView');
-const ExpensesView = lazyPage(() => import('./pages/app/ExpensesView'), 'ExpensesView');
-const CampaignsView = lazyPage(() => import('./pages/app/CampaignsView'), 'CampaignsView');
-const SettingsView = lazyPage(() => import('./pages/app/SettingsView'), 'SettingsView');
-const BillingView = lazyPage(() => import('./pages/app/BillingView'), 'BillingView');
-const ProfileView = lazyPage(() => import('./pages/app/ProfileView'), 'ProfileView');
-const OnboardingWizard = lazyPage(() => import('./pages/app/OnboardingWizard'), 'OnboardingWizard');
-const ServicesView = lazyPage(() => import('./pages/app/ServicesView'), 'ServicesView');
-const CustomerDetailView = lazyPage(() => import('./pages/app/CustomerDetailView'), 'CustomerDetailView');
-const OrdersView = lazyPage(() => import('./pages/app/OrdersView'), 'OrdersView');
-const OrderDetailView = lazyPage(() => import('./pages/app/OrderDetailView'), 'OrderDetailView');
-const ReservationDetailView = lazyPage(() => import('./pages/app/ReservationDetailView'), 'ReservationDetailView');
-const ReservationCreateView = lazyPage(() => import('./pages/app/ReservationCreateView'), 'ReservationCreateView');
-const NotificationsView = lazyPage(() => import('./pages/app/NotificationsView'), 'NotificationsView');
-const RemindersView = lazyPage(() => import('./pages/app/RemindersView'), 'RemindersView');
-const WorkerDetailView = lazyPage(() => import('./pages/app/WorkerDetailView'), 'WorkerDetailView');
-const PaymentResultView = lazyPage(() => import('./pages/app/PaymentResultView'), 'PaymentResultView');
-const TenantsAdmin = lazyPage(() => import('./pages/platform/TenantsAdmin'), 'TenantsAdmin');
-const PlansAdmin = lazyPage(() => import('./pages/platform/PlansAdmin'), 'PlansAdmin');
-const SubscriptionsAdmin = lazyPage(() => import('./pages/platform/SubscriptionsAdmin'), 'SubscriptionsAdmin');
-const AuditLogView = lazyPage(() => import('./pages/platform/AuditLogView'), 'AuditLogView');
-const TenantDetailView = lazyPage(() => import('./pages/platform/TenantDetailView'), 'TenantDetailView');
-const PlatformSmsView = lazyPage(() => import('./pages/platform/PlatformSmsView'), 'PlatformSmsView');
-const TicketsAdmin = lazyPage(() => import('./pages/platform/TicketsAdmin'), 'TicketsAdmin');
-const SupportView = lazyPage(() => import('./pages/app/SupportView'), 'SupportView');
-const SmsView = lazyPage(() => import('./pages/app/SmsView'), 'SmsView');
-const SupportTicketDetailView = lazyPage(() => import('./pages/app/SupportTicketDetailView'), 'SupportTicketDetailView');
-const RostersView = lazyPage(() => import('./pages/app/RostersView'), 'RostersView');
+const Layout = lazyPage(() => import('./components/Layout'), 'Layout');
+const PlatformLayout = lazyPage(() => import('./components/platform/PlatformLayout'), 'PlatformLayout');
+const BaysDashboard = lazyPage(() => import('./pages/BaysView'), 'BaysDashboard');
+const CRMView = lazyPage(() => import('./pages/CRMView'), 'CRMView');
+const ReportsView = lazyPage(() => import('./pages/ReportsView'), 'ReportsView');
+const WorkersView = lazyPage(() => import('./pages/WorkersView'), 'WorkersView');
+const ReservationsView = lazyPage(() => import('./pages/ReservationsView'), 'ReservationsView');
+const BranchesView = lazyPage(() => import('./pages/app/BranchesView'), 'BranchesView');
+const UsersView = lazyPage(() => import('./pages/app/UsersView'), 'UsersView');
+const ShiftsView = lazyPage(() => import('./pages/app/ShiftsView'), 'ShiftsView');
+const ExpensesView = lazyPage(() => import('./pages/app/ExpensesView'), 'ExpensesView');
+const CampaignsView = lazyPage(() => import('./pages/app/CampaignsView'), 'CampaignsView');
+const SettingsView = lazyPage(() => import('./pages/app/SettingsView'), 'SettingsView');
+const BillingView = lazyPage(() => import('./pages/app/BillingView'), 'BillingView');
+const ProfileView = lazyPage(() => import('./pages/app/ProfileView'), 'ProfileView');
+const OnboardingWizard = lazyPage(() => import('./pages/app/OnboardingWizard'), 'OnboardingWizard');
+const ServicesView = lazyPage(() => import('./pages/app/ServicesView'), 'ServicesView');
+const CustomerDetailView = lazyPage(() => import('./pages/app/CustomerDetailView'), 'CustomerDetailView');
+const OrdersView = lazyPage(() => import('./pages/app/OrdersView'), 'OrdersView');
+const OrderDetailView = lazyPage(() => import('./pages/app/OrderDetailView'), 'OrderDetailView');
+const ReservationDetailView = lazyPage(() => import('./pages/app/ReservationDetailView'), 'ReservationDetailView');
+const ReservationCreateView = lazyPage(() => import('./pages/app/ReservationCreateView'), 'ReservationCreateView');
+const NotificationsView = lazyPage(() => import('./pages/app/NotificationsView'), 'NotificationsView');
+const RemindersView = lazyPage(() => import('./pages/app/RemindersView'), 'RemindersView');
+const WorkerDetailView = lazyPage(() => import('./pages/app/WorkerDetailView'), 'WorkerDetailView');
+const PaymentResultView = lazyPage(() => import('./pages/app/PaymentResultView'), 'PaymentResultView');
+const TenantsAdmin = lazyPage(() => import('./pages/platform/TenantsAdmin'), 'TenantsAdmin');
+const PlansAdmin = lazyPage(() => import('./pages/platform/PlansAdmin'), 'PlansAdmin');
+const SubscriptionsAdmin = lazyPage(() => import('./pages/platform/SubscriptionsAdmin'), 'SubscriptionsAdmin');
+const AuditLogView = lazyPage(() => import('./pages/platform/AuditLogView'), 'AuditLogView');
+const TenantDetailView = lazyPage(() => import('./pages/platform/TenantDetailView'), 'TenantDetailView');
+const PlatformSmsView = lazyPage(() => import('./pages/platform/PlatformSmsView'), 'PlatformSmsView');
+const TicketsAdmin = lazyPage(() => import('./pages/platform/TicketsAdmin'), 'TicketsAdmin');
+const SupportView = lazyPage(() => import('./pages/app/SupportView'), 'SupportView');
+const SmsView = lazyPage(() => import('./pages/app/SmsView'), 'SmsView');
+const SupportTicketDetailView = lazyPage(() => import('./pages/app/SupportTicketDetailView'), 'SupportTicketDetailView');
+const RostersView = lazyPage(() => import('./pages/app/RostersView'), 'RostersView');
 const TipSettlementView = lazyPage(() => import('./pages/app/TipSettlementView'), 'TipSettlementView');
 
 
@@ -85,7 +85,9 @@ const AdminOnly = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-const RequireAuth = ({ children, loginPath = '/login' }: { children: React.ReactNode; loginPath?: string }) => {
+const RequireAuth = ({
+  children, loginPath = '/login', area = 'tenant',
+}: { children: React.ReactNode; loginPath?: string; area?: 'tenant' | 'platform' }) => {
   const { user, ready } = useCarWash();
   if (!ready) return (
     <div dir="rtl" className="min-h-screen flex items-center justify-center bg-[#f5f5f7]">
@@ -93,6 +95,11 @@ const RequireAuth = ({ children, loginPath = '/login' }: { children: React.React
     </div>
   );
   if (!user) return <Navigate to={loginPath} replace />;
+  // A session belongs to one side of the product. The carwash panel asks for tenant data the
+  // platform owner has no access to, so it used to draw an empty carwash with no bays and no
+  // explanation; the platform panel does the same to a carwash user. Each is sent home instead.
+  if (area === 'tenant' && user.isPlatformAdmin) return <Navigate to="/platform/tenants" replace />;
+  if (area === 'platform' && !user.isPlatformAdmin) return <Navigate to="/app/bays" replace />;
   return <>{children}</>;
 };
 
@@ -152,7 +159,7 @@ const router = createBrowserRouter([
   },
   {
     path: '/platform',
-    element: <RequireAuth loginPath="/platform/login"><PlatformLayout /></RequireAuth>,
+    element: <RequireAuth loginPath="/platform/login" area="platform"><PlatformLayout /></RequireAuth>,
     errorElement: <RouteErrorBoundary />,
     children: [
       { index: true, element: <Navigate to="/platform/tenants" replace /> },

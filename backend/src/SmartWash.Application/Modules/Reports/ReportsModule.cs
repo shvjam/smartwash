@@ -120,19 +120,46 @@ public sealed class GetWorkerPerformanceHandler : IRequestHandler<GetWorkerPerfo
     {
         var from = q.FromDate.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
         var to = q.ToDate.ToDateTime(TimeOnly.MaxValue, DateTimeKind.Utc);
-        var rows = await _db.OrderLines.AsNoTracking()
+        var lines = _db.OrderLines.AsNoTracking()
             .Where(l => l.WorkerId.HasValue)
             .Join(_db.Orders.AsNoTracking().Where(o => o.Status == OrderStatus.Completed && o.StartedAtUtc >= from && o.StartedAtUtc <= to),
-                l => l.OrderId, o => o.Id, (l, o) => l)
+                l => l.OrderId, o => o.Id, (l, o) => l);
+
+        // The sums and the count of cars are asked for separately on purpose. Counting distinct
+        // orders inside a grouped projection is not something SQL Server can be given in one
+        // statement, and EF refused the whole query because of it — which made this report
+        // answer with an error rather than with numbers.
+        var totals = await lines
             .GroupBy(l => new { WorkerId = l.WorkerId!.Value, l.WorkerName })
-            .Select(g => new WorkerPerformanceRow(g.Key.WorkerId, g.Key.WorkerName ?? "",
-                g.Select(x => x.OrderId).Distinct().Count(),
-                g.Sum(x => x.LineTotalRials),
-                g.Sum(x => x.WorkerCommissionRials),
-                g.Sum(x => x.TipRials),
-                g.Sum(x => x.WorkerCommissionRials) + g.Sum(x => x.TipRials)))
-            .OrderByDescending(r => r.EarningsRials)
+            .Select(g => new
+            {
+                g.Key.WorkerId,
+                g.Key.WorkerName,
+                Revenue = g.Sum(x => x.LineTotalRials),
+                Commission = g.Sum(x => x.WorkerCommissionRials),
+                Tips = g.Sum(x => x.TipRials),
+            })
             .ToListAsync(ct);
+
+        var carsPerWorker = await lines
+            .Select(l => new { WorkerId = l.WorkerId!.Value, l.OrderId })
+            .Distinct()
+            .GroupBy(x => x.WorkerId)
+            .Select(g => new { WorkerId = g.Key, Cars = g.Count() })
+            .ToDictionaryAsync(x => x.WorkerId, x => x.Cars, ct);
+
+        var rows = totals
+            .Select(t => new WorkerPerformanceRow(
+                t.WorkerId,
+                t.WorkerName ?? "",
+                carsPerWorker.TryGetValue(t.WorkerId, out var cars) ? cars : 0,
+                t.Revenue,
+                t.Commission,
+                t.Tips,
+                t.Commission + t.Tips))
+            .OrderByDescending(r => r.EarningsRials)
+            .ToList();
+
         return Result.Success<IReadOnlyList<WorkerPerformanceRow>>(rows);
     }
 }

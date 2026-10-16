@@ -322,7 +322,9 @@ export type TenantSubscriptionHistoryDto = {
   cancelledAtUtc: string | null; graceEndsAtUtc: string | null;
   priceRials: number; autoRenew: boolean; createdAtUtc: string;
 };
-export type TenantInvoiceDto = {
+/** The short invoice row shown inside a tenant's page in the owner panel. The full
+ *  invoice, with its lines, is TenantInvoiceDto on the billing endpoints. */
+export type TenantDetailInvoiceDto = {
   id: Guid; number: string; kind: number; status: number;
   issuedAtUtc: string; dueAtUtc: string; paidAtUtc: string | null;
   subtotalRials: number; taxRials: number; totalRials: number;
@@ -335,7 +337,7 @@ export type TenantDetailDto = {
   activePlanId: Guid | null; activePlanName: string | null;
   stats: TenantStatsDto;
   subscriptions: TenantSubscriptionHistoryDto[];
-  recentInvoices: TenantInvoiceDto[];
+  recentInvoices: TenantDetailInvoiceDto[];
 };
 
 export const platformTenantsApi = {

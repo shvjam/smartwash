@@ -81,7 +81,7 @@ export type Customer = {
   freeServicesUsed: number;
 };
 
-export type ReservationStatus = 'pending' | 'confirmed' | 'arrived' | 'cancelled';
+export type ReservationStatus = 'pending' | 'confirmed' | 'arrived' | 'cancelled' | 'no_show';
 
 export type Reservation = {
   id: string;

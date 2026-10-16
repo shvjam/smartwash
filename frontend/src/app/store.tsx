@@ -30,7 +30,7 @@ type AuthUser = {
   userId: string; tenantId: string | null; permissions: string[]; isPlatformAdmin: boolean;
 } | null;
 
-type CarWashContextType = {
+export type CarWashContextType = {
   user: AuthUser;
   login: (email: string, password: string, tenantSlug: string) => Promise<{ ok: boolean; error?: string }>;
   logout: () => Promise<void>;

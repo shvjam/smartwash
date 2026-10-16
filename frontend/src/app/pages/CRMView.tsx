@@ -1,7 +1,8 @@
 import { IranPlateInput } from '../components/forms/IranPlateInput';
 import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router';
-import { useCarWash } from '../store';
+import { useCarWash, type CarWashContextType } from '../store';
+import type { Customer } from '../types';
 import { UserPlus, MessageCircle, AlertTriangle, CheckCircle, Gift, Crown, Search, Phone, Sparkles, X, Send } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { formatDistanceToNow, parseISO } from 'date-fns';
@@ -20,7 +21,8 @@ export const CRMView = () => {
   const [form, setForm] = useState({ name: '', phone: '', plate: '' });
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
-  const enriched = useMemo(() => customers.map(c => {
+  // The customer plus the few things this screen works out about them.
+  const enriched: EnrichedCustomer[] = useMemo(() => customers.map(c => {
     const daysSince = Math.floor((Date.now() - new Date(c.lastVisitDate).getTime()) / 86400000);
     const lp = loyaltyProgress(c);
     const status: 'good' | 'warning' | 'danger' =
@@ -311,7 +313,17 @@ const PRESET_MESSAGES = [
   'وقتت بخیر {name} ✨ ماشینت دلش هوای براق شدن کرده 😊 یک جایگاه VIP برات نگه داشتیم.',
 ];
 
-const ReminderModal = ({ customer, onClose, onSend }: any) => {
+type EnrichedCustomer = Customer & {
+  daysSince: number;
+  loyalty: ReturnType<CarWashContextType['loyaltyProgress']>;
+  status: 'good' | 'warning' | 'danger';
+};
+
+const ReminderModal = ({ customer, onClose, onSend }: {
+  customer: EnrichedCustomer;
+  onClose: () => void;
+  onSend: (message: string) => Promise<void> | void;
+}) => {
   const [msg, setMsg] = useState(PRESET_MESSAGES[0].replace('{name}', customer.name));
   const [sending, setSending] = useState(false);
   const handleSend = async () => {

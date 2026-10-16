@@ -51,9 +51,13 @@ export const SettingsView = () => {
   }, [featuresLoading]);
 
   useEffect(() => { settingsApi.get().then(setData).catch(() => { }); }, []);
-  if (!data) return <div className="text-center text-gray-400 py-10">در حال بارگذاری…</div>;
 
+  // Every hook is called before the loading state returns. Reading branding after that early
+  // return meant React saw a different set of hooks once the settings arrived, which is the
+  // kind of mismatch that makes a form lose what was typed into it.
   const { refresh: refreshBranding } = useBranding();
+
+  if (!data) return <div className="text-center text-gray-400 py-10">در حال بارگذاری…</div>;
 
   const set = <K extends keyof TenantSettingsDto>(k: K, v: TenantSettingsDto[K]) => setData(d => d ? { ...d, [k]: v } : d);
 

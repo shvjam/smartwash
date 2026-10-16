@@ -122,13 +122,15 @@ public sealed class AddCustomerVehicleHandler : IRequestHandler<AddCustomerVehic
     {
         var cust = await _db.Customers.Include(x => x.Vehicles).FirstOrDefaultAsync(x => x.Id == c.CustomerId, ct);
         if (cust is null) return Result.Failure<CustomerVehicleDto>(Error.NotFound("Customer.NotFound", "مشتری یافت نشد."));
+        // The plan limits how many cars one customer may keep on file, not how many cars the
+        // carwash has ever seen. Counting every vehicle in the tenant meant a site on the
+        // professional plan could register ten cars in total and then refuse the eleventh
+        // customer's car forever — which, now that booking a bay files the car automatically,
+        // would have quietly stopped recording cars after the first few days of use.
         var limit = await _features.GetLimitAsync("limit.vehicles", ct);
-        if (limit.HasValue)
-        {
-            var count = await _db.CustomerVehicles.CountAsync(ct);
-            if (count >= limit.Value)
-                return Result.Failure<CustomerVehicleDto>(Error.Conflict("Quota.Exceeded", $"سقف تعداد خودروهای پلن ({limit.Value}) پر شده است."));
-        }
+        if (limit.HasValue && cust.Vehicles.Count >= limit.Value)
+            return Result.Failure<CustomerVehicleDto>(Error.Conflict("Quota.Exceeded",
+                $"برای هر مشتری حداکثر {limit.Value} خودرو در این پلن ثبت می‌شود."));
         var v = cust.AddVehicle(c.Plate, c.Brand, c.Model, c.Color, c.Year);
         await _db.SaveChangesAsync(ct);
         return new CustomerVehicleDto(v.Id, v.Plate, v.Brand, v.Model, v.Color, v.Year);

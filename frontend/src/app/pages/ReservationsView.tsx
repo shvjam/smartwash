@@ -258,7 +258,7 @@ export const ReservationsView = () => {
             bays={bays}
             customers={customers}
             customerByPhone={customerByPhone}
-            onSubmit={async (payload) => {
+            onSubmit={async (payload: Parameters<typeof addReservation>[0]) => {
               try {
                 const id = await addReservation(payload);
                 if (!id) { showToast('ثبت رزرو ناموفق بود'); return; }

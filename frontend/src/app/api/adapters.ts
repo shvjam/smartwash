@@ -100,7 +100,9 @@ export const fromReservation = (r: ReservationDto): Reservation => ({
   bayId: r.preferredBayId ?? undefined,
   status: r.status === ReservationStatus.Confirmed ? 'confirmed'
         : r.status === ReservationStatus.Cancelled ? 'cancelled'
-        : r.status === ReservationStatus.NoShow ? 'cancelled'
+        // A customer who never arrived is not a booking we cancelled. Collapsing the two hid
+        // exactly the number an owner wants: how often people book and do not turn up.
+        : r.status === ReservationStatus.NoShow ? 'no_show'
         : r.status === ReservationStatus.Arrived ? 'arrived'
         : 'pending',
   createdAt: r.createdAtUtc,

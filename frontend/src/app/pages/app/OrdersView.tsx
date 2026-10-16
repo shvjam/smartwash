@@ -436,7 +436,7 @@ const CreateOrderWizard: React.FC<{ onClose: () => void; onCreated: (id: string)
         </div>
 
         <footer className="sticky bottom-0 bg-white border-t px-6 py-4 flex items-center justify-between gap-2">
-          <button type="button" onClick={() => setStep(s => Math.max(1, (s - 1) as WizardStep))}
+          <button type="button" onClick={() => setStep(s => (Math.max(1, s - 1) as WizardStep))}
             disabled={step === 1}
             className="px-4 py-2.5 rounded-xl border text-sm font-bold disabled:opacity-40 inline-flex items-center gap-1">
             <ChevronRight size={14} />مرحله قبل
