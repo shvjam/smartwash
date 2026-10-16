@@ -93,7 +93,14 @@ public sealed class SmsIrSmsSender : ISmsSender
         {
             Mobile = Normalize(phone),
             TemplateId = templateId,
-            Parameters = parameters.Select(kv => new VerifyParameter { Name = kv.Key, Value = kv.Value }).ToArray()
+            // Template variables are written #CODE#, #NAME#, #PLATE# in the sms.ir panel, and the
+            // provider matches a sent parameter to them by name. Our call sites spell the same
+            // names in ordinary case ("Code"), which the provider does not recognise as #CODE#,
+            // and the message is rejected. Upper-casing here keeps the call sites readable and
+            // still speaks the provider's convention.
+            Parameters = parameters
+                .Select(kv => new VerifyParameter { Name = kv.Key.ToUpperInvariant(), Value = kv.Value })
+                .ToArray()
         };
         return PostAsync("send/verify", req, credentials, "verify", phone, ct);
     }
