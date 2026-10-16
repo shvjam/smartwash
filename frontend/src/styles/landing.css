@@ -846,6 +846,56 @@
 @media (max-width: 1023px) { .sw-hero-car { height: 52%; bottom: 2%; } }
 @media (max-width: 640px) { .sw-hero-car { display: none; } }
 
+
+/* ── The scroll-driven wash ────────────────────────────────────────────── */
+
+/* Tall enough to give the scroll something to spend: three screens of travel for six
+   stages, which lands at a pace that can be read rather than skimmed past. */
+.sw-wash {
+  position: relative;
+  height: 300vh;
+  background: linear-gradient(180deg, oklch(98.5% 0.01 235), oklch(96.5% 0.022 235) 45%, oklch(98.5% 0.008 25));
+}
+
+.sw-wash-pin {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+
+.sw-wash-step {
+  display: flex;
+  gap: 0.7rem;
+  align-items: flex-start;
+  border-radius: 1rem;
+  padding: 0.6rem 0.7rem;
+  transition: background-color .3s var(--sw-ease);
+}
+.sw-wash-step-on { background: oklch(100% 0 0 / 0.72); box-shadow: 0 10px 30px -22px oklch(30% 0.06 260 / 0.5); }
+
+.sw-wash-placeholder {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 1.5rem;
+  background: oklch(100% 0 0 / 0.45);
+  font-size: 12px;
+  font-weight: 700;
+  color: oklch(60% 0.02 260);
+}
+
+/* On a narrow screen the scene never loads, so the section is just the six captions and
+   has no business being three screens tall. */
+@media (max-width: 1023px) {
+  .sw-wash { height: auto; }
+  .sw-wash-pin { position: static; height: auto; padding-block: 4rem; }
+  .sw-wash-placeholder { display: none; }
+}
+
 /* ── Still version ─────────────────────────────────────────────────────── */
 
 @media (prefers-reduced-motion: reduce) {
