@@ -92,3 +92,34 @@ sent to `localhost:9876`, terminated with a null byte:
 This machine runs an Intel Core Ultra with Intel Graphics, which Cycles drives through
 **oneAPI**; `setup_prefs.py` selected it and saved the preference. Renders here use EEVEE
 anyway, because a flat-shaded asset does not need a path tracer and EEVEE finishes in seconds.
+
+## A local model instead of Claude
+
+Blender Lab's own setup guide pairs their MCP server with [llama.cpp], a local LLM runtime, so
+Blender can be driven by a model running on this machine with nothing leaving it. That is set
+up here too, alongside the Claude route — they share the same add-on and the same server.
+
+[llama.cpp]: https://github.com/ggml-org/llama.cpp
+
+```bash
+node tools/blender/llama.mjs      # starts the model and the bridge
+```
+
+Then open <http://127.0.0.1:8080/> and point its MCP settings at `http://127.0.0.1:9191/`.
+Blender has to be open; its add-on starts the socket on 9876 by itself.
+
+What is installed:
+
+* `llama.cpp` build 11680 via winget, with the Vulkan backend — which is what drives the
+  Intel GPU on this machine.
+* `Qwen3-4B-Instruct` (Q4_K_M, 2.5 GB) in `%USERPROFILE%\models`.
+
+### Why a 4B model and not the ones the guide recommends
+
+The guide suggests Gemma4 26B or Qwen3.6 35B. This machine has 15.5 GB of memory and an
+integrated GPU that eats from the same pool, so a 15–23 GB model would spend its time reading
+itself off the disk. A 4B model fits with room to spare and answers quickly; it is noticeably
+weaker at multi-step work, which is the trade being made.
+
+Any other `.gguf` dropped into `%USERPROFILE%\models` is picked up — the newest by name wins,
+or name one: `node tools/blender/llama.mjs my-model.gguf`.
