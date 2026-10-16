@@ -58,6 +58,10 @@ export default defineConfig({
       // Alias @ to the src directory
       '@': path.resolve(__dirname, './src'),
     },
+    // pnpm gives each package its own node_modules, so a library can end up holding a second
+    // copy of React. Two copies mean two sets of hooks, and any hook called from that library
+    // throws "Invalid hook call". Everything resolves to this app's React.
+    dedupe: ['react', 'react-dom'],
   },
 
   // File types to support raw imports. Never add .css, .tsx, or .ts files to this.

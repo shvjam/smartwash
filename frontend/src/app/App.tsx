@@ -1,14 +1,7 @@
 import React, { useEffect } from 'react';
 import { RouterProvider, createBrowserRouter, Navigate } from 'react-router';
 import { ThemeProvider } from 'next-themes';
-import { Layout } from './components/Layout';
 import { PublicLayout } from './components/public/PublicLayout';
-import { PlatformLayout } from './components/platform/PlatformLayout';
-import { BaysDashboard } from './pages/BaysView';
-import { CRMView } from './pages/CRMView';
-import { ReportsView } from './pages/ReportsView';
-import { WorkersView } from './pages/WorkersView';
-import { ReservationsView } from './pages/ReservationsView';
 import { LoginView, PlatformLoginView } from './pages/Login';
 import { Landing } from './pages/public/Landing';
 import { Pricing } from './pages/public/Pricing';
@@ -16,45 +9,75 @@ import { Features } from './pages/public/Features';
 import { Contact } from './pages/public/Contact';
 import { Register } from './pages/public/Register';
 import { ForgotPassword } from './pages/public/ForgotPassword';
-import { BranchesView } from './pages/app/BranchesView';
-import { UsersView } from './pages/app/UsersView';
-import { ShiftsView } from './pages/app/ShiftsView';
-import { ExpensesView } from './pages/app/ExpensesView';
-import { CampaignsView } from './pages/app/CampaignsView';
-import { SettingsView } from './pages/app/SettingsView';
-import { BillingView } from './pages/app/BillingView';
-import { ProfileView } from './pages/app/ProfileView';
-import { OnboardingWizard } from './pages/app/OnboardingWizard';
-import { ServicesView } from './pages/app/ServicesView';
-import { CustomerDetailView } from './pages/app/CustomerDetailView';
-import { OrdersView } from './pages/app/OrdersView';
-import { OrderDetailView } from './pages/app/OrderDetailView';
-import { ReservationDetailView } from './pages/app/ReservationDetailView';
-import { ReservationCreateView } from './pages/app/ReservationCreateView';
-import { NotificationsView } from './pages/app/NotificationsView';
-import { RemindersView } from './pages/app/RemindersView';
-import { WorkerDetailView } from './pages/app/WorkerDetailView';
-import { PaymentResultView } from './pages/app/PaymentResultView';
 import { FeaturesProvider } from './lib/features';
 import { RbacProvider } from './lib/rbac';
-import { TenantsAdmin } from './pages/platform/TenantsAdmin';
-import { PlansAdmin } from './pages/platform/PlansAdmin';
-import { SubscriptionsAdmin } from './pages/platform/SubscriptionsAdmin';
-import { AuditLogView } from './pages/platform/AuditLogView';
-import { TenantDetailView } from './pages/platform/TenantDetailView';
-import { PlatformSmsView } from './pages/platform/PlatformSmsView';
-import { TicketsAdmin } from './pages/platform/TicketsAdmin';
-import { SupportView } from './pages/app/SupportView';
-import { SmsView } from './pages/app/SmsView';
-import { SupportTicketDetailView } from './pages/app/SupportTicketDetailView';
 import { CarWashProvider, useCarWash } from './store';
-import { RostersView } from './pages/app/RostersView';
-import { TipSettlementView } from './pages/app/TipSettlementView';
 import { BrandingProvider } from './lib/branding';
 import { NetworkActivityBar } from './components/NetworkActivityBar';
 import { Toaster } from './components/ui/sonner';
 import { normalizeDigits } from './lib/persian';
 import { RouteErrorBoundary } from './components/RouteErrorBoundary';
+
+/**
+ * A route's page, fetched the first time that route is opened.
+ *
+ * The public pages stay in the first bundle because they are what a visitor came for; the
+ * panel is code they only need once signed in, and it is several times larger.
+ */
+const PageLoading = () => (
+  <div dir="rtl" className="flex min-h-[60vh] items-center justify-center">
+    <div className="h-9 w-9 animate-spin rounded-full border-4 border-brand-200 border-t-brand-600" />
+  </div>
+);
+
+const lazyPage = (load: () => Promise<Record<string, unknown>>, name: string) => {
+  const Loaded = React.lazy(async () => ({ default: (await load())[name] as React.ComponentType }));
+  return () => (
+    <React.Suspense fallback={<PageLoading />}>
+      <Loaded />
+    </React.Suspense>
+  );
+};
+
+const Layout = lazyPage(() => import('./components/Layout'), 'Layout');
+const PlatformLayout = lazyPage(() => import('./components/platform/PlatformLayout'), 'PlatformLayout');
+const BaysDashboard = lazyPage(() => import('./pages/BaysView'), 'BaysDashboard');
+const CRMView = lazyPage(() => import('./pages/CRMView'), 'CRMView');
+const ReportsView = lazyPage(() => import('./pages/ReportsView'), 'ReportsView');
+const WorkersView = lazyPage(() => import('./pages/WorkersView'), 'WorkersView');
+const ReservationsView = lazyPage(() => import('./pages/ReservationsView'), 'ReservationsView');
+const BranchesView = lazyPage(() => import('./pages/app/BranchesView'), 'BranchesView');
+const UsersView = lazyPage(() => import('./pages/app/UsersView'), 'UsersView');
+const ShiftsView = lazyPage(() => import('./pages/app/ShiftsView'), 'ShiftsView');
+const ExpensesView = lazyPage(() => import('./pages/app/ExpensesView'), 'ExpensesView');
+const CampaignsView = lazyPage(() => import('./pages/app/CampaignsView'), 'CampaignsView');
+const SettingsView = lazyPage(() => import('./pages/app/SettingsView'), 'SettingsView');
+const BillingView = lazyPage(() => import('./pages/app/BillingView'), 'BillingView');
+const ProfileView = lazyPage(() => import('./pages/app/ProfileView'), 'ProfileView');
+const OnboardingWizard = lazyPage(() => import('./pages/app/OnboardingWizard'), 'OnboardingWizard');
+const ServicesView = lazyPage(() => import('./pages/app/ServicesView'), 'ServicesView');
+const CustomerDetailView = lazyPage(() => import('./pages/app/CustomerDetailView'), 'CustomerDetailView');
+const OrdersView = lazyPage(() => import('./pages/app/OrdersView'), 'OrdersView');
+const OrderDetailView = lazyPage(() => import('./pages/app/OrderDetailView'), 'OrderDetailView');
+const ReservationDetailView = lazyPage(() => import('./pages/app/ReservationDetailView'), 'ReservationDetailView');
+const ReservationCreateView = lazyPage(() => import('./pages/app/ReservationCreateView'), 'ReservationCreateView');
+const NotificationsView = lazyPage(() => import('./pages/app/NotificationsView'), 'NotificationsView');
+const RemindersView = lazyPage(() => import('./pages/app/RemindersView'), 'RemindersView');
+const WorkerDetailView = lazyPage(() => import('./pages/app/WorkerDetailView'), 'WorkerDetailView');
+const PaymentResultView = lazyPage(() => import('./pages/app/PaymentResultView'), 'PaymentResultView');
+const TenantsAdmin = lazyPage(() => import('./pages/platform/TenantsAdmin'), 'TenantsAdmin');
+const PlansAdmin = lazyPage(() => import('./pages/platform/PlansAdmin'), 'PlansAdmin');
+const SubscriptionsAdmin = lazyPage(() => import('./pages/platform/SubscriptionsAdmin'), 'SubscriptionsAdmin');
+const AuditLogView = lazyPage(() => import('./pages/platform/AuditLogView'), 'AuditLogView');
+const TenantDetailView = lazyPage(() => import('./pages/platform/TenantDetailView'), 'TenantDetailView');
+const PlatformSmsView = lazyPage(() => import('./pages/platform/PlatformSmsView'), 'PlatformSmsView');
+const TicketsAdmin = lazyPage(() => import('./pages/platform/TicketsAdmin'), 'TicketsAdmin');
+const SupportView = lazyPage(() => import('./pages/app/SupportView'), 'SupportView');
+const SmsView = lazyPage(() => import('./pages/app/SmsView'), 'SmsView');
+const SupportTicketDetailView = lazyPage(() => import('./pages/app/SupportTicketDetailView'), 'SupportTicketDetailView');
+const RostersView = lazyPage(() => import('./pages/app/RostersView'), 'RostersView');
+const TipSettlementView = lazyPage(() => import('./pages/app/TipSettlementView'), 'TipSettlementView');
+
 
 const AdminOnly = ({ children }: { children: React.ReactNode }) => {
   const { role } = useCarWash();
