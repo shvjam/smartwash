@@ -40,3 +40,6 @@ backend/publish-fdd/
 
 # The Blender MCP server lives in its own virtual environment; it is installed, not committed.
 tools/blender/.venv/
+
+# The official Blender MCP server: a release bundle, downloaded not committed.
+tools/blender/mcp-server/

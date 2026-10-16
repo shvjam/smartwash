@@ -60,23 +60,32 @@ is live on the dev server the moment Blender finishes writing it.
 
 ## Driving a running Blender from Claude
 
-`setup_prefs.py` and the build scripts are enough for everything above. The MCP server is for
-the other case: changing a scene interactively while Blender is open in front of you.
+The build scripts above need nothing of this. The MCP bridge is for the other case: changing
+a scene while Blender is open in front of you.
 
-It is already installed:
+It is Blender Lab's official add-on and server, and both halves are already in place:
 
-* `tools/blender/.venv` holds `mcp-for-blender`, declared in `.mcp.json` at the project root.
-* The add-on is copied into Blender's add-ons folder and enabled.
+* **Blender side** — the `mcp` extension (`mcp-1.0.3.zip` from
+  <https://projects.blender.org/lab/blender_mcp/releases>), installed and enabled.
+  It opens a local socket on port 9876 one second after Blender starts, on its own.
+  Re-run `node tools/blender/run.mjs install_addon.py` after downloading a newer release.
+* **Claude side** — `tools/blender/mcp-server`, the official `.mcpb` bundle unpacked and
+  installed into `tools/blender/.venv`, declared in `.mcp.json` at the project root.
 
-Two things are still manual, and deliberately so:
+The only manual step is restarting the Claude session once, so the `blender` tools load.
 
-1. **Start the server in Blender.** Open Blender, press `N` in the 3D viewport, go to the
-   **MCP** tab and press *Start MCP Server*. That opens a socket on port 9876; nothing here
-   does that to your machine on its own.
-2. **Restart the Claude session** after the first time, so the `blender` tools are loaded.
+### What it can do, and the warning that comes with it
 
-With both done, `blender` appears in the tool list and the scene in front of you can be built,
-measured and exported through it.
+The bridge runs Python inside Blender. Blender Lab say so plainly: there are no guards, and
+generated code can delete or send whatever Blender can reach. Keep it for scenes you are
+happy to lose, and close Blender when you are not using it — the socket is open while it runs.
+
+A request on the wire looks like this, which is also how to check that the bridge is alive —
+sent to `localhost:9876`, terminated with a null byte:
+
+```json
+{"type": "execute", "strict_json": true, "code": "import bpy\nresult = bpy.app.version_string"}
+```
 
 ## GPU
 

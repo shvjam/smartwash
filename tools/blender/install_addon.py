@@ -1,56 +1,71 @@
 """
-Installs and enables the MCP add-on inside Blender, so Claude can drive a running Blender.
+Installs Blender Lab's official MCP add-on, so Claude can drive a running Blender.
 
     blender --background --python tools/blender/install_addon.py
 
-The add-on ships inside the mcp-for-blender package in tools/blender/.venv. Rather than ask
-someone to find that file and walk the Preferences dialog, this copies it into Blender's own
-add-ons folder, switches it on, and saves preferences — the same three things the dialog does.
+The add-on is the Blender half of the bridge: it listens on a local socket and runs what the
+MCP server sends it. The server half lives in tools/blender/mcp-server and is declared in
+.mcp.json at the project root.
 
-The add-on only listens once the server is started from Blender's sidebar (View3D > N > MCP).
-That one click stays manual on purpose: it opens a socket, and nothing here should do that to
-someone's machine without them asking.
+It is installed as an extension (Blender 4.2+ packaging), which is how the official release
+ships. The third-party add-on this project used first is removed on the way past: both bind
+port 9876, and two things listening on one port is a bug waiting for a confusing afternoon.
 """
 import pathlib
-import shutil
 import sys
 
 import addon_utils
 import bpy
 
 HERE = pathlib.Path(__file__).resolve().parent
-SOURCE = HERE / ".venv" / "Lib" / "site-packages" / "blender_mcp" / "bundled" / "addon.py"
-MODULE = "blender_mcp_addon"
+# Where the release was downloaded to. Kept out of the repo: it is 18 KB of someone else's
+# code, versioned by them, and the download link is in the README.
+CANDIDATES = [
+    HERE / "mcp-1.0.3.zip",
+    pathlib.Path.home() / "Downloads" / "mcp-1.0.3.zip",
+]
+OLD_MODULE = "blender_mcp_addon"   # the third-party add-on, installed before the official one
+EXTENSION_ID = "mcp"
+
+
+def remove_old() -> None:
+    """Takes the earlier add-on out of the way, including its file."""
+    if any(a.module == OLD_MODULE for a in bpy.context.preferences.addons):
+        try:
+            bpy.ops.preferences.addon_disable(module=OLD_MODULE)
+            print(f"SW: disabled {OLD_MODULE}")
+        except Exception as exc:
+            print(f"SW: could not disable {OLD_MODULE}: {exc}")
+
+    stale = pathlib.Path(bpy.utils.user_resource("SCRIPTS", path="addons")) / f"{OLD_MODULE}.py"
+    if stale.exists():
+        stale.unlink()
+        print(f"SW: removed {stale.name}")
 
 
 def main() -> None:
-    if not SOURCE.exists():
-        sys.exit(f"SW: add-on not found at {SOURCE}; run pip install mcp-for-blender in tools/blender/.venv")
+    remove_old()
 
-    scripts = pathlib.Path(bpy.utils.user_resource("SCRIPTS", path="addons", create=True))
-    target = scripts / f"{MODULE}.py"
+    package = next((p for p in CANDIDATES if p.exists()), None)
+    if package is None:
+        sys.exit(
+            "SW: mcp-1.0.3.zip not found. Download it from\n"
+            "    https://projects.blender.org/lab/blender_mcp/releases\n"
+            f"    and put it in {HERE} or your Downloads folder."
+        )
 
-    fresh = not target.exists() or target.read_bytes() != SOURCE.read_bytes()
-    if fresh:
-        shutil.copyfile(SOURCE, target)
-        print(f"SW: copied the add-on to {target}")
+    bpy.ops.extensions.package_install_files(
+        filepath=str(package),
+        repo="user_default",
+        enable_on_install=True,
+    )
+    bpy.ops.wm.save_userpref()
 
-    # Blender builds its add-on module list at startup, and a file that appears afterwards is
-    # not importable in that same run however the list is refreshed. So the copy and the
-    # enable happen in two runs; the second sees the file already in place.
-    addon_utils.modules_refresh()
-    if str(scripts) not in sys.path:
-        sys.path.append(str(scripts))
-
-    try:
-        bpy.ops.preferences.addon_enable(module=MODULE)
-        bpy.ops.wm.save_userpref()
-    except Exception as exc:
-        print(f"SW: add-on copied but not enabled in this run ({exc}); run this script once more")
-        return
-
-    enabled = {a.module for a in bpy.context.preferences.addons}
-    print("SW: add-on enabled and saved" if MODULE in enabled else "SW: add-on did NOT enable")
+    installed = [a.module for a in bpy.context.preferences.addons if EXTENSION_ID in a.module]
+    if installed:
+        print(f"SW: installed and enabled {installed[0]} from {package.name}")
+    else:
+        print("SW: the extension did not report as enabled; open Preferences > Add-ons and check 'MCP'")
 
 
 main()
