@@ -156,8 +156,11 @@ const Bay = ({ progress }: { progress: React.MutableRefObject<number> }) => {
     // The brushes spin while the car is under them, and idle slowly either side of that.
     const working = ramp(p, WASH_START - 0.04, WASH_START + 0.08) * (1 - ramp(p, RINSE_END, RINSE_END + 0.08));
     const speed = 0.4 + working * 9;
-    if (left.current) left.current.rotation.z += delta * speed;
-    if (right.current) right.current.rotation.z -= delta * speed;
+    // Around Y, the axis the brush actually stands on. Spinning it around Z rolled it over
+    // sideways like a rolling pin — which is not how any brush in any carwash behaves, and is
+    // the first thing anyone who has sat in one would notice.
+    if (left.current) left.current.rotation.y += delta * speed;
+    if (right.current) right.current.rotation.y -= delta * speed;
   });
 
   return (
