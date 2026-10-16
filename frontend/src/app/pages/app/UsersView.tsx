@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { UserPlus, Power, RotateCcw, Loader2, Shield, Check, UserCog } from 'lucide-react';
+import { UserPlus, Power, KeyRound, Loader2, Shield, Check, UserCog } from 'lucide-react';
 import { PageHeader, Card, EmptyState } from '../../components/app/PageHeader';
 import { usersApi, type TenantUserDto, ApiException } from '../../api';
 import { clsx } from 'clsx';
@@ -69,7 +69,7 @@ export const UsersView: React.FC = () => {
         subtitle="دعوت، نقش‌بندی و مدیریت کارکنان کارواش"
         actions={
           <button onClick={() => setShowInvite(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-red-600 text-white text-sm font-bold hover:bg-red-700 transition-colors">
+            className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-brand-600 text-white text-sm font-bold hover:bg-brand-700 transition-colors">
             <UserPlus size={16} />دعوت کاربر جدید
           </button>
         }
@@ -83,7 +83,7 @@ export const UsersView: React.FC = () => {
       {err && <div className="mb-4 border border-red-200 bg-red-50 text-red-700 px-4 py-3 rounded-2xl text-sm">{err}</div>}
 
       {loading ? (
-        <div className="grid place-items-center min-h-[30vh]"><Loader2 className="animate-spin text-red-600" /></div>
+        <div className="grid place-items-center min-h-[30vh]"><Loader2 className="animate-spin text-brand-600" /></div>
       ) : users.length === 0 ? (
         <Card><EmptyState icon={UserPlus} title="کاربری ثبت نشده" hint="با دعوت کارکنان، آن‌ها می‌توانند وارد سیستم شوند." /></Card>
       ) : (
@@ -143,7 +143,7 @@ export const UsersView: React.FC = () => {
                         onClick={() => handleResetPassword(u)}
                         title="بازنشانی رمز عبور"
                         className="p-2 rounded-xl text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors">
-                        <RotateCcw size={15} />
+                        <KeyRound size={15} />
                       </button>
                     </div>
                   </td>
@@ -209,7 +209,7 @@ const InviteModal: React.FC<{ onClose: () => void; onCreated: () => void }> = ({
       <div className="relative z-10 flex min-h-full items-start justify-center sm:items-center">
         <div className="my-2 max-h-[calc(100dvh-1.5rem)] w-full max-w-md overflow-y-auto rounded-3xl bg-white p-5 shadow-2xl sm:my-0 sm:p-8" dir="rtl" role="dialog" aria-modal="true" aria-labelledby="invite-user-title">
         <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center">
             <UserPlus size={20} />
           </div>
           <div>
@@ -234,11 +234,11 @@ const InviteModal: React.FC<{ onClose: () => void; onCreated: () => void }> = ({
               {ROLE_OPTIONS.map(r => (
                 <label key={r.value} className={clsx(
                   'flex items-start gap-3 rounded-2xl border-2 p-3 cursor-pointer transition-all',
-                  form.role === r.value ? 'bg-red-50 border-red-500' : 'bg-white border-gray-200 hover:border-gray-300'
+                  form.role === r.value ? 'bg-brand-50 border-brand-500' : 'bg-white border-gray-200 hover:border-gray-300'
                 )}>
                   <input type="radio" value={r.value} checked={form.role === r.value}
                     onChange={() => setForm({ ...form, role: r.value })}
-                    className="mt-0.5 accent-red-600" />
+                    className="mt-0.5 accent-brand-600" />
                   <div>
                     <div className="font-bold text-sm text-gray-900">{r.label}</div>
                     <div className="text-[11px] text-gray-500">{r.desc}</div>
@@ -254,7 +254,7 @@ const InviteModal: React.FC<{ onClose: () => void; onCreated: () => void }> = ({
               انصراف
             </button>
             <button type="submit" disabled={loading}
-              className="flex-1 bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white font-bold py-3 rounded-2xl flex items-center justify-center gap-2 text-sm">
+              className="flex-1 bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white font-bold py-3 rounded-2xl flex items-center justify-center gap-2 text-sm">
               {loading ? <Loader2 size={16} className="animate-spin" /> : <UserPlus size={16} />}
               دعوت کاربر
             </button>
@@ -296,9 +296,9 @@ const ChangeRoleModal: React.FC<{ user: TenantUserDto; onClose: () => void; onCh
           {ROLE_OPTIONS.map(r => (
             <label key={r.value} className={clsx(
               'flex items-center gap-3 rounded-2xl border-2 p-3 cursor-pointer transition-all',
-              role === r.value ? 'bg-red-50 border-red-500' : 'bg-white border-gray-200 hover:border-gray-300'
+              role === r.value ? 'bg-brand-50 border-brand-500' : 'bg-white border-gray-200 hover:border-gray-300'
             )}>
-              <input type="radio" value={r.value} checked={role === r.value} onChange={() => setRole(r.value)} className="accent-red-600" />
+              <input type="radio" value={r.value} checked={role === r.value} onChange={() => setRole(r.value)} className="accent-brand-600" />
               <div>
                 <div className="font-bold text-sm">{r.label}</div>
                 <div className="text-[11px] text-gray-500">{r.desc}</div>
@@ -309,7 +309,7 @@ const ChangeRoleModal: React.FC<{ user: TenantUserDto; onClose: () => void; onCh
         <div className="sticky bottom-0 -mx-1 flex gap-2 border-t border-gray-100 bg-white px-1 pt-4 pb-1">
           <button type="button" onClick={onClose} className="px-4 py-2.5 rounded-2xl border border-gray-200 text-sm">انصراف</button>
           <button type="button" onClick={submit} disabled={loading}
-            className="flex-1 bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white font-bold py-2.5 rounded-2xl text-sm flex items-center justify-center gap-2">
+            className="flex-1 bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white font-bold py-2.5 rounded-2xl text-sm flex items-center justify-center gap-2">
             {loading ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}ذخیره نقش
           </button>
         </div>
@@ -328,7 +328,7 @@ const Field = ({ label, value, onChange, required, type = 'text', dir, placehold
     <input
       type={type} value={value} onChange={e => onChange(e.target.value)}
       required={required} dir={dir as any} placeholder={placeholder} autoComplete={autoComplete}
-      className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all"
+      className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all"
     />
   </label>
 );

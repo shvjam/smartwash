@@ -1,3 +1,4 @@
+using SmartWash.Application.Abstractions.Multitenancy;
 using SmartWash.Application.Abstractions.Persistence;
 using SmartWash.Application.Behaviors;
 using SmartWash.Domain.Billing;
@@ -95,7 +96,8 @@ public sealed record AssignPlanCommand(Guid TenantId, Guid PlanId, BillingCycle 
 public sealed class AssignPlanHandler : IRequestHandler<AssignPlanCommand, Result<Guid>>
 {
     private readonly IAppDbContext _db;
-    public AssignPlanHandler(IAppDbContext db) => _db = db;
+    private readonly ITenantFeatureService _features;
+    public AssignPlanHandler(IAppDbContext db, ITenantFeatureService features) { _db = db; _features = features; }
 
     public async Task<Result<Guid>> Handle(AssignPlanCommand c, CancellationToken ct)
     {
@@ -122,6 +124,9 @@ public sealed class AssignPlanHandler : IRequestHandler<AssignPlanCommand, Resul
             sub.MarkActive();
             tenant.Activate(sub.Id);
             await _db.SaveChangesAsync(ct);
+            // The tenant's features are cached; without this a newly granted plan stayed
+            // invisible to the carwash for up to five minutes.
+            await _features.InvalidateAsync(c.TenantId, ct);
         }
 
         return Result.Success(sub.Id);

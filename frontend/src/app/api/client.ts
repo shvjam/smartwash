@@ -126,7 +126,42 @@ async function attemptRefresh(): Promise<boolean> {
   return refreshInFlight;
 }
 
+/**
+ * How many requests are in flight right now, for the activity bar at the top of the app.
+ *
+ * Buttons across the panel fire a request and wait for the answer without saying so, which
+ * left people unsure whether a click had registered and clicking again. Counting requests
+ * here gives every action on every screen the same visible response without touching them one
+ * by one; the bar itself lives in components/NetworkActivityBar.
+ */
+type ActivityListener = (pending: number, writing: boolean) => void;
+const activityListeners = new Set<ActivityListener>();
+let pendingRequests = 0;
+let pendingWrites = 0;
+const notifyActivity = () => activityListeners.forEach(l => l(pendingRequests, pendingWrites > 0));
+export const networkActivity = {
+  subscribe(listener: ActivityListener) {
+    activityListeners.add(listener);
+    listener(pendingRequests, pendingWrites > 0);
+    return () => { activityListeners.delete(listener); };
+  },
+};
+
 export async function request<T>(path: string, opts: RequestOptions = {}): Promise<T> {
+  const isWrite = (opts.method ?? 'GET') !== 'GET';
+  pendingRequests++;
+  if (isWrite) pendingWrites++;
+  notifyActivity();
+  try {
+    return await performRequest<T>(path, opts);
+  } finally {
+    pendingRequests--;
+    if (isWrite) pendingWrites--;
+    notifyActivity();
+  }
+}
+
+async function performRequest<T>(path: string, opts: RequestOptions): Promise<T> {
   const scope = opts.scope ?? 'tenant';
   const url = buildUrl(path, scope, opts.query);
   const headers: Record<string, string> = { 'Accept': 'application/json' };

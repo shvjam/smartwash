@@ -56,6 +56,12 @@ public class AppDbContext : DbContext, IAppDbContext
     public DbSet<Order> Orders => Set<Order>();
     public DbSet<OrderLine> OrderLines => Set<OrderLine>();
     public DbSet<OrderPayment> OrderPayments => Set<OrderPayment>();
+    public DbSet<OrderStageEvent> OrderStageEvents => Set<OrderStageEvent>();
+    public DbSet<BayDowntime> BayDowntimes => Set<BayDowntime>();
+    public DbSet<OrderBayVisit> OrderBayVisits => Set<OrderBayVisit>();
+    public DbSet<ShiftRoster> ShiftRosters => Set<ShiftRoster>();
+    public DbSet<ShiftAssignment> ShiftAssignments => Set<ShiftAssignment>();
+    public DbSet<TipSettlement> TipSettlements => Set<TipSettlement>();
     public DbSet<Reservation> Reservations => Set<Reservation>();
     public DbSet<ReservationService> ReservationServices => Set<ReservationService>();
     public DbSet<Expense> Expenses => Set<Expense>();
@@ -74,6 +80,15 @@ public class AppDbContext : DbContext, IAppDbContext
     public DbSet<TicketMessage> TicketMessages => Set<TicketMessage>();
     public DbSet<TicketAttachment> TicketAttachments => Set<TicketAttachment>();
     public DbSet<TicketEvent> TicketEvents => Set<TicketEvent>();
+
+    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+    {
+        base.ConfigureConventions(configurationBuilder);
+        // Every timestamp this application writes is UTC; say so when reading it back, so it
+        // reaches the browser with its time zone attached. See UtcDateTimeConverter.
+        configurationBuilder.Properties<DateTime>().HaveConversion<UtcDateTimeConverter>();
+        configurationBuilder.Properties<DateTime?>().HaveConversion<NullableUtcDateTimeConverter>();
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

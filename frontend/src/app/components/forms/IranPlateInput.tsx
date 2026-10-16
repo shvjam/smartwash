@@ -126,6 +126,9 @@ export const IranPlateInput = ({
   };
 
   const [parts, setParts] = useState<Parts>(() => load(value));
+  // The newest parts, readable synchronously between fast keystrokes.
+  const latest = useRef<Parts>(parts);
+  latest.current = parts;
   // «آخرین مقداری که خودمان به بالا دادیم». چون والد آن را دست‌نخورده برمی‌گرداند،
   // با همین مقایسه‌ی رشته‌ایِ ساده، بازتابِ خودمان را نادیده می‌گیریم و ورودیِ
   // کاربر هرگز بازنویسی نمی‌شود. سینک فقط برای مقادیرِ واقعاً بیرونی رخ می‌دهد.
@@ -148,6 +151,7 @@ export const IranPlateInput = ({
   };
 
   const commit = (next: Parts) => {
+    latest.current = next;
     setParts(next);
     const s = serializeIranPlate(next);
     emitted.current = s;
@@ -158,13 +162,15 @@ export const IranPlateInput = ({
     const clean = toEnDigits(e.target.value).slice(0, LEN[box]);
     // نکته‌ی مهم: به‌جای تکیه بر state (که ممکن است در رویدادهای پشت‌سرهم کهنه باشد)،
     // با به‌روزرسانیِ تابعی، همیشه از آخرین بخش‌ها می‌سازیم.
-    setParts(prev => {
-      const next = { ...prev, [box]: clean };
-      const s = serializeIranPlate(next);
-      emitted.current = s;
-      onChange(s);
-      return next;
-    });
+    // Built from the latest parts held in a ref rather than inside a state updater: React may
+    // run an updater during rendering, and calling the parent's setter from there is what
+    // produced the "cannot update a component while rendering another" warning.
+    const next = { ...latest.current, [box]: clean };
+    latest.current = next;
+    setParts(next);
+    const s = serializeIranPlate(next);
+    emitted.current = s;
+    onChange(s);
     if (clean.length === LEN[box]) nextOf[box].current?.focus();
   };
 
@@ -187,13 +193,13 @@ export const IranPlateInput = ({
   };
 
   const cell = 'h-11 min-w-0 bg-white text-center text-base font-bold tabular-nums text-slate-900 outline-none ' +
-    'placeholder:font-normal placeholder:text-slate-300 focus:bg-red-50 disabled:bg-slate-100 disabled:text-slate-400';
+    'placeholder:font-normal placeholder:text-slate-300 focus:bg-brand-50 disabled:bg-slate-100 disabled:text-slate-400';
 
   return (
     <div
       dir="ltr"
       onPaste={onPaste}
-      className={`inline-flex h-11 max-w-full select-none items-stretch overflow-hidden rounded-lg border-2 border-slate-800 bg-white shadow-sm focus-within:ring-2 focus-within:ring-red-500/30 ${className}`}
+      className={`inline-flex h-11 max-w-full select-none items-stretch overflow-hidden rounded-lg border-2 border-slate-800 bg-white shadow-sm focus-within:ring-2 focus-within:ring-brand-500/30 ${className}`}
     >
       {/* نوار آبی سمت چپ، مطابق پلاک واقعی */}
       <span className="flex w-7 shrink-0 flex-col items-center justify-center gap-0.5 bg-[#1e3a8a] px-0.5 text-white">

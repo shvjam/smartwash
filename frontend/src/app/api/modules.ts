@@ -2,8 +2,12 @@ import { api, auth } from './client';
 import type {
   AuthResponse, BranchDto, BayDto, WorkerDto, ServiceDto, CustomerDto, CustomerVehicleDto,
   OrderDto, ReservationDto, ExpenseDto, ShiftDto, TenantSettingsDto, NotificationDto, CampaignDto,
-  DashboardDto, DailyRevenuePoint, WorkerPerformanceRow, PunctualityReport, WorkerScorecardReport, PagedList, Guid,
-  OrderStatus, OrderSource, BayStatus, PaymentMethod, ReservationStatus, LoyaltyTier, Gender,
+  DashboardDto, DailyRevenuePoint, WorkerPerformanceRow, PunctualityReport, WorkerScorecardReport,
+  OrderArchiveRow, PagedList, Guid,
+  ShiftRosterDto, TipLedger, TipSettlementRow,
+  BayPerformanceReport, WaitingReport, StaffingReport, RevenueReport, ActivityLogRow,
+  CustomerSegment, CustomerSegmentFilter,
+  OrderStatus, OrderStage, OrderSource, BayStatus, BayType, StaffRole, PaymentMethod, ReservationStatus, LoyaltyTier, Gender,
   ServiceCategory, ExpenseCategory, CampaignType, CampaignTarget, CampaignStatus,
   PlanDto, PlanFeatureDto, PlanBillingModel, TenantAdminDto, TenantStatus, CurrentTenantDto,
   SubscriptionDto, SubscriptionStatus, SubscriptionCycle,
@@ -105,8 +109,8 @@ export const branchesApi = {
 // ---------- BAYS ----------
 export const baysApi = {
   list: (branchId?: Guid, onlyActive = false) => api.get<BayDto[]>('/bays', { branchId, onlyActive }),
-  create: (body: { branchId: Guid; name: string; number: number }) => api.post<BayDto>('/bays', body),
-  update: (id: Guid, body: { name: string; number: number; notes?: string | null }) => api.put<BayDto>(`/bays/${id}`, body),
+  create: (body: { branchId: Guid; name: string; number: number; type?: BayType; serviceCapacity?: number; queueCapacity?: number }) => api.post<BayDto>('/bays', body),
+  update: (id: Guid, body: { name: string; number: number; notes?: string | null; type?: BayType; serviceCapacity?: number; queueCapacity?: number }) => api.put<BayDto>(`/bays/${id}`, body),
   maintenance: (id: Guid, notes?: string | null) => api.post<void>(`/bays/${id}/maintenance`, { notes }),
   free: (id: Guid) => api.post<void>(`/bays/${id}/free`),
 };
@@ -125,9 +129,9 @@ export const workersApi = {
 // ---------- SERVICES ----------
 export const servicesApi = {
   list: (onlyActive = false, category?: ServiceCategory) => api.get<ServiceDto[]>('/services', { onlyActive, category }),
-  create: (body: { name: string; description?: string | null; category: ServiceCategory; priceRials: number; durationMinutes: number; workerCommissionRate: number }) =>
+  create: (body: { name: string; description?: string | null; category: ServiceCategory; priceRials: number; durationMinutes: number; workerCommissionRate: number; requiredBayType?: BayType | null; isOptional?: boolean }) =>
     api.post<ServiceDto>('/services', body),
-  update: (id: Guid, body: { name: string; description?: string | null; category: ServiceCategory; priceRials: number; durationMinutes: number; workerCommissionRate: number; sortOrder: number; iconKey?: string | null }) =>
+  update: (id: Guid, body: { name: string; description?: string | null; category: ServiceCategory; priceRials: number; durationMinutes: number; workerCommissionRate: number; sortOrder: number; iconKey?: string | null; requiredBayType?: BayType | null; isOptional?: boolean }) =>
     api.put<ServiceDto>(`/services/${id}`, body),
   setActive: (id: Guid, isActive: boolean) => api.post<void>(`/services/${id}/active`, { isActive }),
 };
@@ -140,7 +144,7 @@ export const customersApi = {
   create: (body: { fullName: string; phone: string; email?: string | null }) => api.post<CustomerDto>('/customers', body),
   update: (id: Guid, body: { fullName: string; phone: string; email?: string | null; nationalId?: string | null; birthDate?: string | null; gender: Gender; address?: string | null; notes?: string | null }) =>
     api.put<CustomerDto>(`/customers/${id}`, body),
-  addVehicle: (id: Guid, body: { plate: string; brand: string; model: string; color?: string | null; year?: number | null }) =>
+  addVehicle: (id: Guid, body: { plate: string; brand?: string; model?: string; color?: string | null; year?: number | null }) =>
     api.post<CustomerVehicleDto>(`/customers/${id}/vehicles`, body),
   removeVehicle: (id: Guid, vehicleId: Guid) => api.delete<void>(`/customers/${id}/vehicles/${vehicleId}`),
   adjustWallet: (id: Guid, amountRials: number, description?: string | null) =>
@@ -175,7 +179,7 @@ export const ordersApi = {
     api.get<PagedList<OrderDto>>('/orders', { ...params, page: params.page ?? 1, pageSize: params.pageSize ?? 20 }),
   get: (id: Guid) => api.get<OrderDto>(`/orders/${id}`),
   create: (body: {
-    branchId: Guid; bayId: Guid; customerId?: Guid | null; vehicleId?: Guid | null;
+    branchId: Guid; bayId: Guid | null; customerId?: Guid | null; vehicleId?: Guid | null;
     customerName: string; customerPhone?: string | null; vehiclePlate: string;
     vehicleBrand?: string | null; vehicleModel?: string | null;
     source: OrderSource; reservationId?: Guid | null; lines: CreateOrderLineInput[];
@@ -186,6 +190,9 @@ export const ordersApi = {
   applyDiscount: (id: Guid, discountRials: number) => api.post<OrderDto>(`/orders/${id}/discount`, { discountRials }),
   addPayment: (id: Guid, body: { method: PaymentMethod; amountRials: number; reference?: string | null }) =>
     api.post<OrderDto>(`/orders/${id}/payments`, body),
+  /** انتقال سفارش به مرحله‌ی بعدی چرخه‌ی خودرو */
+  advanceStage: (id: Guid, stage: OrderStage, bayId?: Guid | null, note?: string | null) =>
+    api.post<OrderDto>(`/orders/${id}/stage`, { stage, bayId: bayId ?? null, note: note ?? null }),
   complete: (id: Guid, finalMethod: PaymentMethod) => api.post<OrderDto>(`/orders/${id}/complete`, { finalMethod }),
   cancel: (id: Guid, reason?: string | null) => api.post<OrderDto>(`/orders/${id}/cancel`, { reason }),
   // انعام هر لاین به‌صورت مستقل (ذخیره در backend)
@@ -444,6 +451,25 @@ export const reportsApi = {
     api.get<DailyRevenuePoint[]>('/reports/revenue-series', { fromDate, toDate, branchId }),
   workerPerformance: (fromDate: string, toDate: string) =>
     api.get<WorkerPerformanceRow[]>('/reports/worker-performance', { fromDate, toDate }),
+  bayPerformance: (fromDate: string, toDate: string) =>
+    api.get<BayPerformanceReport>('/reports/bay-performance', { fromDate, toDate }),
+  waiting: (fromDate: string, toDate: string) =>
+    api.get<WaitingReport>('/reports/waiting', { fromDate, toDate }),
+  staffing: (fromDate: string, toDate: string) =>
+    api.get<StaffingReport>('/reports/staffing', { fromDate, toDate }),
+  revenue: (fromDate: string, toDate: string, bucket: 'day' | 'week' | 'month' = 'day') =>
+    api.get<RevenueReport>('/reports/revenue', { fromDate, toDate, bucket }),
+  activityLog: (fromDate: string, toDate: string, opts?: { userId?: Guid; entityName?: string; page?: number; pageSize?: number }) =>
+    api.get<PagedList<ActivityLogRow>>('/reports/activity-log', {
+      fromDate, toDate, userId: opts?.userId, entityName: opts?.entityName,
+      page: opts?.page ?? 1, pageSize: opts?.pageSize ?? 50,
+    }),
+  orderArchive: (fromDate: string, toDate: string, opts?: { bayId?: Guid; workerId?: Guid; page?: number; pageSize?: number }) =>
+    api.get<PagedList<OrderArchiveRow>>('/reports/order-archive', {
+      fromDate, toDate,
+      bayId: opts?.bayId, workerId: opts?.workerId,
+      page: opts?.page ?? 1, pageSize: opts?.pageSize ?? 50,
+    }),
   punctuality: (fromDate: string, toDate: string) =>
     api.get<PunctualityReport>('/reports/punctuality', { fromDate, toDate }),
   workerScorecards: (fromDate: string, toDate: string) =>
@@ -556,4 +582,32 @@ export const platformTicketsApi = {
     api.post<void>(`/tickets/${id}/category`, { category }, 'platform'),
   assign: (id: Guid, assignedToUserId: Guid | null) =>
     api.post<void>(`/tickets/${id}/assign`, { assignedToUserId }, 'platform'),
+};
+
+/** برنامه‌ی شیفت پرسنل */
+/** فیلتر هوشمند مشتریان برای ارسال گروهی */
+export const customerSegmentApi = {
+  query: (filter: CustomerSegmentFilter) =>
+    api.get<CustomerSegment>('/customers/segment', filter as Record<string, string | number | boolean | null | undefined>),
+};
+
+export const rostersApi = {
+  list: (fromDate: string, toDate: string, branchId?: Guid) =>
+    api.get<ShiftRosterDto[]>('/rosters', { fromDate, toDate, branchId }),
+  create: (body: { branchId: Guid; date: string; name: string; startsAt: string; endsAt: string; notes?: string | null }) =>
+    api.post<ShiftRosterDto>('/rosters', body),
+  update: (id: Guid, body: { name: string; startsAt: string; endsAt: string; notes?: string | null }) =>
+    api.put<ShiftRosterDto>(`/rosters/${id}`, body),
+  remove: (id: Guid) => api.delete<void>(`/rosters/${id}`),
+  assign: (id: Guid, body: { role: StaffRole; workerId?: Guid | null; userId?: Guid | null; bayId?: Guid | null; note?: string | null }) =>
+    api.post<ShiftRosterDto>(`/rosters/${id}/assignments`, body),
+  unassign: (id: Guid, assignmentId: Guid) =>
+    api.delete<ShiftRosterDto>(`/rosters/${id}/assignments/${assignmentId}`),
+};
+
+/** انعام: مانده‌ی پرداخت‌نشده و تسویه */
+export const tipsApi = {
+  ledger: (branchId?: Guid) => api.get<TipLedger>('/tips/ledger', { branchId }),
+  settle: (body: { workerId: Guid; branchId: Guid; throughUtc: string; paidRials: number; note?: string | null }) =>
+    api.post<TipSettlementRow>('/tips/settle', body),
 };

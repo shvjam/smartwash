@@ -4,6 +4,7 @@ import { Loader2, ChevronRight, ChevronLeft, Calendar, Clock, User, Car, Sparkle
 import { PageHeader, Card } from '../../components/app/PageHeader';
 import { branchesApi, baysApi, servicesApi, customersApi, reservationsApi, ApiException } from '../../api';
 import type { BranchDto, BayDto, ServiceDto, CustomerDto } from '../../api/types';
+import { localIsoDate, localIsoDateIn } from '../../lib/dates';
 
 const toFa = (v: number | string) => String(v).replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[+d]);
 const fmtRials = (n: number) => toFa(n.toLocaleString('fa-IR'));
@@ -21,7 +22,7 @@ export const ReservationCreateView: React.FC = () => {
   const [branchId, setBranchId] = useState<string>('');
   const [bayId, setBayId] = useState<string>('');
   const today = new Date(); today.setHours(0, 0, 0, 0);
-  const [date, setDate] = useState<string>(() => new Date(today.getTime() + 86400_000).toISOString().slice(0, 10));
+  const [date, setDate] = useState<string>(() => localIsoDateIn(1));
   const [hour, setHour] = useState(10);
   const [minute, setMinute] = useState(0);
   const [customerSearch, setCustomerSearch] = useState('');
@@ -126,7 +127,7 @@ export const ReservationCreateView: React.FC = () => {
 
       <div className="flex items-center gap-2 mb-5">
         {[1, 2, 3, 4].map(n => (
-          <div key={n} className={`flex-1 h-1.5 rounded-full ${n <= step ? 'bg-red-500' : 'bg-gray-100'}`} />
+          <div key={n} className={`flex-1 h-1.5 rounded-full ${n <= step ? 'bg-brand-500' : 'bg-gray-100'}`} />
         ))}
       </div>
 
@@ -147,12 +148,12 @@ export const ReservationCreateView: React.FC = () => {
               <span className="block mb-2 text-xs text-gray-600">جایگاه ترجیحی (اختیاری)</span>
               <div className="grid grid-cols-3 gap-2">
                 <button type="button" onClick={() => setBayId('')}
-                  className={`rounded-2xl border-2 p-3 text-center text-xs font-bold ${bayId === '' ? 'bg-red-50 border-red-500' : 'bg-white border-gray-200'}`}>
+                  className={`rounded-2xl border-2 p-3 text-center text-xs font-bold ${bayId === '' ? 'bg-brand-50 border-brand-500' : 'bg-white border-gray-200'}`}>
                   هر جایگاه آزاد
                 </button>
                 {bays.map(b => (
                   <button key={b.id} type="button" onClick={() => setBayId(b.id)}
-                    className={`rounded-2xl border-2 p-3 text-center ${bayId === b.id ? 'bg-red-50 border-red-500' : 'bg-white border-gray-200'}`}>
+                    className={`rounded-2xl border-2 p-3 text-center ${bayId === b.id ? 'bg-brand-50 border-brand-500' : 'bg-white border-gray-200'}`}>
                     <div className="text-[10px] text-gray-500">جایگاه</div>
                     <div className="font-extrabold text-lg text-gray-900">{toFa(b.number)}</div>
                     <div className="text-[10px] text-gray-500">{b.name}</div>
@@ -167,7 +168,7 @@ export const ReservationCreateView: React.FC = () => {
           <>
             <SectionTitle icon={Calendar} title="تاریخ و زمان" hint="حداقل یک ساعت بعد از حالا" />
             <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-              <input type="date" value={date} min={new Date().toISOString().slice(0, 10)}
+              <input type="date" value={date} min={localIsoDate()}
                 onChange={e => setDate(e.target.value)}
                 className="bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-sm" />
               <select value={hour} onChange={e => setHour(Number(e.target.value))}
@@ -180,7 +181,7 @@ export const ReservationCreateView: React.FC = () => {
               </select>
             </div>
             <div className="mt-3 rounded-xl bg-gray-50 px-3 py-2 text-xs text-gray-600 flex items-center gap-2">
-              <Clock size={14} className="text-red-600" />
+              <Clock size={14} className="text-brand-600" />
               {scheduledLocal().toLocaleString('fa-IR', { dateStyle: 'full', timeStyle: 'short' })}
             </div>
           </>
@@ -233,7 +234,7 @@ export const ReservationCreateView: React.FC = () => {
                 return (
                   <button key={s.id} type="button"
                     onClick={() => setServiceIds(prev => active ? prev.filter(x => x !== s.id) : [...prev, s.id])}
-                    className={`text-right rounded-xl border p-3 ${active ? 'bg-red-50 border-red-500' : 'bg-white border-gray-200'}`}>
+                    className={`text-right rounded-xl border p-3 ${active ? 'bg-brand-50 border-brand-500' : 'bg-white border-gray-200'}`}>
                     <div className="font-bold text-sm">{s.name}</div>
                     <div className="text-[10px] text-gray-500 font-mono">{fmtRials(s.priceRials)} ﷼ • {toFa(s.durationMinutes)}د</div>
                   </button>
@@ -257,12 +258,12 @@ export const ReservationCreateView: React.FC = () => {
         </button>
         {step < 4 ? (
           <button type="button" disabled={!canNext()} onClick={() => setStep(s => (s + 1) as Step)}
-            className="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-bold disabled:opacity-50 inline-flex items-center gap-1">
+            className="px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-sm font-bold disabled:opacity-50 inline-flex items-center gap-1">
             ادامه<ChevronLeft size={14} />
           </button>
         ) : (
           <button type="button" disabled={saving || serviceIds.length === 0} onClick={submit}
-            className="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-bold disabled:opacity-50 inline-flex items-center gap-2">
+            className="px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-sm font-bold disabled:opacity-50 inline-flex items-center gap-2">
             {saving ? <Loader2 size={16} className="animate-spin" /> : <Calendar size={16} />}ثبت رزرو
           </button>
         )}
@@ -273,7 +274,7 @@ export const ReservationCreateView: React.FC = () => {
 
 const SectionTitle = ({ icon: Icon, title, hint }: { icon: any; title: string; hint: string }) => (
   <div className="flex items-center gap-3 mb-4">
-    <div className="w-9 h-9 rounded-xl bg-red-50 text-red-600 grid place-items-center"><Icon size={18} /></div>
+    <div className="w-9 h-9 rounded-xl bg-brand-50 text-brand-600 grid place-items-center"><Icon size={18} /></div>
     <div>
       <div className="font-extrabold text-gray-900 text-sm">{title}</div>
       <div className="text-[11px] text-gray-500">{hint}</div>
@@ -288,7 +289,7 @@ const Txt = ({ label, value, onChange, required, mono, placeholder }: {
   <label className="block">
     <span className="block mb-1 text-[11px] text-gray-600">{label}{required && ' *'}</span>
     <input value={value} onChange={e => onChange(e.target.value)} required={required} placeholder={placeholder}
-      className={`w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 ${mono ? 'font-mono' : ''}`} />
+      className={`w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 ${mono ? 'font-mono' : ''}`} />
   </label>
 );
 

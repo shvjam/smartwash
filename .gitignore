@@ -32,3 +32,8 @@ desktop.ini
 # Server files downloaded for diagnosis — may contain host config and paths.
 files on server/
 remote-listing.txt
+
+# Final deploy packages: build output, not source
+final*deploy.zip
+appsettings.secrets.config
+backend/publish-fdd/

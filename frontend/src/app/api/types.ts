@@ -19,8 +19,16 @@ export type ApiError = { code: string; message: string };
 // Enums (string-or-number tolerant, but backend serializes as numbers by default)
 // همه‌ی enumها دقیقاً منطبق با enumهای دامنه‌ی بک‌اند (SmartWash.Domain.*). سریال‌سازی عددی است.
 export enum OrderStatus { InProgress = 0, Completed = 1, Cancelled = 2 }
+/** جایگاه خودرو در چرخه‌ی کارواش — مستقل از باز یا بسته بودن سفارش. */
+export enum OrderStage {
+  Received = 0, QueuedForWash = 1, Washing = 2, QueuedForDry = 3,
+  Drying = 4, OptionServices = 5, ReadyForPickup = 6, Delivered = 7,
+}
 export enum OrderSource { WalkIn = 0, Reservation = 1, Online = 2 }
 export enum BayStatus { Free = 0, Occupied = 1, Maintenance = 2 }
+export enum BayType { Wash = 0, Dry = 1, Wax = 2, Polish = 3, EngineWash = 4, Special = 5 }
+export enum BayDowntimeReason { Maintenance = 0, NoStaff = 1, ManagementDecision = 2, Other = 3 }
+export enum StaffRole { Washer = 0, Dryer = 1, OptionServices = 2, Cashier = 3, ShiftLead = 4, Other = 5 }
 export enum PaymentMethod { Cash = 0, Card = 1, Online = 2, Wallet = 3, Mixed = 4, Credit = 5, Tip = 6 }
 export enum ReservationStatus { Pending = 0, Confirmed = 1, Arrived = 2, NoShow = 3, Cancelled = 4 }
 export enum LoyaltyTier { Bronze = 0, Silver = 1, Gold = 2, Platinum = 3, Diamond = 4 }
@@ -42,6 +50,12 @@ export type BranchDto = {
 export type BayDto = {
   id: Guid; branchId: Guid; name: string; number: number; status: BayStatus;
   isActive: boolean; currentOrderId?: Guid | null; notes?: string | null;
+  /** شستشو، خشک، واکس… — مسیر خودرو به آن وابسته است. */
+  type: BayType;
+  serviceCapacity: number;
+  queueCapacity: number;
+  /** خودروهای منتظر برای این نوع جایگاه. */
+  queueLength: number;
 };
 
 export type WorkerDto = {
@@ -53,6 +67,9 @@ export type ServiceDto = {
   id: Guid; name: string; description?: string | null; category: ServiceCategory;
   priceRials: number; durationMinutes: number; workerCommissionRate: number;
   isActive: boolean; sortOrder: number; iconKey?: string | null;
+  /** جایگاه موردنیاز برای این خدمت؛ null یعنی هر جایگاهی. */
+  requiredBayType?: BayType | null;
+  isOptional?: boolean;
 };
 
 export type CustomerVehicleDto = {
@@ -80,17 +97,26 @@ export type OrderPaymentDto = {
   id: Guid; method: PaymentMethod; amountRials: number; reference?: string | null; paidAtUtc: DateTimeIso;
 };
 export type OrderDto = {
-  id: Guid; branchId: Guid; bayId: Guid; number: string;
+  id: Guid; branchId: Guid; bayId: Guid | null; number: string;
   customerId?: Guid | null; vehicleId?: Guid | null; customerName: string; customerPhone?: string | null;
   vehiclePlate: string; vehicleBrand?: string | null; vehicleModel?: string | null;
-  status: OrderStatus; source: OrderSource; reservationId?: Guid | null;
+  status: OrderStatus; stage: OrderStage; queuePosition?: number | null;
+  /** جایگاهی که خودرو همین حالا در آن است. */
+  currentBayId?: Guid | null;
+  source: OrderSource; reservationId?: Guid | null;
   subtotalRials: number; discountRials: number; walletUsedRials: number;
   loyaltyPointsUsed: number; totalRials: number; paidRials: number;
   finalPaymentMethod?: PaymentMethod | null; notes?: string | null;
   expectedDurationMinutes: number;
   startedAtUtc: DateTimeIso; completedAtUtc?: DateTimeIso | null;
+  washStartedAtUtc?: DateTimeIso | null; washCompletedAtUtc?: DateTimeIso | null;
+  /** مانده‌ی پرداخت‌نشده. تا صفر نشود خودرو تحویل نمی‌شود. */
+  outstandingRials: number;
   lines: OrderLineDto[]; payments: OrderPaymentDto[];
+  stageEvents: OrderStageEventDto[];
 };
+
+export type OrderStageEventDto = { stage: OrderStage; atUtc: DateTimeIso; note?: string | null };
 
 export type ReservationServiceDto = { serviceId: Guid; serviceName: string; priceRials: number; durationMinutes: number };
 export type ReservationDto = {
@@ -391,4 +417,145 @@ export type TeamAverages = {
 export type WorkerScorecardReport = {
   workerCount: number; totalOrders: number;
   team: TeamAverages; workers: WorkerScorecardRow[];
+};
+
+export type ArchiveWorkerRow = {
+  workerId: Guid; fullName: string; services: string;
+  minutes: number; commissionRials: number; tipRials: number;
+};
+
+export type OrderArchiveRow = {
+  orderId: Guid; number: string;
+  bayName: string; bayNumber: number;
+  vehiclePlate: string; vehicleBrand?: string | null; vehicleModel?: string | null;
+  customerName: string; customerPhone?: string | null;
+  status: OrderStatus; stage: OrderStage;
+  receivedAtUtc: DateTimeIso;
+  washStartedAtUtc?: DateTimeIso | null;
+  washCompletedAtUtc?: DateTimeIso | null;
+  readyAtUtc?: DateTimeIso | null;
+  deliveredAtUtc?: DateTimeIso | null;
+  totalMinutes?: number | null;
+  washMinutes?: number | null;
+  waitBeforeWashMinutes?: number | null;
+  expectedDurationMinutes: number;
+  totalRials: number; paidRials: number; outstandingRials: number;
+  finalPaymentMethod?: PaymentMethod | null;
+  workers: ArchiveWorkerRow[];
+  services: string;
+};
+
+// ───────────────────────────── جایگاه، شیفت، انعام ─────────────────────────────
+
+export type ShiftAssignmentDto = {
+  id: Guid; role: StaffRole;
+  workerId?: Guid | null; workerName?: string | null; workerAvatarUrl?: string | null;
+  userId?: Guid | null; userName?: string | null;
+  bayId?: Guid | null; bayName?: string | null;
+  note?: string | null;
+};
+
+export type ShiftRosterDto = {
+  id: Guid; branchId: Guid; date: string; name: string;
+  startsAt: string; endsAt: string; notes?: string | null;
+  headCount: number;
+  assignments: ShiftAssignmentDto[];
+};
+
+export type TipBalanceRow = {
+  workerId: Guid; fullName: string; avatarUrl?: string | null;
+  unsettledRials: number; unsettledOrders: number;
+  unsettledFromUtc?: DateTimeIso | null;
+  lastSettledAtUtc?: DateTimeIso | null;
+  settledThroughUtc?: DateTimeIso | null;
+  lifetimeEarnedRials: number; lifetimePaidRials: number;
+};
+
+export type TipSettlementRow = {
+  id: Guid; workerId: Guid; workerName: string;
+  periodFromUtc: DateTimeIso; periodToUtc: DateTimeIso;
+  earnedRials: number; paidRials: number;
+  settledAtUtc: DateTimeIso; note?: string | null;
+};
+
+export type TipLedger = {
+  balances: TipBalanceRow[];
+  recentSettlements: TipSettlementRow[];
+  totalUnsettledRials: number;
+};
+
+// ─────────────────────────────── گزارش‌های جدید ───────────────────────────────
+
+export type BayDowntimeRow = { reason: BayDowntimeReason; reasonLabel: string; minutes: number; occurrences: number };
+
+export type BayPerformanceRow = {
+  bayId: Guid; name: string; number: number; type: BayType; isActive: boolean;
+  carsServed: number; busyMinutes: number; downMinutes: number;
+  availableMinutes: number; utilisationPercent: number; averageMinutesPerCar: number;
+  downtime: BayDowntimeRow[];
+};
+
+export type BayPerformanceReport = {
+  windowMinutes: number; bays: BayPerformanceRow[];
+  totalCarsServed: number; totalDownMinutes: number;
+};
+
+export type StageWaitRow = { stage: OrderStage; label: string; carsCounted: number; averageMinutes: number; longestMinutes: number };
+
+export type WaitingReport = {
+  carsCounted: number; averageTotalMinutes: number;
+  stages: StageWaitRow[];
+  bottleneckStage?: OrderStage | null; bottleneckLabel?: string | null; bottleneckMinutes: number;
+};
+
+export type StaffingDayRow = {
+  date: string; headCount: number; shifts: number;
+  washers: number; dryers: number; optionStaff: number; cashiers: number;
+  carsServed: number;
+};
+
+export type StaffingReport = {
+  days: StaffingDayRow[]; averageHeadCount: number;
+  totalWorkers: number; activeWorkers: number; inactiveWorkers: number;
+};
+
+export type RevenueServiceRow = {
+  serviceId: Guid; serviceName: string; category: ServiceCategory;
+  timesSold: number; revenueRials: number; directToWorkerRials: number;
+  previousRevenueRials: number; changePercent?: number | null;
+};
+
+export type RevenueBucketRow = { label: string; date: string; revenueRials: number; orders: number };
+
+export type RevenueReport = {
+  revenueRials: number; discountRials: number; tipsRials: number; directToWorkerRials: number;
+  orders: number; averageOrderRials: number;
+  services: RevenueServiceRow[];
+  buckets: RevenueBucketRow[];
+  previousRevenueRials: number; previousOrders: number;
+  revenueChangePercent?: number | null; ordersChangePercent?: number | null;
+  previousFromDate: string; previousToDate: string;
+};
+
+export type ActivityLogRow = {
+  id: Guid; atUtc: DateTimeIso; userId?: Guid | null; userName: string;
+  action: string; actionLabel: string; entityName: string; entityId: string;
+  ipAddress?: string | null;
+};
+
+export type SegmentCustomerRow = {
+  customerId: Guid; fullName: string; phone: string; plate?: string | null;
+  lastVisitAtUtc?: DateTimeIso | null; daysSinceLastVisit: number;
+  visitCount: number; totalSpentRials: number; tier: LoyaltyTier;
+  nextReminderDueUtc?: DateTimeIso | null;
+};
+
+export type CustomerSegment = { matchCount: number; customers: SegmentCustomerRow[] };
+
+export type CustomerSegmentFilter = {
+  dueFrom?: string; dueTo?: string;
+  notVisitedInDays?: number; visitedInDays?: number;
+  minVisits?: number; maxVisits?: number;
+  minTier?: LoyaltyTier; serviceId?: Guid;
+  minTotalSpentRials?: number; take?: number;
 };

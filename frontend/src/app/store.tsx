@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback, useRef } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Bay, Order, Worker, Service, Customer, Role, Reservation, AppNotification } from './types';
 import {
   auth, authApi, branchesApi, baysApi, workersApi, servicesApi, customersApi,
@@ -8,6 +8,22 @@ import {
 import { OrderSource, PaymentMethod, BayStatus as ApiBayStatus, NotificationType, ReservationStatus as ApiResvStatus } from './api/types';
 import { fromBay, fromWorker, fromService, fromCustomer, fromOrder, fromReservation } from './api/adapters';
 import { toast } from 'sonner';
+import { normalizePlate, ensureCustomerAndVehicle } from './lib/customerRecords';
+
+/** Bays a wash can start in; matches the server's rule for the washing step. */
+const WASH_BAY_TYPES: number[] = [BayType.Wash, BayType.EngineWash, BayType.Special];
+import { OrderStage, Gender, BayType, type OrderDto } from './api/types';
+
+const STAGE_DONE: Record<OrderStage, string> = {
+  [OrderStage.Received]: 'خودرو پذیرش شد',
+  [OrderStage.QueuedForWash]: 'خودرو به صف شستشو رفت',
+  [OrderStage.Washing]: 'شستشو شروع شد',
+  [OrderStage.QueuedForDry]: 'شستشو تمام شد؛ خودرو در صف خشک است',
+  [OrderStage.Drying]: 'خشک‌کردن شروع شد',
+  [OrderStage.OptionServices]: 'خدمات آپشن شروع شد',
+  [OrderStage.ReadyForPickup]: 'خودرو آماده‌ی تحویل است',
+  [OrderStage.Delivered]: 'خودرو تحویل داده شد',
+};
 
 type AuthUser = {
   username: string; role: Role; name: string;
@@ -43,15 +59,19 @@ type CarWashContextType = {
   sendCustomerMessage: (customerId: string, message: string) => Promise<void>;
 
   createOrder: (bayId: string, plate: string, phone: string, isWalkIn: boolean, customerName?: string) => Promise<string | undefined>;
-  addLineItem: (orderId: string, serviceId: string) => Promise<void>;
-  removeLineItem: (orderId: string, lineId: string) => Promise<void>;
-  assignLineWorker: (orderId: string, lineId: string, workerId: string) => Promise<void>;
-  setLineTip: (orderId: string, lineId: string, tip: number) => Promise<void>;
-  setOrderDiscount: (orderId: string, discount: number) => Promise<void>;
-  applyFreeService: (orderId: string) => Promise<void>;
-  finishOrder: (orderId: string, method?: PaymentMethod) => Promise<void>;
-  cancelOrder: (orderId: string) => Promise<void>;
+  addLineItem: (orderId: string, serviceId: string) => Promise<boolean>;
+  removeLineItem: (orderId: string, lineId: string) => Promise<boolean>;
+  assignLineWorker: (orderId: string, lineId: string, workerId: string) => Promise<boolean>;
+  setLineTip: (orderId: string, lineId: string, tip: number) => Promise<boolean>;
+  setOrderDiscount: (orderId: string, discount: number) => Promise<boolean>;
+  applyFreeService: (orderId: string) => Promise<boolean>;
+  finishOrder: (orderId: string, method?: PaymentMethod) => Promise<boolean>;
+  cancelOrder: (orderId: string) => Promise<boolean>;
+  advanceOrderStage: (orderId: string, stage: OrderStage, bayId?: string | null) => Promise<boolean>;
   activeOrderForBay: (bayId: string) => Order | undefined;
+  orderById: (orderId: string) => Order | undefined;
+  /** Cars in progress that are not in any bay: waiting in a line, or ready to be collected. */
+  waitingOrders: Order[];
   getOrderTotals: (order: Order) => { subtotal: number; tips: number; discount: number; freeDiscount: number; total: number };
   customerByPhone: (phone: string) => Customer | undefined;
   customerForOrder: (order: Order) => Customer | undefined;
@@ -59,7 +79,8 @@ type CarWashContextType = {
 
   addReservation: (r: { customerName: string; customerPhone: string; customerPlate: string; scheduledAt: string; serviceIds: string[]; notes?: string; bayId?: string }) => Promise<string | undefined>;
   cancelReservation: (id: string) => Promise<void>;
-  arriveReservation: (id: string) => Promise<string | undefined>;
+  /** Checks a reservation in: into a free wash bay, or into the wash queue when none is free. */
+  arriveReservation: (id: string) => Promise<{ orderId: string; queuePosition?: number } | undefined>;
 
   markAllRead: () => Promise<void>;
   dismissNotification: (id: string) => Promise<void>;
@@ -292,7 +313,6 @@ export const CarWashProvider = ({ children }: { children: ReactNode }) => {
   const addCustomer: CarWashContextType['addCustomer'] = async (c) => {
     const created = await customersApi.create({ fullName: c.name, phone: c.phone });
     const mapped: Customer = fromCustomer(created);
-    if (c.plate) mapped.plate = c.plate;
     setCustomers(prev => [...prev, mapped]);
     return mapped;
   };
@@ -318,97 +338,148 @@ export const CarWashProvider = ({ children }: { children: ReactNode }) => {
 
   // ----- Orders -----
   const createOrder: CarWashContextType['createOrder'] = async (bayId, plate, phone, isWalkIn, customerName) => {
-    if (!branchId) return undefined;
-    // اول از state محلی جستجو می‌کنیم (سریع‌تر)
-    let customer = phone ? customerByPhone(phone) : undefined;
-    // اگر پیدا نشد، از API جستجو می‌کنیم — از محدودیت 200 مشتری جلوگیری می‌شه
-    if (!customer && phone) {
-      try {
-        const result = await customersApi.search({ search: phone, pageSize: 1 });
-        if (result.items.length > 0) {
-          customer = fromCustomer(result.items[0]);
-          // مشتری پیداشده رو به state محلی اضافه می‌کنیم
-          setCustomers(prev => prev.find(c => c.id === customer!.id) ? prev : [...prev, customer!]);
-        }
-      } catch { /* اگر جستجو fail شد، ادامه می‌دیم */ }
+    // A failed booking used to throw straight out of the form handler, which looked like a
+    // submit button that did nothing. It now says why and leaves the form as it was.
+    try {
+      if (!branchId) return undefined;
+      // اول از state محلی جستجو می‌کنیم (سریع‌تر)
+      let customer = phone ? customerByPhone(phone) : undefined;
+      // اگر پیدا نشد، از API جستجو می‌کنیم — از محدودیت 200 مشتری جلوگیری می‌شه
+      if (!customer && phone) {
+        try {
+          const result = await customersApi.search({ search: phone, pageSize: 1 });
+          if (result.items.length > 0) {
+            customer = fromCustomer(result.items[0]);
+            // مشتری پیداشده رو به state محلی اضافه می‌کنیم
+            setCustomers(prev => prev.find(c => c.id === customer!.id) ? prev : [...prev, customer!]);
+          }
+        } catch { /* اگر جستجو fail شد، ادامه می‌دیم */ }
+      }
+      // The name the operator typed is what gets stored. Falling back to a constant here is
+      // what put "مشتری جدید" on every new record and into the SMS that greets them.
+      const typedName = customerName?.trim();
+      if (!customer && phone) customer = await addCustomer({ name: typedName || 'مشتری', phone, plate });
+      // An existing customer who was saved under the placeholder gets their real name now.
+      else if (customer && typedName && customer.name !== typedName && customer.name === 'مشتری جدید') {
+        try {
+          await customersApi.update(customer.id, { fullName: typedName, phone: customer.phone, gender: Gender.Unknown });
+          customer = { ...customer, name: typedName };
+          setCustomers(prev => prev.map(c => (c.id === customer!.id ? customer! : c)));
+        } catch { /* naming is a convenience; never block the order on it */ }
+      }
+      // Save the car on the customer and tie the order to it. The plate used to live only in
+      // browser memory, so the next visit started with an empty plate and the car never built
+      // up a history of its own.
+      let vehicleId: string | null = null;
+      if (customer && plate) {
+        try {
+          const found = await customersApi.get(customer.id);
+          const same = found.vehicles.find(v => normalizePlate(v.plate) === normalizePlate(plate));
+          vehicleId = same?.id
+            ?? (await customersApi.addVehicle(customer.id, { plate, brand: '', model: '' })).id;
+          const known = customer;
+          setCustomers(prev => prev.map(c => (c.id === known.id ? { ...c, plate } : c)));
+        } catch { /* the order still goes through; the car can be attached later */ }
+      }
+      const created = await ordersApi.create({
+        branchId, bayId, customerId: customer?.id ?? null, vehicleId,
+        customerName: typedName || customer?.name || 'مشتری',
+        customerPhone: phone || null,
+        vehiclePlate: plate, source: isWalkIn ? OrderSource.WalkIn : OrderSource.Reservation,
+        lines: [],
+      });
+      setOrders(prev => [fromOrder(created), ...prev]);
+      setBays(prev => prev.map(b => b.id === bayId
+        ? { ...b, status: isWalkIn ? 'occupied' : 'reserved', currentOrderId: created.id }
+        : b));
+      toast.success('سفارش ثبت شد؛ خدمات را اضافه کنید');
+      return created.id;
+    } catch (error) {
+      toast.error(error instanceof ApiException ? error.message : 'ثبت سفارش انجام نشد.');
+      return undefined;
     }
-    // The name the operator typed is what gets stored. Falling back to a constant here is
-    // what put "مشتری جدید" on every new record and into the SMS that greets them.
-    const typedName = customerName?.trim();
-    if (!customer && phone) customer = await addCustomer({ name: typedName || 'مشتری', phone, plate });
-    // An existing customer who was saved under the placeholder gets their real name now.
-    else if (customer && typedName && customer.name !== typedName && customer.name === 'مشتری جدید') {
-      try {
-        await customersApi.update(customer.id, { fullName: typedName, phone: customer.phone });
-        customer = { ...customer, name: typedName };
-        setCustomers(prev => prev.map(c => (c.id === customer!.id ? customer! : c)));
-      } catch { /* naming is a convenience; never block the order on it */ }
-    }
-    const created = await ordersApi.create({
-      branchId, bayId, customerId: customer?.id ?? null,
-      customerName: typedName || customer?.name || 'مشتری',
-      customerPhone: phone || null,
-      vehiclePlate: plate, source: isWalkIn ? OrderSource.WalkIn : OrderSource.Reservation,
-      lines: [],
-    });
-    setOrders(prev => [fromOrder(created), ...prev]);
-    setBays(prev => prev.map(b => b.id === bayId
-      ? { ...b, status: isWalkIn ? 'occupied' : 'reserved', currentOrderId: created.id }
-      : b));
-    return created.id;
   };
 
-  const addLineItem = async (orderId: string, serviceId: string) => {
+  /**
+   * Runs one change to an order and tells the person what happened.
+   *
+   * Every order action used to be wired straight to a button with nothing catching a failure,
+   * so a refused request left the screen exactly as it was and looked like a dead button —
+   * only adding a service reported its errors. All of them now go through here: a failure is
+   * always shown, and the caller learns whether it worked so a dialog can stay open on error.
+   */
+  const orderAction = async <T,>(
+    orderId: string,
+    op: () => Promise<T>,
+    options: { success?: string; failure: string },
+  ): Promise<boolean> => {
     try {
-      await enqueueOrderOp(orderId, async () => {
-        const updated = await ordersApi.addLine(orderId, { serviceId, quantity: 1 });
-        setOrders(prev => prev.map(o => o.id === orderId ? fromOrder(updated) : o));
-      });
+      await enqueueOrderOp(orderId, op);
+      if (options.success) toast.success(options.success);
+      return true;
     } catch (error) {
-      // This action originates from a plain button click. Without handling the rejected
-      // promise here, a backend error (notably a 409 caused by an invalid Orders.RowVersion
-      // column) leaves the modal visually unchanged and looks like a dead button.
-      const message = error instanceof ApiException
-        ? error.message
-        : 'افزودن خدمت انجام نشد. اتصال به سرور را بررسی کنید.';
-      toast.error(message);
+      toast.error(error instanceof ApiException ? error.message : options.failure);
+      // A refusal usually means the order changed elsewhere. Show it as it now is, and the
+      // bays with it, instead of leaving the board on a step the server has moved past.
+      if (error instanceof ApiException && error.status >= 400 && error.status < 500) {
+        ordersApi.get(orderId).then(o => applyUpdated(orderId, o)).catch(() => { });
+        refreshBays();
+      }
+      return false;
     }
   };
-  const removeLineItem = (orderId: string, lineId: string) => enqueueOrderOp(orderId, async () => {
-    const updated = await ordersApi.removeLine(orderId, lineId);
+
+  const applyUpdated = (orderId: string, updated: OrderDto) =>
     setOrders(prev => prev.map(o => o.id === orderId ? fromOrder(updated) : o));
-  });
-  const assignLineWorker = (orderId: string, lineId: string, workerId: string) => enqueueOrderOp(orderId, async () => {
-    // از endpoint اختصاصی PATCH استفاده می‌کنیم — بدون حذف و بازاضافه
-    const updated = await ordersApi.assignLineWorker(orderId, lineId, workerId);
-    setOrders(prev => prev.map(o => o.id === orderId ? fromOrder(updated) : o));
-  });
+
+  /** Bays change hands when a car moves, so the board reads them again after any move. */
+  const refreshBays = async () => {
+    try {
+      const list = await baysApi.list(branchId ?? undefined, false);
+      setBays(list.map(fromBay));
+    } catch { /* the next full reload will catch up */ }
+  };
+
+  const addLineItem = (orderId: string, serviceId: string) => orderAction(orderId, async () => {
+    applyUpdated(orderId, await ordersApi.addLine(orderId, { serviceId, quantity: 1 }));
+  }, { failure: 'افزودن خدمت انجام نشد.' });
+
+  const removeLineItem = (orderId: string, lineId: string) => orderAction(orderId, async () => {
+    applyUpdated(orderId, await ordersApi.removeLine(orderId, lineId));
+  }, { failure: 'حذف خدمت انجام نشد.' });
+
+  const assignLineWorker = (orderId: string, lineId: string, workerId: string) => orderAction(orderId, async () => {
+    applyUpdated(orderId, await ordersApi.assignLineWorker(orderId, lineId, workerId));
+  }, { failure: 'تعیین پرسنل انجام نشد.' });
+
   const setLineTip = async (orderId: string, lineId: string, tip: number) => {
     const normalizedTip = Math.max(0, tip);
-    // ذخیره optimistic در UI
+    const previous = orders.find(o => o.id === orderId)?.lineItems.find(l => l.id === lineId)?.tipAmount ?? 0;
     setOrders(prev => prev.map(o => o.id === orderId
       ? { ...o, lineItems: o.lineItems.map(l => l.id === lineId ? { ...l, tipAmount: normalizedTip } : l) }
       : o));
-    // ارسال به backend (سریالی، تا با سایر تغییرات همان سفارش تداخل نکند)
-    try {
-      const updated = await enqueueOrderOp(orderId, () => ordersApi.setLineTip(orderId, lineId, normalizedTip));
-      setOrders(prev => prev.map(o => o.id === orderId ? fromOrder(updated) : o));
-    } catch {
-      // اگر backend خطا داد، state رو revert می‌کنیم
-      setOrders(prev => prev.map(o => o.id === orderId
-        ? { ...o, lineItems: o.lineItems.map(l => l.id === lineId ? { ...l, tipAmount: 0 } : l) }
-        : o));
-    }
+    const ok = await orderAction(orderId, async () => {
+      applyUpdated(orderId, await ordersApi.setLineTip(orderId, lineId, normalizedTip));
+    }, { failure: 'ثبت انعام انجام نشد.' });
+    // Put back what was there before, not zero: a failed edit must not erase a recorded tip.
+    if (!ok) setOrders(prev => prev.map(o => o.id === orderId
+      ? { ...o, lineItems: o.lineItems.map(l => l.id === lineId ? { ...l, tipAmount: previous } : l) }
+      : o));
+    return ok;
   };
-  const setOrderDiscount = (orderId: string, discount: number) => enqueueOrderOp(orderId, async () => {
-    const updated = await ordersApi.applyDiscount(orderId, Math.max(0, discount));
-    setOrders(prev => prev.map(o => o.id === orderId ? fromOrder(updated) : o));
-  });
-  const applyFreeService = (orderId: string) => enqueueOrderOp(orderId, async () => {
-    // ارسال به backend — backend بررسی واجد شرط بودن مشتری رو هم انجام می‌ده
-    const updated = await ordersApi.applyLoyaltyFree(orderId);
-    setOrders(prev => prev.map(o => o.id === orderId ? fromOrder(updated) : o));
-  });
+
+  const setOrderDiscount = (orderId: string, discount: number) => orderAction(orderId, async () => {
+    applyUpdated(orderId, await ordersApi.applyDiscount(orderId, Math.max(0, discount)));
+  }, { failure: 'ثبت تخفیف انجام نشد.' });
+
+  const applyFreeService = (orderId: string) => orderAction(orderId, async () => {
+    applyUpdated(orderId, await ordersApi.applyLoyaltyFree(orderId));
+  }, { success: 'جایزه‌ی وفاداری اعمال شد', failure: 'اعمال جایزه انجام نشد.' });
+
+  const advanceOrderStage = (orderId: string, stage: OrderStage, bayId?: string | null) => orderAction(orderId, async () => {
+    applyUpdated(orderId, await ordersApi.advanceStage(orderId, stage, bayId ?? null));
+    await refreshBays();
+  }, { success: STAGE_DONE[stage], failure: 'تغییر مرحله انجام نشد.' });
 
   const getOrderTotals = (o: Order) => {
     const subtotal = o.lineItems.reduce((s, l) => s + l.price, 0);
@@ -419,23 +490,30 @@ export const CarWashProvider = ({ children }: { children: ReactNode }) => {
     return { subtotal, tips, discount, freeDiscount, total };
   };
 
-  const finishOrder = (orderId: string, method: PaymentMethod = PaymentMethod.Cash) => enqueueOrderOp(orderId, async () => {
-    // method: Cash=0, Card=1, Online=2, Wallet=3 — پیش‌فرض نقد. صف تضمین می‌کند تسویه بعد از آخرین تغییر انجام شود.
-    const updated = await ordersApi.complete(orderId, method);
-    setOrders(prev => prev.map(o => o.id === orderId ? fromOrder(updated) : o));
-    setBays(prev => prev.map(b => b.currentOrderId === orderId ? { ...b, status: 'empty', currentOrderId: undefined } : b));
-  });
-  const cancelOrder = (orderId: string) => enqueueOrderOp(orderId, async () => {
-    const updated = await ordersApi.cancel(orderId);
-    setOrders(prev => prev.map(o => o.id === orderId ? fromOrder(updated) : o));
-    setBays(prev => prev.map(b => b.currentOrderId === orderId ? { ...b, status: 'empty', currentOrderId: undefined } : b));
-  });
+  const finishOrder = (orderId: string, method: PaymentMethod = PaymentMethod.Cash) => orderAction(orderId, async () => {
+    // The queue makes sure settling happens after every change already made to this order.
+    applyUpdated(orderId, await ordersApi.complete(orderId, method));
+    await refreshBays();
+  }, { success: 'پرداخت ثبت و سفارش تحویل شد', failure: 'ثبت پرداخت انجام نشد.' });
+
+  const cancelOrder = (orderId: string) => orderAction(orderId, async () => {
+    applyUpdated(orderId, await ordersApi.cancel(orderId));
+    await refreshBays();
+  }, { success: 'سفارش لغو شد', failure: 'لغو سفارش انجام نشد.' });
 
   const expectedDurationFor = (order: Order) =>
     order.lineItems.reduce((sum, l) => {
       const s = services.find(x => x.id === l.serviceId);
       return sum + (s?.durationMinutes ?? 30);
     }, 0);
+
+  const orderById = (orderId: string) => orders.find(o => o.id === orderId);
+
+  const waitingOrders = useMemo(
+    () => orders
+      .filter(o => o.status === 'in_progress' && !o.currentBayId)
+      .sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
+    [orders]);
 
   const activeOrderForBay = (bayId: string) => {
     const bay = bays.find(b => b.id === bayId);
@@ -469,20 +547,30 @@ export const CarWashProvider = ({ children }: { children: ReactNode }) => {
       setReservations(prev => prev.map(x => x.id === id ? { ...x, status: 'confirmed' } : x));
     }
 
-    const targetBay = (r.bayId && bays.find(b => b.id === r.bayId && b.status === 'empty')) || bays.find(b => b.status === 'empty');
-    if (!targetBay || !branchId) return undefined;
-    let customer = customerByPhone(r.customerPhone);
-    if (!customer) customer = await addCustomer({ name: r.customerName, phone: r.customerPhone, plate: r.customerPlate });
+    // The bay the booking asked for if it is free, otherwise a free bay a wash can start in.
+    // "Any free bay" used to put an arriving car into a drying bay, from which its first step
+    // — washing — could not happen without moving it again.
+    const washable = (b: Bay) => b.kind === undefined || WASH_BAY_TYPES.includes(b.kind);
+    const targetBay = (r.bayId && bays.find(b => b.id === r.bayId && b.status === 'empty'))
+      || bays.find(b => b.status === 'empty' && washable(b));
+    if (!branchId) return undefined;
+    // No wash bay free: the car still checks in, and waits in the wash queue with its place in
+    // line. Reservations are the cars that queue; a car booked onto a bay never does.
+    // Same customer-and-car record as booking at a bay or through the new-order form.
+    let ensured: Awaited<ReturnType<typeof ensureCustomerAndVehicle>> = { customer: null, vehicleId: null };
+    try {
+      ensured = await ensureCustomerAndVehicle({ phone: r.customerPhone, name: r.customerName, plate: r.customerPlate });
+    } catch { /* the order still goes through; the car can be attached later */ }
     const created = await ordersApi.create({
-      branchId, bayId: targetBay.id, customerId: customer.id,
-      customerName: customer.name, customerPhone: customer.phone,
+      branchId, bayId: targetBay?.id ?? null, customerId: ensured.customer?.id ?? null, vehicleId: ensured.vehicleId,
+      customerName: ensured.customer?.fullName ?? r.customerName, customerPhone: r.customerPhone,
       vehiclePlate: r.customerPlate, source: OrderSource.Reservation, reservationId: r.id,
       lines: r.serviceIds.map(serviceId => ({ serviceId, quantity: 1 })),
     });
     setOrders(prev => [fromOrder(created), ...prev]);
-    setBays(prev => prev.map(b => b.id === targetBay.id ? { ...b, status: 'occupied', currentOrderId: created.id } : b));
-    setReservations(prev => prev.map(x => x.id === id ? { ...x, status: 'arrived', bayId: targetBay.id } : x));
-    return created.id;
+    if (targetBay) setBays(prev => prev.map(b => b.id === targetBay.id ? { ...b, status: 'occupied', currentOrderId: created.id } : b));
+    setReservations(prev => prev.map(x => x.id === id ? { ...x, status: 'arrived', bayId: targetBay?.id } : x));
+    return { orderId: created.id, queuePosition: created.queuePosition ?? undefined };
   };
 
   // ----- Notifications -----
@@ -504,7 +592,7 @@ export const CarWashProvider = ({ children }: { children: ReactNode }) => {
       addWorker, removeWorker, addService, removeService, addCustomer, sendCustomerMessage,
       createOrder, addLineItem, removeLineItem, assignLineWorker, setLineTip,
       setOrderDiscount, applyFreeService, finishOrder, cancelOrder,
-      activeOrderForBay, getOrderTotals, customerByPhone, customerForOrder, loyaltyProgress,
+      activeOrderForBay, orderById, waitingOrders, advanceOrderStage, getOrderTotals, customerByPhone, customerForOrder, loyaltyProgress,
       addReservation, cancelReservation, arriveReservation,
       markAllRead, dismissNotification, expectedDurationFor,
     }}>

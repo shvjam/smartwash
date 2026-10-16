@@ -44,7 +44,7 @@ export const ReservationDetailView: React.FC = () => {
     finally { setBusy(null); }
   };
 
-  if (loading) return <div className="min-h-[40vh] grid place-items-center"><Loader2 className="animate-spin text-red-600" /></div>;
+  if (loading) return <div className="min-h-[40vh] grid place-items-center"><Loader2 className="animate-spin text-brand-600" /></div>;
   if (!res) return <div className="p-6 text-sm text-gray-500">{err ?? 'رزرو یافت نشد.'}</div>;
 
   const status = STATUS_LABEL[res.status];
@@ -75,7 +75,7 @@ export const ReservationDetailView: React.FC = () => {
 
       <div className="grid lg:grid-cols-3 gap-5">
         <Card className="lg:col-span-2">
-          <h3 className="font-extrabold text-gray-900 mb-3 flex items-center gap-2"><Sparkles size={16} className="text-red-600" />خدمات رزرو</h3>
+          <h3 className="font-extrabold text-gray-900 mb-3 flex items-center gap-2"><Sparkles size={16} className="text-brand-600" />خدمات رزرو</h3>
           {res.services.length === 0 ? (
             <div className="text-sm text-gray-500 py-6 text-center">خدمتی ثبت نشده</div>
           ) : (
@@ -106,7 +106,7 @@ export const ReservationDetailView: React.FC = () => {
             <Row label="مشتری" value={res.customerName} />
             <Row label="تلفن" value={res.customerPhone} mono />
             {res.customerId && (
-              <Link to={`/app/customers/${res.customerId}`} className="text-xs text-red-600 hover:underline mt-1 inline-block">پروفایل مشتری ←</Link>
+              <Link to={`/app/customers/${res.customerId}`} className="text-xs text-brand-600 hover:underline mt-1 inline-block">پروفایل مشتری ←</Link>
             )}
             <div className="my-3 border-t border-dashed" />
             <Row label="پلاک" value={res.vehiclePlate} mono />

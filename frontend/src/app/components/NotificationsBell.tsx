@@ -43,14 +43,14 @@ export const NotificationsBell = () => {
         onClick={handleToggle}
         className={clsx(
           'relative p-2.5 rounded-2xl transition-colors',
-          unreadCount > 0 ? 'bg-red-50 text-red-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+          unreadCount > 0 ? 'bg-brand-50 text-brand-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
         )}
       >
         <Bell size={18} />
         {unreadCount > 0 && (
           <motion.span
             initial={{ scale: 0 }} animate={{ scale: 1 }}
-            className="absolute -top-1 -left-1 min-w-[18px] h-[18px] px-1 bg-red-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-md"
+            className="absolute -top-1 -left-1 min-w-[18px] h-[18px] px-1 bg-brand-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-md"
           >
             {unreadCount}
           </motion.span>
@@ -72,7 +72,7 @@ export const NotificationsBell = () => {
                 <div className="text-[11px] text-gray-500">{notifications.length} مورد</div>
               </div>
               {notifications.length > 0 && (
-                <button onClick={markAllRead} className="text-[11px] text-red-600 font-bold flex items-center gap-1">
+                <button onClick={markAllRead} className="text-[11px] text-brand-600 font-bold flex items-center gap-1">
                   <Check size={12} /> خواندن همه
                 </button>
               )}
@@ -88,7 +88,7 @@ export const NotificationsBell = () => {
                 notifications.map(n => (
                   <div key={n.id} className={clsx(
                     'p-4 border-b border-gray-50 flex items-start gap-3 group hover:bg-gray-50/50',
-                    !n.read && 'bg-red-50/30'
+                    !n.read && 'bg-brand-50/30'
                   )}>
                     <div className={clsx('w-9 h-9 rounded-2xl flex items-center justify-center flex-shrink-0', bgFor(n.type))}>
                       {iconFor(n.type)}
@@ -102,7 +102,7 @@ export const NotificationsBell = () => {
                     </div>
                     <button
                       onClick={() => dismissNotification(n.id)}
-                      className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 p-1 transition-all"
+                      className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-brand-500 p-1 transition-all"
                     >
                       <X size={14} />
                     </button>

@@ -34,6 +34,7 @@ export const fromBay = (b: BayDto): Bay => ({
   id: b.id, name: b.name,
   status: bayStatusMap[b.status] ?? 'empty',
   type: 'standard',
+  kind: b.type,
   currentOrderId: b.currentOrderId ?? undefined,
 });
 
@@ -66,7 +67,7 @@ const orderStatusMap: Record<OrderStatus, Order['status']> = {
 };
 
 export const fromOrder = (o: OrderDto): Order => ({
-  id: o.id, bayId: o.bayId,
+  id: o.id, bayId: o.bayId ?? undefined,
   customerId: o.customerId ?? undefined,
   customerPlate: o.vehiclePlate,
   customerPhone: o.customerPhone ?? undefined,
@@ -77,6 +78,10 @@ export const fromOrder = (o: OrderDto): Order => ({
     workerId: l.workerId ?? undefined,
   })),
   status: orderStatusMap[o.status] ?? 'in_progress',
+  stage: o.stage,
+  queuePosition: o.queuePosition ?? undefined,
+  currentBayId: o.currentBayId ?? undefined,
+  outstanding: o.outstandingRials ?? Math.max(0, (o.totalRials ?? 0) - (o.paidRials ?? 0)),
   createdAt: o.startedAtUtc,
   completedAt: o.completedAtUtc ?? undefined,
   isWalkIn: o.reservationId == null,

@@ -1,4 +1,9 @@
+import { useEffect } from 'react';
 import { isRouteErrorResponse, useRouteError } from 'react-router';
+
+/** A page broken by something rearranging the DOM (an extension), not by our data. */
+const isDomMismatch = (e: unknown) =>
+  e instanceof Error && e.name === 'NotFoundError' && /insertBefore|removeChild/.test(e.message);
 
 /**
  * Keeps a route failure from falling back to React Router's development error
@@ -7,6 +12,19 @@ import { isRouteErrorResponse, useRouteError } from 'react-router';
  */
 export function RouteErrorBoundary() {
   const error = useRouteError();
+  const domMismatch = isDomMismatch(error);
+
+  // Nothing was lost — the server already has the change — so simply draw the page again,
+  // once. The guard stops a loop if the page keeps breaking.
+  useEffect(() => {
+    if (!domMismatch) return;
+    try {
+      const last = Number(sessionStorage.getItem('sw-dom-reload') ?? 0);
+      if (Date.now() - last < 15_000) return;
+      sessionStorage.setItem('sw-dom-reload', String(Date.now()));
+    } catch { /* storage unavailable: reload anyway */ }
+    window.location.reload();
+  }, [domMismatch]);
   const isResponse = isRouteErrorResponse(error);
   const title = isResponse && error.status === 404 ? 'این صفحه پیدا نشد' : 'نمایش این صفحه با مشکل روبه‌رو شد';
   const detail = isResponse

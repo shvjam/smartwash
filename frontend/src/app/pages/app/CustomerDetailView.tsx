@@ -22,7 +22,7 @@ const WTX_TYPE: Record<number, string> = { 0: 'شارژ', 1: 'برداشت', 2: 
 const LTX_TYPE: Record<number, string> = { 0: 'کسب', 1: 'استفاده', 2: 'انقضا', 3: 'تنظیم' };
 
 const toFa = (v: number | string) => String(v).replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[+d]);
-const formatRials = (n: number) => toFa(n.toLocaleString('fa-IR'));
+const formatRials = (n: number) => toFa(Math.round(n / 10).toLocaleString('fa-IR'));
 const formatDate = (iso: string) => {
   try {
     return toFa(new Intl.DateTimeFormat('fa-IR-u-ca-persian', {
@@ -48,17 +48,17 @@ export const CustomerDetailView: React.FC = () => {
   };
   useEffect(() => { reload(); }, [id]);
 
-  if (loading) return <div className="min-h-[40vh] grid place-items-center"><Loader2 className="animate-spin text-red-600" /></div>;
+  if (loading) return <div className="min-h-[40vh] grid place-items-center"><Loader2 className="animate-spin text-brand-600" /></div>;
   if (!customer) return (
     <div className="max-w-4xl mx-auto pb-10">
       <Card><EmptyState icon={Phone} title="مشتری یافت نشد" hint={err ?? undefined}
-        action={<button onClick={() => navigate('/app/crm')} className="px-4 py-2 rounded-xl bg-red-600 text-white text-sm font-bold">بازگشت</button>} /></Card>
+        action={<button onClick={() => navigate('/app/crm')} className="px-4 py-2 rounded-xl bg-brand-600 text-white text-sm font-bold">بازگشت</button>} /></Card>
     </div>
   );
 
   return (
     <div className="max-w-5xl mx-auto pb-10">
-      <Link to="/app/crm" className="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-red-600 mb-3">
+      <Link to="/app/crm" className="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-brand-600 mb-3">
         <ArrowRight size={14} />بازگشت به باشگاه مشتریان
       </Link>
       <PageHeader title={customer.fullName} subtitle={customer.phone}
@@ -69,10 +69,10 @@ export const CustomerDetailView: React.FC = () => {
       {err && <div className="mb-4 rounded-md border border-destructive/40 bg-destructive/10 text-destructive p-3">{err}</div>}
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-        <StatCard label="کیف پول" value={`${formatRials(customer.walletBalanceRials)} ﷼`} accent="emerald" />
+        <StatCard label="کیف پول" value={`${formatRials(customer.walletBalanceRials)} تومان`} accent="emerald" />
         <StatCard label="امتیاز وفاداری" value={toFa(customer.loyaltyPoints)} accent="violet" />
         <StatCard label="تعداد بازدید" value={toFa(customer.totalVisits)} accent="sky" />
-        <StatCard label="مجموع خرید" value={`${formatRials(customer.lifetimeSpendRials)} ﷼`} accent="amber" />
+        <StatCard label="مجموع خرید" value={`${formatRials(customer.lifetimeSpendRials)} تومان`} accent="amber" />
       </div>
 
       <div className="flex gap-1 mb-4 border-b border-gray-200 overflow-x-auto">
@@ -95,7 +95,7 @@ export const CustomerDetailView: React.FC = () => {
 const TabBtn: React.FC<{ active: boolean; onClick: () => void; children: React.ReactNode }> = ({ active, onClick, children }) => (
   <button onClick={onClick}
     className={`px-4 py-2.5 text-sm font-bold whitespace-nowrap border-b-2 transition-colors ${
-      active ? 'border-red-600 text-red-600' : 'border-transparent text-gray-500 hover:text-gray-900'}`}>
+      active ? 'border-brand-600 text-brand-600' : 'border-transparent text-gray-500 hover:text-gray-900'}`}>
     {children}
   </button>
 );
@@ -151,7 +151,7 @@ const OverviewTab: React.FC<{ customer: CustomerDto; onChanged: () => void }> = 
               <span className="text-xs text-gray-500 mb-1 block">{f.label}</span>
               <input dir={f.dir} required={f.required} value={(form as any)[f.key]}
                 onChange={e => setForm({ ...form, [f.key]: e.target.value })}
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500" />
+                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500" />
             </label>
           ))}
         </div>
@@ -171,7 +171,7 @@ const OverviewTab: React.FC<{ customer: CustomerDto; onChanged: () => void }> = 
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-bold text-sm text-gray-700">اطلاعات پایه</h3>
         <button onClick={() => setEditing(true)}
-          className="text-xs flex items-center gap-1 text-gray-400 hover:text-red-600 hover:bg-red-50 px-2 py-1 rounded-lg transition-colors">
+          className="text-xs flex items-center gap-1 text-gray-400 hover:text-brand-600 hover:bg-brand-50 px-2 py-1 rounded-lg transition-colors">
           <Pencil size={12} />ویرایش
         </button>
       </div>
@@ -227,7 +227,7 @@ const VehiclesTab: React.FC<{ customer: CustomerDto; onChanged: () => void }> = 
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-extrabold text-gray-900 flex items-center gap-2"><Car size={18} />خودروها</h3>
         <button onClick={() => setForm({ plate: '', brand: '', model: '', color: '', year: '' })}
-          className="px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold flex items-center gap-1.5">
+          className="px-3 py-1.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold flex items-center gap-1.5">
           <Plus size={14} />خودرو جدید
         </button>
       </div>
@@ -238,7 +238,7 @@ const VehiclesTab: React.FC<{ customer: CustomerDto; onChanged: () => void }> = 
         <div className="grid sm:grid-cols-2 gap-3">
           {customer.vehicles.map(v => (
             <div key={v.id} className="border border-gray-100 rounded-2xl p-3 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-red-50 text-red-600 grid place-items-center"><Car size={18} /></div>
+              <div className="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 grid place-items-center"><Car size={18} /></div>
               <div className="flex-1 min-w-0">
                 <div className="font-bold text-gray-900 truncate">{v.plate}</div>
                 <div className="text-xs text-gray-500 truncate">{v.brand} {v.model}{v.color ? ` · ${v.color}` : ''}{v.year ? ` · ${toFa(v.year)}` : ''}</div>
@@ -263,7 +263,7 @@ const VehiclesTab: React.FC<{ customer: CustomerDto; onChanged: () => void }> = 
             </div>
             <div className="flex gap-2 pt-2">
               <button type="button" onClick={() => setForm(null)} className="flex-1 py-2.5 rounded-xl border text-sm font-bold">انصراف</button>
-              <button type="submit" disabled={busy} className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-bold disabled:opacity-50">
+              <button type="submit" disabled={busy} className="flex-1 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-sm font-bold disabled:opacity-50">
                 {busy ? <Loader2 className="inline animate-spin" size={16} /> : 'افزودن'}
               </button>
             </div>
@@ -285,7 +285,7 @@ const OrdersTab: React.FC<{ customerId: string }> = ({ customerId }) => {
     })();
   }, [customerId]);
 
-  if (loading) return <Card><div className="grid place-items-center py-8"><Loader2 className="animate-spin text-red-600" /></div></Card>;
+  if (loading) return <Card><div className="grid place-items-center py-8"><Loader2 className="animate-spin text-brand-600" /></div></Card>;
   if (items.length === 0) return <Card><EmptyState icon={Receipt} title="سفارشی برای این مشتری ثبت نشده" /></Card>;
 
   return (
@@ -306,7 +306,7 @@ const OrdersTab: React.FC<{ customerId: string }> = ({ customerId }) => {
               <td className="px-4 py-3 font-mono">{o.number}</td>
               <td className="px-4 py-3">{o.vehiclePlate}</td>
               <td className="px-4 py-3">{formatDate(o.createdAtUtc)}</td>
-              <td className="px-4 py-3">{formatRials(o.totalRials)} ﷼</td>
+              <td className="px-4 py-3">{formatRials(o.totalRials)} تومان</td>
               <td className="px-4 py-3"><span className="px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 text-[10px] font-bold">{ORDER_STATUS[o.status] ?? '—'}</span></td>
             </tr>
           ))}
@@ -334,7 +334,7 @@ const WalletTab: React.FC<{ customer: CustomerDto; onChanged: () => void }> = ({
     if (!Number.isFinite(v) || v <= 0) { setErr('مبلغ نامعتبر'); return; }
     setBusy(true); setErr(null);
     try {
-      await customersApi.adjustWallet(customer.id, sign * v, desc.trim() || null);
+      await customersApi.adjustWallet(customer.id, sign * v * 10, desc.trim() || null);
       setAmount(''); setDesc(''); await load(); onChanged();
     } catch (e) { setErr(e instanceof ApiException ? e.message : 'خطا'); }
     finally { setBusy(false); }
@@ -347,7 +347,7 @@ const WalletTab: React.FC<{ customer: CustomerDto; onChanged: () => void }> = ({
         {err && <div className="mb-2 rounded-md bg-destructive/10 text-destructive p-2 text-xs">{err}</div>}
         <div className="flex gap-2 flex-wrap items-end">
           <div className="flex-1 min-w-[140px]">
-            <label className="block text-xs text-gray-600 mb-1">مبلغ (ریال)</label>
+            <label className="block text-xs text-gray-600 mb-1">مبلغ (تومان)</label>
             <input value={amount} onChange={e => setAmount(e.target.value)} type="number" min={0}
               className="w-full rounded-md border bg-background px-3 py-2" />
           </div>
@@ -368,7 +368,7 @@ const WalletTab: React.FC<{ customer: CustomerDto; onChanged: () => void }> = ({
       </Card>
 
       <Card className="p-0 overflow-hidden">
-        {loading ? <div className="grid place-items-center py-8"><Loader2 className="animate-spin text-red-600" /></div>
+        {loading ? <div className="grid place-items-center py-8"><Loader2 className="animate-spin text-brand-600" /></div>
           : items.length === 0 ? <div className="text-center text-sm text-gray-500 py-8">تراکنشی ثبت نشده.</div>
           : (
           <table className="w-full text-right text-sm">
@@ -453,7 +453,7 @@ const LoyaltyTab: React.FC<{ customer: CustomerDto; onChanged: () => void }> = (
       </Card>
 
       <Card className="p-0 overflow-hidden">
-        {loading ? <div className="grid place-items-center py-8"><Loader2 className="animate-spin text-red-600" /></div>
+        {loading ? <div className="grid place-items-center py-8"><Loader2 className="animate-spin text-brand-600" /></div>
           : items.length === 0 ? <div className="text-center text-sm text-gray-500 py-8">تراکنشی ثبت نشده.</div>
           : (
           <table className="w-full text-right text-sm">

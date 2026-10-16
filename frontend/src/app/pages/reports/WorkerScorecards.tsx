@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Users, ChevronDown, ChevronUp, Info } from 'lucide-react';
 import { reportsApi, type WorkerScorecardReport, type WorkerScorecardRow } from '../../api';
 import { Card } from '../../components/app/PageHeader';
+import { WorkerAvatar } from '../../components/WorkerAvatar';
+import { useCarWash } from '../../store';
 
 const fa = (n: number) => n.toLocaleString('fa-IR');
 const money = (rials: number) => fa(Math.round(rials / 10)); // نمایش به تومان
@@ -24,7 +26,7 @@ const Delta = ({ value, average, higherIsBetter = true }: {
   if (d === null) return <span className="text-[10px] text-gray-400">هم‌تراز میانگین</span>;
   const good = higherIsBetter ? d > 0 : d < 0;
   return (
-    <span className={`text-[10px] font-bold ${good ? 'text-emerald-600' : 'text-red-600'}`}>
+    <span className={`text-[10px] font-bold ${good ? 'text-emerald-600' : 'text-brand-600'}`}>
       {d > 0 ? '+' : '−'}{fa(Math.abs(d))}٪ نسبت به میانگین
     </span>
   );
@@ -65,6 +67,11 @@ const diagnose = (w: WorkerScorecardRow, team: WorkerScorecardReport['team']): s
 };
 
 export const WorkerScorecards = ({ fromDate, toDate }: { fromDate: string; toDate: string }) => {
+  // The report is built from order lines and carries no photo, so it is matched back to the
+  // staff list the app already holds rather than widening the API for one image.
+  const { workers } = useCarWash();
+  const photoOf = (id: string) => workers.find(w => w.id === id)?.avatar;
+
   const [data, setData] = useState<WorkerScorecardReport | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
@@ -119,9 +126,12 @@ export const WorkerScorecards = ({ fromDate, toDate }: { fromDate: string; toDat
             <Card key={w.workerId} className="overflow-hidden p-0">
               <div className="p-4">
                 <div className="mb-3 flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="truncate font-bold text-gray-900">{w.fullName}</div>
-                    <div className="text-[11px] text-gray-500">{w.role || '—'}</div>
+                  <div className="flex min-w-0 items-center gap-2.5">
+                    <WorkerAvatar src={photoOf(w.workerId)} name={w.fullName} size={38} rounded="xl" />
+                    <div className="min-w-0">
+                      <div className="truncate font-bold text-gray-900">{w.fullName}</div>
+                      <div className="text-[11px] text-gray-500">{w.role || '—'}</div>
+                    </div>
                   </div>
                   <button onClick={() => setOpen(expanded ? null : w.workerId)}
                     className="flex flex-shrink-0 items-center gap-1 rounded-xl bg-gray-50 px-3 py-1.5 text-[11px] font-bold text-gray-600 hover:bg-gray-100">

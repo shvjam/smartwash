@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, Outlet, useNavigate, useLocation, Navigate } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
-import { Car, Users, UserSquare2, LineChart, LogOut, Menu, Sparkles, CalendarClock, Building2, Clock, Receipt, Megaphone, Settings, CreditCard, User as UserIcon, Shield, ShoppingBag, Bell as BellIcon, BellRing, Sun, Moon, UserCog, LifeBuoy, MessageSquare } from 'lucide-react';
+import { Car, Users, UserSquare2, LineChart, LogOut, Menu, Sparkles, CalendarClock, Building2, Clock, Receipt, Megaphone, Settings, CreditCard, User as UserIcon, Shield, ShoppingBag, Bell as BellIcon, BellRing, Sun, Moon, UserCog, LifeBuoy, MessageSquare, CalendarDays, Coins } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useCarWash } from '../store';
 import { clsx } from 'clsx';
@@ -19,6 +19,8 @@ const navItems: Array<{ name: string; icon: any; path: string; roles: string[]; 
   { name: 'باشگاه مشتریان',   icon: Users,        path: '/app/crm',            roles: ['admin', 'user'], permission: 'tenant.customers.*' },
   { name: 'شیفت‌ها',          icon: Clock,        path: '/app/shifts',         roles: ['admin', 'user'], permission: 'tenant.shifts.*' },
   { name: 'پرسنل',            icon: UserSquare2,  path: '/app/workers',        roles: ['admin'], permission: 'tenant.workers.*' },
+  { name: 'برنامه شیفت',      icon: CalendarDays, path: '/app/rosters',        roles: ['admin'], permission: 'tenant.shifts.*' },
+  { name: 'تسویه انعام',      icon: Coins,        path: '/app/tips',           roles: ['admin'], permission: 'tenant.workers.*' },
   { name: 'خدمات',            icon: Sparkles,     path: '/app/services',       roles: ['admin'], permission: 'tenant.services.*' },
   { name: 'شعب',              icon: Building2,    path: '/app/branches',       roles: ['admin'], permission: 'tenant.branches.*' },
   { name: 'کاربران',          icon: UserCog,      path: '/app/users',          roles: ['admin'], permission: 'tenant.users.*' },
@@ -63,7 +65,7 @@ const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
   return (
     <>
       <div className="p-6 flex items-center gap-3">
-        <Logo size={56} />
+        <Logo size={56} brand="tenant" />
         <div className="flex-1 min-w-0">
           <div className="font-extrabold text-lg text-gray-900 dark:text-gray-100 tracking-tight leading-tight">{BRAND_NAME}</div>
           {/* Branch selector — فقط اگر بیشتر از یک شعبه وجود داشته باشد */}
@@ -94,7 +96,7 @@ const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
             className={({ isActive }) => clsx(
               'flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300',
               isActive
-                ? 'bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 font-bold'
+                ? 'bg-brand-50 dark:bg-brand-950/40 text-brand-600 dark:text-brand-400 font-bold'
                 : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100'
             )}
           >
@@ -108,7 +110,7 @@ const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
         <NavLink to="/app/profile" onClick={onNavigate}
           className={({ isActive }) => clsx(
             'flex items-center gap-3 px-4 py-2.5 rounded-2xl transition-colors text-sm',
-            isActive ? 'bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 font-bold' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100'
+            isActive ? 'bg-brand-50 dark:bg-brand-950/40 text-brand-600 dark:text-brand-400 font-bold' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100'
           )}>
           <UserIcon size={18} />پروفایل من
         </NavLink>
@@ -141,7 +143,7 @@ const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
         )}
         <button
           onClick={() => { logout(); navigate('/login', { replace: true }); }}
-          className="flex items-center gap-3 px-4 py-3 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 w-full rounded-2xl transition-colors"
+          className="flex items-center gap-3 px-4 py-3 text-gray-500 dark:text-gray-400 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-brand-50 dark:hover:bg-brand-950/40 w-full rounded-2xl transition-colors"
         >
           <LogOut size={20} />
           <span className="text-sm">خروج از سیستم</span>
@@ -211,7 +213,7 @@ export const Layout = () => {
       <div className="flex-1 flex flex-col overflow-hidden">
         <header className="lg:hidden bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-100 dark:border-gray-800 px-4 py-3 flex items-center justify-between sticky top-0 z-10">
           <div className="flex items-center gap-2">
-            <Logo size={44} />
+            <Logo size={44} brand="tenant" />
             <span className="font-extrabold text-gray-900 dark:text-gray-100">{BRAND_NAME}</span>
           </div>
           <div className="flex items-center gap-2">

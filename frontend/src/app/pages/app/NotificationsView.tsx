@@ -73,15 +73,15 @@ export const NotificationsView: React.FC = () => {
 
       <div className="flex items-center gap-2 mb-4">
         <button onClick={() => setUnreadOnly(false)}
-          className={`px-3 py-1.5 rounded-full text-xs font-bold ${!unreadOnly ? 'bg-red-600 text-white' : 'bg-gray-100 text-gray-600'}`}>همه</button>
+          className={`px-3 py-1.5 rounded-full text-xs font-bold ${!unreadOnly ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-600'}`}>همه</button>
         <button onClick={() => setUnreadOnly(true)}
-          className={`px-3 py-1.5 rounded-full text-xs font-bold ${unreadOnly ? 'bg-red-600 text-white' : 'bg-gray-100 text-gray-600'}`}>فقط خوانده‌نشده</button>
+          className={`px-3 py-1.5 rounded-full text-xs font-bold ${unreadOnly ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-600'}`}>فقط خوانده‌نشده</button>
       </div>
 
       {err && <div className="mb-4 rounded-md border border-rose-200 bg-rose-50 text-rose-700 p-3 text-sm">{err}</div>}
 
       {loading ? (
-        <div className="min-h-[30vh] grid place-items-center"><Loader2 className="animate-spin text-red-600" /></div>
+        <div className="min-h-[30vh] grid place-items-center"><Loader2 className="animate-spin text-brand-600" /></div>
       ) : items.length === 0 ? (
         <Card><EmptyState icon={Bell} title="اعلانی برای نمایش نیست" hint="پس از فعالیت سیستم، اعلان‌ها اینجا ظاهر می‌شوند." /></Card>
       ) : (
@@ -92,7 +92,7 @@ export const NotificationsView: React.FC = () => {
               const Icon = meta.Icon;
               return (
                 <div key={n.id}
-                  className={`p-4 flex items-start gap-3 ${!n.isRead ? 'bg-red-50/30' : ''}`}>
+                  className={`p-4 flex items-start gap-3 ${!n.isRead ? 'bg-brand-50/30' : ''}`}>
                   <div className={`w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0 ${meta.cls}`}>
                     <Icon size={18} />
                   </div>
@@ -100,7 +100,7 @@ export const NotificationsView: React.FC = () => {
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-bold text-sm text-gray-900">{n.title}</span>
                       <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${meta.cls}`}>{meta.label}</span>
-                      {!n.isRead && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-700">جدید</span>}
+                      {!n.isRead && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-brand-100 text-brand-700">جدید</span>}
                     </div>
                     <div className="text-xs text-gray-600 mt-1 leading-relaxed">{n.body}</div>
                     <div className="text-[10px] text-gray-400 mt-1.5 font-mono">{fmtDate(n.createdAtUtc)}</div>

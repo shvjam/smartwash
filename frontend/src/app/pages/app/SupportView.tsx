@@ -64,7 +64,7 @@ export const SupportView = () => {
         actions={
           <button
             onClick={() => setComposerOpen(v => !v)}
-            className="inline-flex items-center gap-2 rounded-2xl bg-red-600 hover:bg-red-700 px-4 py-2.5 text-sm font-bold text-white"
+            className="inline-flex items-center gap-2 rounded-2xl bg-brand-600 hover:bg-brand-700 px-4 py-2.5 text-sm font-bold text-white"
           >
             {composerOpen ? <X size={16} /> : <Plus size={16} />}
             {composerOpen ? 'بستن فرم' : 'تیکت جدید'}
@@ -140,7 +140,7 @@ export const SupportView = () => {
 const TicketRow = ({ ticket, onOpen }: { ticket: TicketListItemDto; onOpen: () => void }) => (
   <button
     onClick={onOpen}
-    className="w-full text-right bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 hover:border-red-200 dark:hover:border-red-900 p-4 sm:p-5 transition-colors"
+    className="w-full text-right bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 hover:border-brand-200 dark:hover:border-brand-900 p-4 sm:p-5 transition-colors"
   >
     <div className="flex items-start justify-between gap-3 flex-wrap">
       <div className="min-w-0 flex-1">
@@ -153,7 +153,7 @@ const TicketRow = ({ ticket, onOpen }: { ticket: TicketListItemDto; onOpen: () =
             {TICKET_PRIORITY_LABEL[ticket.priority]}
           </span>
           {ticket.unreadForTenant > 0 && (
-            <span className="rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-bold text-white">
+            <span className="rounded-full bg-brand-600 px-2 py-0.5 text-[10px] font-bold text-white">
               {fa(ticket.unreadForTenant)} پاسخ جدید
             </span>
           )}
@@ -297,7 +297,7 @@ export const AttachmentChips = ({
         <span className="max-w-[180px] truncate">{a.fileName}</span>
         <span className="text-gray-400">{formatFileSize(a.sizeBytes)}</span>
         {onRemove && (
-          <button type="button" onClick={() => onRemove(i)} className="text-gray-400 hover:text-red-600">
+          <button type="button" onClick={() => onRemove(i)} className="text-gray-400 hover:text-brand-600">
             <X size={12} />
           </button>
         )}

@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Sparkles, Plus, Pencil, Power, Loader2, X, Clock, Coins } from 'lucide-react';
+import { Sparkles, Plus, Pencil, Power, Loader2, X, Clock, Coins, Layers } from 'lucide-react';
+import { BayType } from '../../api/types';
+import { BAY_TYPE_LABEL } from '../../lib/orderStages';
 import { PageHeader, Card, EmptyState } from '../../components/app/PageHeader';
 import { servicesApi, ApiException } from '../../api';
 import { ServiceCategory, type ServiceDto } from '../../api/types';
@@ -12,7 +14,7 @@ const CATEGORY_LABEL: Record<number, string> = {
 const CATEGORIES: ServiceCategory[] = [0, 1, 2, 3, 4, 5];
 
 const toFa = (v: number | string) => String(v).replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[+d]);
-const formatRials = (n: number) => toFa(n.toLocaleString('fa-IR'));
+const formatRials = (n: number) => toFa(Math.round(n / 10).toLocaleString('fa-IR'));
 
 type FormState = {
   id: string | null;
@@ -22,11 +24,13 @@ type FormState = {
   priceRials: number;
   durationMinutes: number;
   workerCommissionRate: number;
+  requiredBayType: BayType | null;
 };
 
 const emptyForm = (): FormState => ({
   id: null, name: '', description: '', category: 0,
   priceRials: 0, durationMinutes: 30, workerCommissionRate: 0.1,
+  requiredBayType: null,
 });
 
 export const ServicesView: React.FC = () => {
@@ -65,6 +69,7 @@ export const ServicesView: React.FC = () => {
         priceRials: Math.max(0, Math.floor(form.priceRials)),
         durationMinutes: Math.max(1, Math.floor(form.durationMinutes)),
         workerCommissionRate: Math.max(0, Math.min(1, form.workerCommissionRate)),
+        requiredBayType: form.requiredBayType,
       };
       if (form.id) {
         const cur = items.find(x => x.id === form.id);
@@ -92,7 +97,7 @@ export const ServicesView: React.FC = () => {
     }
   };
 
-  if (loading) return <div className="min-h-[40vh] grid place-items-center"><Loader2 className="animate-spin text-red-600" /></div>;
+  if (loading) return <div className="min-h-[40vh] grid place-items-center"><Loader2 className="animate-spin text-brand-600" /></div>;
 
   return (
     <div className="max-w-6xl mx-auto pb-10">
@@ -101,7 +106,7 @@ export const ServicesView: React.FC = () => {
         subtitle="کتگوری، قیمت‌گذاری، مدت زمان و کمیسیون کارمند"
         actions={
           <button onClick={() => setForm(emptyForm())}
-            className="px-4 py-2.5 rounded-2xl bg-red-600 text-white text-sm font-bold flex items-center gap-1.5 hover:bg-red-700 transition-colors">
+            className="px-4 py-2.5 rounded-2xl bg-brand-600 text-white text-sm font-bold flex items-center gap-1.5 hover:bg-brand-700 transition-colors">
             <Plus size={16} />خدمت جدید
           </button>
         }
@@ -123,7 +128,7 @@ export const ServicesView: React.FC = () => {
       {filtered.length === 0 ? (
         <Card><EmptyState icon={Sparkles} title="خدمتی برای نمایش نیست"
           action={<button onClick={() => setForm(emptyForm())}
-            className="px-4 py-2 rounded-xl bg-red-600 text-white text-sm font-bold">افزودن خدمت</button>} /></Card>
+            className="px-4 py-2 rounded-xl bg-brand-600 text-white text-sm font-bold">افزودن خدمت</button>} /></Card>
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map(s => (
@@ -131,7 +136,7 @@ export const ServicesView: React.FC = () => {
               <div className="flex items-start justify-between gap-2 mb-3">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="px-2 py-0.5 rounded-full bg-red-50 text-red-600 text-[10px] font-bold">
+                    <span className="px-2 py-0.5 rounded-full bg-brand-50 text-brand-600 text-[10px] font-bold">
                       {CATEGORY_LABEL[s.category]}
                     </span>
                     {!s.isActive && <span className="px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 text-[10px] font-bold">غیرفعال</span>}
@@ -141,15 +146,16 @@ export const ServicesView: React.FC = () => {
                 </div>
               </div>
               <div className="grid grid-cols-3 gap-2 text-xs">
-                <Stat icon={Coins} label="قیمت" value={`${formatRials(s.priceRials)} ﷼`} />
+                <Stat icon={Coins} label="قیمت" value={`${formatRials(s.priceRials)} تومان`} />
                 <Stat icon={Clock} label="مدت" value={`${toFa(s.durationMinutes)} د`} />
-                <Stat icon={Sparkles} label="کمیسیون" value={`${toFa(Math.round(s.workerCommissionRate * 100))}٪`} />
+                <Stat icon={Layers} label="جایگاه" value={s.requiredBayType === null || s.requiredBayType === undefined ? 'آزاد' : BAY_TYPE_LABEL[s.requiredBayType]} />
               </div>
               <div className="flex gap-2 mt-4">
                 <button onClick={() => setForm({
                   id: s.id, name: s.name, description: s.description ?? '',
                   category: s.category, priceRials: s.priceRials,
                   durationMinutes: s.durationMinutes, workerCommissionRate: s.workerCommissionRate,
+                  requiredBayType: s.requiredBayType ?? null,
                 })}
                   className="flex-1 py-2 rounded-xl bg-gray-50 hover:bg-gray-100 text-gray-700 text-xs font-bold flex items-center justify-center gap-1.5">
                   <Pencil size={13} />ویرایش
@@ -183,16 +189,24 @@ export const ServicesView: React.FC = () => {
               </select>
             </label>
             <div className="grid grid-cols-3 gap-2">
-              <NumField label="قیمت (ریال)" value={form.priceRials} onChange={v => setForm({ ...form, priceRials: v })} step={50_000} />
+              <NumField label="قیمت (تومان)" value={Math.round(form.priceRials / 10)} onChange={v => setForm({ ...form, priceRials: v * 10 })} step={5_000} />
               <NumField label="مدت (دقیقه)" value={form.durationMinutes} onChange={v => setForm({ ...form, durationMinutes: v })} />
-              <NumField label="کمیسیون (٪)" value={Math.round(form.workerCommissionRate * 100)}
-                onChange={v => setForm({ ...form, workerCommissionRate: Math.max(0, Math.min(100, v)) / 100 })} />
+              <label className="block">
+                <span className="mb-1 block text-xs font-medium text-gray-600">جایگاه موردنیاز</span>
+                <select
+                  value={form.requiredBayType ?? ''}
+                  onChange={e => setForm({ ...form, requiredBayType: e.target.value === '' ? null : Number(e.target.value) as BayType })}
+                  className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm">
+                  <option value="">هر جایگاهی</option>
+                  {Object.entries(BAY_TYPE_LABEL).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                </select>
+              </label>
             </div>
             <div className="flex gap-2 pt-2">
               <button type="button" onClick={() => setForm(null)}
                 className="flex-1 py-2.5 rounded-xl border text-sm font-bold">انصراف</button>
               <button type="submit" disabled={saving}
-                className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-bold disabled:opacity-50">
+                className="flex-1 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-sm font-bold disabled:opacity-50">
                 {saving ? <Loader2 className="inline animate-spin" size={16} /> : 'ذخیره'}
               </button>
             </div>
@@ -206,7 +220,7 @@ export const ServicesView: React.FC = () => {
 const FilterChip = ({ active, children, onClick }: { active: boolean; children: React.ReactNode; onClick: () => void }) => (
   <button onClick={onClick}
     className={`px-3 py-1.5 rounded-full text-xs font-bold transition-colors ${
-      active ? 'bg-red-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+      active ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
     {children}
   </button>
 );

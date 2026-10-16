@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { BellRing, Plus, X, Loader2, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { BellRing, Plus, X, Loader2, Search, ChevronLeft, ChevronRight, Filter } from 'lucide-react';
+import { CustomerSegmentPicker } from '../../components/CustomerSegmentPicker';
 import { PageHeader, Card, EmptyState } from '../../components/app/PageHeader';
 import { remindersApi, customersApi, ApiException } from '../../api';
 import type { ReminderDto, ReminderStatus, ReminderType } from '../../api/modules';
@@ -32,6 +33,7 @@ export const RemindersView: React.FC = () => {
   const [busy, setBusy] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkBusy, setBulkBusy] = useState(false);
+  const [showSegment, setShowSegment] = useState(false);
   const [bulkNote, setBulkNote] = useState<string | null>(null);
 
   const reload = async (p = page) => {
@@ -102,11 +104,36 @@ export const RemindersView: React.FC = () => {
         title="یادآور خدمات"
         subtitle="یادآورهای شستشو و خدمات بعدی مشتریان"
         actions={
-          <button onClick={() => setShowCreate(true)} className="px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 flex items-center gap-2">
-            <Plus size={16} /> یادآور جدید
-          </button>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setShowSegment(v => !v)}
+              className="flex items-center gap-2 rounded-lg bg-gray-100 px-4 py-2 text-gray-700 hover:bg-gray-200">
+              <Filter size={16} /> انتخاب گروهی
+            </button>
+            <button onClick={() => setShowCreate(true)} className="px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 flex items-center gap-2">
+              <Plus size={16} /> یادآور جدید
+            </button>
+          </div>
         }
       />
+
+      {showSegment && (
+        <div className="mb-4">
+          <CustomerSegmentPicker
+            onClose={() => setShowSegment(false)}
+            onPick={(segment, description) => {
+              // Only reminders belonging to the chosen customers are ticked. The picker knows
+              // about people; this screen knows which of their reminders are still sendable.
+              const wanted = new Set(segment.customers.map(c => c.customerId));
+              const matching = items.filter(r => r.status === 0 && wanted.has(r.customerId));
+              setSelected(new Set(matching.map(r => r.id)));
+              setBulkNote(matching.length === 0
+                ? `هیچ یادآور ارسال‌نشده‌ای برای «${description}» پیدا نشد.`
+                : `${matching.length.toLocaleString('fa-IR')} یادآور از گروه «${description}» انتخاب شد.`);
+              setShowSegment(false);
+            }}
+          />
+        </div>
+      )}
 
       <Card>
         {selected.size > 0 && (

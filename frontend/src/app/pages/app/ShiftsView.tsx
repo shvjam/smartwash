@@ -30,7 +30,7 @@ export const ShiftsView = () => {
     if (!branchId) return;
     setBusy(true); setErr(null);
     try {
-      const s = await shiftsApi.open(branchId, Number(openCash) || 0);
+      const s = await shiftsApi.open(branchId, (Number(openCash) || 0) * 10);
       setOpen(s); setOpenCash('');
       setToast('شیفت با موفقیت باز شد');
       setTimeout(() => setToast(null), 2500);
@@ -43,7 +43,7 @@ export const ShiftsView = () => {
     if (!open) return;
     setBusy(true); setErr(null);
     try {
-      await shiftsApi.close(open.id, Number(closeCash) || 0, notes.trim() || null);
+      await shiftsApi.close(open.id, (Number(closeCash) || 0) * 10, notes.trim() || null);
       setOpen(null); setCloseCash(''); setNotes('');
       setToast('شیفت بسته شد. مغایرت در گزارش‌ها قابل مشاهده است.');
       setTimeout(() => setToast(null), 3000);
@@ -67,12 +67,12 @@ export const ShiftsView = () => {
       ) : open ? (
         <>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
-            <StatCard accent="emerald" label="نقدی" value={fmt(open.cashSalesRials)} hint="فروش نقدی" />
-            <StatCard accent="sky" label="کارت" value={fmt(open.cardSalesRials)} />
-            <StatCard accent="violet" label="آنلاین" value={fmt(open.onlineSalesRials)} />
-            <StatCard accent="blue" label="کیف پول" value={fmt(open.walletSalesRials ?? 0)} hint="پرداخت با کیف پول" />
-            <StatCard accent="indigo" label="انعام پرسنل" value={fmt(open.tipsRials ?? 0)} />
-            <StatCard accent="amber" label="هزینه‌ها" value={fmt(open.expensesRials)} />
+            <StatCard accent="emerald" label="نقدی" value={`${fmt(Math.round((open.cashSalesRials) / 10))} تومان`} hint="فروش نقدی" />
+            <StatCard accent="sky" label="کارت" value={`${fmt(Math.round((open.cardSalesRials) / 10))} تومان`} />
+            <StatCard accent="violet" label="آنلاین" value={`${fmt(Math.round((open.onlineSalesRials) / 10))} تومان`} />
+            <StatCard accent="sky" label="کیف پول" value={`${fmt(Math.round((open.walletSalesRials ?? 0) / 10))} تومان`} hint="پرداخت با کیف پول" />
+            <StatCard accent="violet" label="انعام پرسنل" value={`${fmt(Math.round((open.tipsRials ?? 0) / 10))} تومان`} />
+            <StatCard accent="amber" label="هزینه‌ها" value={`${fmt(Math.round((open.expensesRials) / 10))} تومان`} />
           </div>
 
           <Card>
@@ -88,25 +88,25 @@ export const ShiftsView = () => {
             </div>
 
             <div className="bg-gray-50 rounded-2xl p-4 mb-5 grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
-              <div><div className="text-xs text-gray-500">نقدی شروع</div><div className="font-bold">{fmt(open.openingCashRials)} ریال</div></div>
-              <div><div className="text-xs text-gray-500">نقدی مورد انتظار</div><div className="font-bold">{fmt(open.openingCashRials + open.cashSalesRials - open.expensesRials)} ریال</div></div>
-              <div><div className="text-xs text-gray-500">جمع فروش</div><div className="font-bold">{fmt(open.cashSalesRials + open.cardSalesRials + open.onlineSalesRials + (open.walletSalesRials ?? 0))} ریال</div></div>
+              <div><div className="text-xs text-gray-500">نقدی شروع</div><div className="font-bold">{fmt(Math.round((open.openingCashRials) / 10))} تومان</div></div>
+              <div><div className="text-xs text-gray-500">نقدی مورد انتظار</div><div className="font-bold">{fmt(Math.round((open.openingCashRials + open.cashSalesRials - open.expensesRials) / 10))} تومان</div></div>
+              <div><div className="text-xs text-gray-500">جمع فروش</div><div className="font-bold">{fmt(Math.round((open.cashSalesRials + open.cardSalesRials + open.onlineSalesRials + (open.walletSalesRials ?? 0)) / 10))} تومان</div></div>
             </div>
 
             <form onSubmit={handleClose} className="space-y-3">
               <label className="block">
-                <span className="text-xs font-medium text-gray-600 mb-2 block">شمارش نقدی پایان شیفت</span>
+                <span className="text-xs font-medium text-gray-600 mb-2 block">شمارش نقدی پایان شیفت (تومان)</span>
                 <input type="number" required value={closeCash} onChange={e => setCloseCash(e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-500/20" />
+                  className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500/20" />
               </label>
               <label className="block">
                 <span className="text-xs font-medium text-gray-600 mb-2 block">یادداشت (اختیاری)</span>
                 <textarea rows={2} value={notes} onChange={e => setNotes(e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 resize-none focus:outline-none focus:ring-2 focus:ring-red-500/20" />
+                  className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 resize-none focus:outline-none focus:ring-2 focus:ring-brand-500/20" />
               </label>
               {err && <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-2xl flex items-center gap-2"><AlertCircle size={16} />{err}</div>}
               <button type="submit" disabled={busy}
-                className="bg-gradient-to-br from-red-500 to-red-700 text-white px-5 py-3 rounded-2xl font-bold flex items-center gap-2 disabled:opacity-60">
+                className="bg-gradient-to-br from-brand-500 to-brand-700 text-white px-5 py-3 rounded-2xl font-bold flex items-center gap-2 disabled:opacity-60">
                 <Square size={16} />بستن شیفت
               </button>
             </form>
@@ -123,11 +123,11 @@ export const ShiftsView = () => {
           </div>
           <form onSubmit={handleOpen} className="max-w-md mx-auto space-y-3">
             <label className="block">
-              <span className="text-xs font-medium text-gray-600 mb-2 block">موجودی نقدی شروع</span>
+              <span className="text-xs font-medium text-gray-600 mb-2 block">موجودی نقدی شروع (تومان)</span>
               <div className="relative">
                 <Banknote className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                 <input type="number" required value={openCash} onChange={e => setOpenCash(e.target.value)} placeholder="۰"
-                  className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-12 py-3 focus:outline-none focus:ring-2 focus:ring-red-500/20" />
+                  className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-12 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500/20" />
               </div>
             </label>
             {err && <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-2xl flex items-center gap-2"><AlertCircle size={16} />{err}</div>}

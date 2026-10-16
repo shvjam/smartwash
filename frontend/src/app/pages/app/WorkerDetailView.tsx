@@ -2,13 +2,16 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router';
 import { Loader2, ChevronRight, UserSquare2, Phone, Coins, Percent, TrendingUp, Calendar, Power, Pencil } from 'lucide-react';
 import { PageHeader, Card, StatCard, EmptyState } from '../../components/app/PageHeader';
+import { WorkerAvatar } from '../../components/WorkerAvatar';
+import { resolveUploadUrl } from '../../api/adapters';
 import { workersApi, reportsApi, ApiException } from '../../api';
 import type { WorkerDto, WorkerPerformanceRow } from '../../api/types';
+import { localIsoDate, localIsoDateIn } from '../../lib/dates';
 
 const toFa = (v: number | string) => String(v).replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[+d]);
 const fmtRials = (n: number) => toFa(n.toLocaleString('fa-IR'));
-const today = () => new Date().toISOString().slice(0, 10);
-const daysAgo = (n: number) => { const d = new Date(); d.setDate(d.getDate() - n); return d.toISOString().slice(0, 10); };
+const today = () => localIsoDate();
+const daysAgo = (n: number) => localIsoDateIn(-n);
 
 export const WorkerDetailView: React.FC = () => {
   const { id } = useParams();
@@ -20,6 +23,12 @@ export const WorkerDetailView: React.FC = () => {
   const [to, setTo] = useState<string>(today());
   const [busy, setBusy] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
+  const [photo, setPhoto] = useState<File | null>(null);
+
+  // Made once per chosen file and released when it is replaced: calling createObjectURL
+  // straight in the markup would mint a new blob URL on every render and free none of them.
+  const photoPreview = useMemo(() => (photo ? URL.createObjectURL(photo) : null), [photo]);
+  useEffect(() => () => { if (photoPreview) URL.revokeObjectURL(photoPreview); }, [photoPreview]);
   const [form, setForm] = useState<{ fullName: string; role: string; phone: string; nationalId: string; commissionRate: number }>({
     fullName: '', role: '', phone: '', nationalId: '', commissionRate: 0,
   });
@@ -66,21 +75,24 @@ export const WorkerDetailView: React.FC = () => {
     if (!worker) return;
     setBusy('save'); setErr(null);
     try {
+      // Uploaded first: a failure here must not half-save the rest of the form.
+      const avatarUrl = photo ? (await workersApi.uploadPhoto(photo)).url : worker.avatarUrl ?? null;
       const updated = await workersApi.update(worker.id, {
         fullName: form.fullName.trim(),
         role: form.role.trim(),
         phone: form.phone.trim() || null,
         nationalId: form.nationalId.trim() || null,
         commissionRate: Math.max(0, Math.min(1, form.commissionRate)),
-        avatarUrl: worker.avatarUrl ?? null,
+        avatarUrl,
       });
       setWorker(updated);
+      setPhoto(null);
       setEditing(false);
     } catch (e) { setErr(e instanceof ApiException ? e.message : 'خطا در ذخیره'); }
     finally { setBusy(null); }
   };
 
-  if (loading) return <div className="min-h-[40vh] grid place-items-center"><Loader2 className="animate-spin text-red-600" /></div>;
+  if (loading) return <div className="min-h-[40vh] grid place-items-center"><Loader2 className="animate-spin text-brand-600" /></div>;
   if (!worker) return (
     <div className="max-w-3xl mx-auto pb-10">
       <Card><EmptyState icon={UserSquare2} title="کارمند یافت نشد" /></Card>
@@ -92,6 +104,20 @@ export const WorkerDetailView: React.FC = () => {
       <Link to="/app/workers" className="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-gray-900 mb-3">
         <ChevronRight size={14} />بازگشت به لیست پرسنل
       </Link>
+
+      <div className="mb-4 flex items-center gap-4">
+        <WorkerAvatar
+          src={photoPreview ?? resolveUploadUrl(worker.avatarUrl)}
+          name={worker.fullName} size={72} rounded="2xl" />
+        {editing && (
+          <label className="cursor-pointer text-xs font-bold text-brand-600 hover:text-brand-700">
+            {worker.avatarUrl || photo ? 'تغییر عکس پرسنلی' : 'افزودن عکس پرسنلی'}
+            <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden"
+              onChange={e => setPhoto(e.target.files?.[0] ?? null)} />
+            <span className="mt-0.5 block text-[10px] font-medium text-gray-400">JPG، PNG یا WEBP تا ۵ مگابایت</span>
+          </label>
+        )}
+      </div>
 
       <PageHeader
         title={worker.fullName}
@@ -122,7 +148,7 @@ export const WorkerDetailView: React.FC = () => {
 
       <div className="grid lg:grid-cols-3 gap-5">
         <Card className="lg:col-span-2">
-          <h3 className="font-extrabold text-gray-900 mb-3 flex items-center gap-2"><TrendingUp size={16} className="text-red-600" />عملکرد در بازه</h3>
+          <h3 className="font-extrabold text-gray-900 mb-3 flex items-center gap-2"><TrendingUp size={16} className="text-brand-600" />عملکرد در بازه</h3>
           <div className="flex items-center gap-2 mb-3 flex-wrap">
             <label className="text-xs text-gray-600 flex items-center gap-1">
               <Calendar size={12} />از:
@@ -185,7 +211,7 @@ export const WorkerDetailView: React.FC = () => {
                   className="w-full bg-gray-50 border rounded-xl px-3 py-2 text-sm font-mono" />
               </label>
               <button disabled={busy === 'save'} onClick={save}
-                className="w-full py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-bold disabled:opacity-50">
+                className="w-full py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-sm font-bold disabled:opacity-50">
                 {busy === 'save' ? <Loader2 size={14} className="inline animate-spin" /> : 'ذخیره'}
               </button>
             </div>

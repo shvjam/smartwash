@@ -45,7 +45,7 @@ export const PaymentResultView: React.FC = () => {
       <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl p-10 max-w-md w-full text-center space-y-6">
         {state === 'loading' && (
           <>
-            <Loader2 size={56} className="mx-auto animate-spin text-red-500" />
+            <Loader2 size={56} className="mx-auto animate-spin text-brand-500" />
             <h1 className="text-xl font-extrabold text-gray-900 dark:text-gray-100">در حال تأیید پرداخت…</h1>
             <p className="text-gray-500 text-sm">لطفاً صبر کنید.</p>
           </>
@@ -58,7 +58,7 @@ export const PaymentResultView: React.FC = () => {
             <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">{message}</p>
             <Link
               to="/app/billing"
-              className="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white font-bold px-6 py-3 rounded-2xl transition-colors"
+              className="inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white font-bold px-6 py-3 rounded-2xl transition-colors"
             >
               <ArrowLeft size={16} /> مشاهده اشتراک
             </Link>
@@ -73,7 +73,7 @@ export const PaymentResultView: React.FC = () => {
             <div className="flex gap-3 justify-center">
               <Link
                 to="/app/billing"
-                className="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white font-bold px-6 py-3 rounded-2xl transition-colors"
+                className="inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white font-bold px-6 py-3 rounded-2xl transition-colors"
               >
                 تلاش مجدد
               </Link>

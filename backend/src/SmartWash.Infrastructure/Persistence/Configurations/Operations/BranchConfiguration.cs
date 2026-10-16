@@ -30,6 +30,7 @@ public sealed class BayConfiguration : IEntityTypeConfiguration<Bay>
         b.Property(x => x.Name).IsRequired().HasMaxLength(80);
         b.Property(x => x.Notes).HasMaxLength(500);
         b.Property(x => x.Status).HasConversion<int>();
+        b.Property(x => x.Type).HasConversion<int>();
         b.Property(x => x.RowVersion).IsConcurrencyToken().IsRequired().HasMaxLength(16);
         b.HasIndex(x => new { x.TenantId, x.BranchId });
         b.HasIndex(x => new { x.TenantId, x.BranchId, x.Number }).IsUnique();
@@ -64,6 +65,7 @@ public sealed class ServiceConfiguration : IEntityTypeConfiguration<Service>
         b.Property(x => x.Description).HasMaxLength(500);
         b.Property(x => x.IconKey).HasMaxLength(60);
         b.Property(x => x.Category).HasConversion<int>();
+        b.Property(x => x.RequiredBayType).HasConversion<int?>();
         b.Property(x => x.WorkerCommissionRate).HasPrecision(5, 2);
         b.Property(x => x.RowVersion).IsConcurrencyToken().IsRequired().HasMaxLength(16);
         b.HasIndex(x => new { x.TenantId, x.IsActive, x.Category });

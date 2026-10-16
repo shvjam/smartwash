@@ -4,6 +4,7 @@ import { expensesApi, type ExpenseDto, ExpenseCategory, PaymentMethod, ApiExcept
 import { useCarWash } from '../../store';
 import { PageHeader, Card, StatCard, EmptyState } from '../../components/app/PageHeader';
 import { toJalaliLabel } from '../../lib/persian';
+import { localIsoDate } from '../../lib/dates';
 
 const fmt = (n: number) => new Intl.NumberFormat('fa-IR').format(n);
 const categories: { v: ExpenseCategory; l: string }[] = [
@@ -20,7 +21,7 @@ type FormState = {
 };
 const emptyForm = (): FormState => ({
   category: ExpenseCategory.Supplies, title: '', amountRials: '',
-  paymentMethod: PaymentMethod.Cash, date: new Date().toISOString().slice(0, 10), description: '',
+  paymentMethod: PaymentMethod.Cash, date: localIsoDate(), description: '',
 });
 
 export const ExpensesView = () => {
@@ -44,7 +45,7 @@ export const ExpensesView = () => {
   const openEdit = (e: ExpenseDto) => {
     setEditingId(e.id);
     setForm({
-      category: e.category, title: e.title, amountRials: String(e.amountRials),
+      category: e.category, title: e.title, amountRials: String(Math.round(e.amountRials / 10)),
       paymentMethod: e.paymentMethod, date: e.date, description: e.description ?? '',
     });
     setErr(null);
@@ -57,7 +58,7 @@ export const ExpensesView = () => {
     setErr(null);
     const body = {
       category: form.category, title: form.title.trim(),
-      amountRials: Number(form.amountRials) || 0, paymentMethod: form.paymentMethod,
+      amountRials: (Number(form.amountRials) || 0) * 10, paymentMethod: form.paymentMethod,
       date: form.date, description: form.description.trim() || null,
     };
     try {
@@ -92,15 +93,15 @@ export const ExpensesView = () => {
         subtitle="ثبت و دسته‌بندی هزینه‌های ماهانه کارواش"
         actions={
           <button onClick={openNew}
-            className="bg-gradient-to-br from-red-500 to-red-700 text-white px-4 py-2.5 rounded-2xl text-sm font-bold flex items-center gap-1.5 shadow-lg shadow-red-500/30">
+            className="bg-gradient-to-br from-brand-500 to-brand-700 text-white px-4 py-2.5 rounded-2xl text-sm font-bold flex items-center gap-1.5 shadow-lg shadow-brand-500/30">
             <Plus size={16} />هزینه جدید
           </button>
         }
       />
 
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
-        <StatCard accent="red" label="جمع هزینه‌ها" value={fmt(total)} hint="مجموع همه دسته‌ها" />
-        {byCat.map(c => <StatCard key={c.v} accent="amber" label={c.l} value={fmt(c.total)} />)}
+        <StatCard accent="red" label="جمع هزینه‌ها" value={`${fmt(Math.round(total / 10))} تومان`} hint="مجموع همه دسته‌ها" />
+        {byCat.map(c => <StatCard key={c.v} accent="amber" label={c.l} value={`${fmt(Math.round(c.total / 10))} تومان`} />)}
       </div>
 
       {showForm && (
@@ -113,14 +114,14 @@ export const ExpensesView = () => {
             <label className="block">
               <span className="text-xs font-medium text-gray-600 mb-2 block">دسته‌بندی</span>
               <select value={form.category} onChange={e => setForm({ ...form, category: Number(e.target.value) })}
-                className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-500/20">
+                className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500/20">
                 {categories.map(c => <option key={c.v} value={c.v}>{c.l}</option>)}
               </select>
             </label>
             <label className="block">
               <span className="text-xs font-medium text-gray-600 mb-2 block">روش پرداخت</span>
               <select value={form.paymentMethod} onChange={e => setForm({ ...form, paymentMethod: Number(e.target.value) })}
-                className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-500/20">
+                className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500/20">
                 <option value={PaymentMethod.Cash}>نقدی</option>
                 <option value={PaymentMethod.Card}>کارتی</option>
                 <option value={PaymentMethod.Online}>آنلاین</option>
@@ -129,27 +130,27 @@ export const ExpensesView = () => {
             <label className="block sm:col-span-2">
               <span className="text-xs font-medium text-gray-600 mb-2 block">عنوان</span>
               <input required value={form.title} onChange={e => setForm({ ...form, title: e.target.value })}
-                className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-500/20" />
+                className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500/20" />
             </label>
             <label className="block">
-              <span className="text-xs font-medium text-gray-600 mb-2 block">مبلغ (ریال)</span>
+              <span className="text-xs font-medium text-gray-600 mb-2 block">مبلغ (تومان)</span>
               <input required type="number" value={form.amountRials} onChange={e => setForm({ ...form, amountRials: e.target.value })}
-                className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-500/20" />
+                className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500/20" />
             </label>
             <label className="block">
               <span className="text-xs font-medium text-gray-600 mb-2 block">تاریخ</span>
               <input required type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })}
-                className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-500/20" />
+                className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500/20" />
               {/* The browser's picker is Gregorian and cannot be switched, so the Jalali date
                   is echoed here — otherwise the person is converting in their head. */}
               {form.date && (
-                <span className="mt-1.5 block text-xs font-bold text-red-600">{toJalaliLabel(form.date)}</span>
+                <span className="mt-1.5 block text-xs font-bold text-brand-600">{toJalaliLabel(form.date)}</span>
               )}
             </label>
             <label className="block sm:col-span-2">
               <span className="text-xs font-medium text-gray-600 mb-2 block">توضیحات</span>
               <textarea rows={2} value={form.description} onChange={e => setForm({ ...form, description: e.target.value })}
-                className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 resize-none focus:outline-none focus:ring-2 focus:ring-red-500/20" />
+                className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 resize-none focus:outline-none focus:ring-2 focus:ring-brand-500/20" />
             </label>
             {err && <div className="sm:col-span-2 bg-red-50 text-red-600 text-sm px-4 py-3 rounded-2xl">{err}</div>}
             <div className="sm:col-span-2 flex gap-2">
@@ -186,14 +187,14 @@ export const ExpensesView = () => {
                     <td className="px-5 py-3 text-gray-700">{new Date(e.date).toLocaleDateString('fa-IR')}</td>
                     <td className="px-5 py-3"><span className="px-2 py-1 rounded-lg bg-amber-50 text-amber-700 text-xs font-bold">{catLabel(e.category)}</span></td>
                     <td className="px-5 py-3 font-bold">{e.title}{e.description && <span className="block text-[11px] text-gray-400 font-normal">{e.description}</span>}</td>
-                    <td className="px-5 py-3 font-bold font-mono">{fmt(e.amountRials)} ریال</td>
+                    <td className="px-5 py-3 font-bold font-mono">{fmt(Math.round(e.amountRials / 10))} تومان</td>
                     <td className="px-5 py-3 text-xs text-gray-500">{e.paymentMethod === PaymentMethod.Cash ? 'نقدی' : e.paymentMethod === PaymentMethod.Card ? 'کارتی' : 'آنلاین'}</td>
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
                         <button onClick={() => openEdit(e)} className="p-1.5 rounded-lg hover:bg-blue-50 text-gray-400 hover:text-blue-600 transition-colors">
                           <Pencil size={13} />
                         </button>
-                        <button onClick={() => deleteExpense(e.id)} className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors">
+                        <button onClick={() => deleteExpense(e.id)} className="p-1.5 rounded-lg hover:bg-brand-50 text-gray-400 hover:text-brand-500 transition-colors">
                           <Trash2 size={13} />
                         </button>
                       </div>

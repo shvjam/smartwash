@@ -83,7 +83,7 @@ export const SupportTicketDetailView = () => {
         <div className="space-y-5">
           <Card>
             <h3 className="text-sm font-extrabold mb-4 flex items-center gap-2">
-              <ShieldCheck size={16} className="text-red-600" />وضعیت پیگیری
+              <ShieldCheck size={16} className="text-brand-600" />وضعیت پیگیری
             </h3>
             <dl className="space-y-3 text-xs">
               <Row label="کارشناس مسئول" value={t.assignedToName ?? 'در انتظار تخصیص'} />
@@ -107,7 +107,7 @@ export const SupportTicketDetailView = () => {
           {data.attachments.length > 0 && (
             <Card>
               <h3 className="text-sm font-extrabold mb-3 flex items-center gap-2">
-                <Paperclip size={16} className="text-red-600" />پیوست‌ها
+                <Paperclip size={16} className="text-brand-600" />پیوست‌ها
               </h3>
               <div className="space-y-2">
                 {data.attachments.map(a => (
@@ -127,7 +127,7 @@ export const SupportTicketDetailView = () => {
 
           <Card>
             <h3 className="text-sm font-extrabold mb-3 flex items-center gap-2">
-              <History size={16} className="text-red-600" />تاریخچه
+              <History size={16} className="text-brand-600" />تاریخچه
             </h3>
             <ol className="space-y-3">
               {data.events.map(e => (
@@ -159,14 +159,14 @@ const Row = ({ label, value, danger }: { label: string; value: string; danger?: 
 const MessageBubble = ({ message }: { message: TicketMessageDto }) => {
   const fromPlatform = message.authorSide === 1;
   return (
-    <div className={`p-4 sm:p-5 ${fromPlatform ? 'bg-red-50/40 dark:bg-red-950/10' : ''}`}>
+    <div className={`p-4 sm:p-5 ${fromPlatform ? 'bg-brand-50/40 dark:bg-brand-950/10' : ''}`}>
       <div className="flex items-center gap-2 mb-2">
-        <span className={`inline-flex h-7 w-7 items-center justify-center rounded-xl text-[10px] font-black text-white ${fromPlatform ? 'bg-red-600' : 'bg-gray-700 dark:bg-gray-600'}`}>
+        <span className={`inline-flex h-7 w-7 items-center justify-center rounded-xl text-[10px] font-black text-white ${fromPlatform ? 'bg-brand-600' : 'bg-gray-700 dark:bg-gray-600'}`}>
           {fromPlatform ? 'SW' : message.authorName.slice(0, 1)}
         </span>
         <span className="text-xs font-bold text-gray-800 dark:text-gray-200">{message.authorName}</span>
         {fromPlatform && (
-          <span className="rounded-full bg-red-100 dark:bg-red-950/50 px-2 py-0.5 text-[9px] font-bold text-red-700 dark:text-red-300">
+          <span className="rounded-full bg-brand-100 dark:bg-brand-950/50 px-2 py-0.5 text-[9px] font-bold text-brand-700 dark:text-brand-300">
             پشتیبانی
           </span>
         )}
@@ -178,7 +178,7 @@ const MessageBubble = ({ message }: { message: TicketMessageDto }) => {
           {message.attachments.map(a => (
             <a
               key={a.id} href={a.url} target="_blank" rel="noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-2.5 py-1.5 text-[11px] hover:border-red-300"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-2.5 py-1.5 text-[11px] hover:border-brand-300"
             >
               <Paperclip size={11} className="text-gray-400" />
               <span className="max-w-[160px] truncate">{a.fileName}</span>
@@ -250,7 +250,7 @@ const ReplyBox = ({ ticketId, onSent }: { ticketId: string; onSent: (d: TicketDe
             </button>
             <button
               type="submit" disabled={busy || !body.trim()}
-              className="inline-flex items-center gap-2 rounded-xl bg-red-600 hover:bg-red-700 px-5 py-2.5 text-sm font-bold text-white disabled:opacity-60"
+              className="inline-flex items-center gap-2 rounded-xl bg-brand-600 hover:bg-brand-700 px-5 py-2.5 text-sm font-bold text-white disabled:opacity-60"
             >
               <Send size={15} />{busy ? 'در حال ارسال…' : 'ارسال پاسخ'}
             </button>

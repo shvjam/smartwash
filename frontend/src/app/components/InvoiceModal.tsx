@@ -4,6 +4,9 @@ import { Receipt, Printer, X, Gift, Sparkles, Check } from 'lucide-react';
 import { useCarWash } from '../store';
 import { Logo } from './Logo';
 
+/** Rials in, tomans out: the invoice speaks the unit people pay in. */
+const toman = (rials: number) => Math.round(rials / 10).toLocaleString('fa-IR');
+
 export const InvoiceModal = ({ id, onClose }: { id: string | null; onClose: () => void }) => {
   const { orders, workers, getOrderTotals, customerForOrder } = useCarWash();
   const printRef = useRef<HTMLDivElement>(null);
@@ -55,14 +58,14 @@ export const InvoiceModal = ({ id, onClose }: { id: string | null; onClose: () =
           dir="rtl"
           className="relative w-full max-w-sm bg-white rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
         >
-          <div className="bg-gradient-to-br from-red-500 via-red-600 to-red-700 text-white p-6 text-center flex-shrink-0 relative overflow-hidden">
+          <div className="bg-gradient-to-br from-brand-500 via-brand-600 to-brand-700 text-white p-6 text-center flex-shrink-0 relative overflow-hidden">
             <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
             <div className="mx-auto mb-2 relative w-20 h-20 flex items-center justify-center">
-              <Logo size={72} />
+              <Logo size={72} brand="tenant" />
             </div>
             <div className="font-extrabold text-lg relative">فاکتور SmartWash</div>
-            <div className="text-xs text-red-100 font-mono mt-1 relative">#{order.id.slice(-8).toUpperCase()}</div>
-            <div className="text-[10px] text-red-100 mt-1 relative">{new Date(order.createdAt).toLocaleString('fa-IR')}</div>
+            <div className="text-xs text-brand-100 font-mono mt-1 relative">#{order.id.slice(-8).toUpperCase()}</div>
+            <div className="text-[10px] text-brand-100 mt-1 relative">{new Date(order.createdAt).toLocaleString('fa-IR')}</div>
           </div>
 
           <div className="overflow-y-auto flex-1">
@@ -90,13 +93,13 @@ export const InvoiceModal = ({ id, onClose }: { id: string | null; onClose: () =
                         <span className={li.isFree ? 'free' : ''}>
                           {li.isFree && '🎁 '}{li.serviceName}
                         </span>
-                        <span className={`font-mono ${li.isFree ? 'strike' : ''}`}>{li.price.toLocaleString('fa-IR')}</span>
+                        <span className={`font-mono ${li.isFree ? 'strike' : ''}`}>{toman(li.price)}</span>
                       </div>
                       {w && <div className="text-[10px] text-gray-400">توسط: {w.name}</div>}
                       {li.tipAmount > 0 && (
                         <div className="row flex justify-between text-[11px] text-blue-600">
                           <span>↳ انعام</span>
-                          <span className="font-mono">+{li.tipAmount.toLocaleString('fa-IR')}</span>
+                          <span className="font-mono">+{toman(li.tipAmount)}</span>
                         </div>
                       )}
                     </div>
@@ -107,15 +110,15 @@ export const InvoiceModal = ({ id, onClose }: { id: string | null; onClose: () =
               <hr />
 
               <div className="space-y-1">
-                <div className="row flex justify-between text-gray-500"><span>جمع خدمات</span><span className="font-mono">{totals.subtotal.toLocaleString('fa-IR')}</span></div>
-                {totals.freeDiscount > 0 && <div className="row flex justify-between text-emerald-600"><span>🎁 جایزه وفاداری</span><span className="font-mono">−{totals.freeDiscount.toLocaleString('fa-IR')}</span></div>}
-                {totals.discount > 0 && <div className="row flex justify-between text-amber-600"><span>تخفیف</span><span className="font-mono">−{totals.discount.toLocaleString('fa-IR')}</span></div>}
-                {totals.tips > 0 && <div className="row flex justify-between text-blue-600"><span>انعام پرسنل</span><span className="font-mono">+{totals.tips.toLocaleString('fa-IR')}</span></div>}
+                <div className="row flex justify-between text-gray-500"><span>جمع خدمات</span><span className="font-mono">{toman(totals.subtotal)}</span></div>
+                {totals.freeDiscount > 0 && <div className="row flex justify-between text-emerald-600"><span>🎁 جایزه وفاداری</span><span className="font-mono">−{toman(totals.freeDiscount)}</span></div>}
+                {totals.discount > 0 && <div className="row flex justify-between text-amber-600"><span>تخفیف</span><span className="font-mono">−{toman(totals.discount)}</span></div>}
+                {totals.tips > 0 && <div className="row flex justify-between text-blue-600"><span>انعام پرسنل</span><span className="font-mono">+{toman(totals.tips)}</span></div>}
               </div>
 
               <div className="total flex justify-between items-center border-t border-dashed border-gray-200 pt-3">
                 <span className="font-bold">جمع نهایی</span>
-                <span className="font-mono font-extrabold text-lg">{totals.total.toLocaleString('fa-IR')} ت</span>
+                <span className="font-mono font-extrabold text-lg">{toman(totals.total)} تومان</span>
               </div>
 
               {order.freeServiceApplied && (

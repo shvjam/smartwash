@@ -1,10 +1,15 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router';
-import { Loader2, ChevronRight, Plus, Trash2, Percent, CreditCard, CheckCircle2, XCircle, User, Car, Receipt } from 'lucide-react';
+import clsx from 'clsx';
+import { Loader2, ChevronRight, Plus, Trash2, Percent, CreditCard, CheckCircle2, XCircle, User, UserX, Car, Receipt } from 'lucide-react';
 import { PageHeader, Card, StatCard } from '../../components/app/PageHeader';
-import { ordersApi, servicesApi, workersApi, ApiException } from '../../api';
-import { OrderStatus, PaymentMethod, type OrderDto, type ServiceDto, type WorkerDto } from '../../api/types';
+import { ordersApi, servicesApi, workersApi, baysApi, ApiException } from '../../api';
+import { OrderStatus, OrderStage, PaymentMethod, type OrderDto, type ServiceDto, type WorkerDto, type BayDto } from '../../api/types';
 import { useCarWash } from '../../store';
+import { WorkerAvatar } from '../../components/WorkerAvatar';
+import { toast } from 'sonner';
+import { OrderStageControl } from '../../components/OrderStageControl';
+import { resolveUploadUrl } from '../../api/adapters';
 import { formatIranPlate } from '../../components/forms/IranPlateInput';
 
 const toFa = (v: number | string) => String(v).replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[+d]);
@@ -16,6 +21,17 @@ const toToman = (rials: number) => Math.round(rials / RIAL_PER_TOMAN);
 const toRials = (toman: number) => Math.round(toman) * RIAL_PER_TOMAN;
 /** مبلغِ ریالیِ آمده از API را به تومانِ فارسی‌شده تبدیل می‌کند. */
 const fmtToman = (rials: number) => toFa(toToman(rials).toLocaleString('fa-IR'));
+
+/** What each action confirms once the server has accepted it. */
+const DONE: Record<string, string> = {
+  stage: 'مرحله‌ی خودرو ثبت شد',
+  pay: 'پرداخت ثبت شد',
+  complete: 'سفارش تحویل و بسته شد',
+  cancel: 'سفارش لغو شد',
+  discount: 'تخفیف اعمال شد',
+  'add-line': 'خدمت اضافه شد',
+  tip: 'انعام ثبت شد',
+};
 
 const STATUS_LABEL: Record<number, { label: string; cls: string }> = {
   [OrderStatus.InProgress]: { label: 'در حال انجام', cls: 'bg-sky-50 text-sky-700 border-sky-200' },
@@ -40,6 +56,7 @@ export const OrderDetailView: React.FC = () => {
   const [order, setOrder] = useState<OrderDto | null>(null);
   const [services, setServices] = useState<ServiceDto[]>([]);
   const [workers, setWorkers] = useState<WorkerDto[]>([]);
+  const [bayList, setBayList] = useState<BayDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -60,8 +77,11 @@ export const OrderDetailView: React.FC = () => {
   const reload = async () => {
     if (!id) return;
     try {
-      const o = await ordersApi.get(id);
+      // Bays are read again with the order: a step moves the car, and a list loaded once kept
+      // offering the bay it had just left as occupied and the one it moved into as free.
+      const [o, b] = await Promise.all([ordersApi.get(id), baysApi.list(undefined, true).catch(() => null)]);
       setOrder(o);
+      if (b) setBayList(b);
       setDiscount(toToman(o.discountRials));
       setPayAmount(toToman(Math.max(0, o.totalRials - o.paidRials)));
     } catch (e) {
@@ -71,8 +91,8 @@ export const OrderDetailView: React.FC = () => {
 
   useEffect(() => {
     setLoading(true);
-    Promise.all([servicesApi.list(true), workersApi.list(undefined, true)])
-      .then(([s, w]) => { setServices(s); setWorkers(w); })
+    Promise.all([servicesApi.list(true), workersApi.list(undefined, true), baysApi.list(undefined, true)])
+      .then(([s, w, b]) => { setServices(s); setWorkers(w); setBayList(b); })
       .catch(() => {});
     reload();
   }, [id]);
@@ -88,6 +108,9 @@ export const OrderDetailView: React.FC = () => {
     try {
       await fn();
       await reload();
+      // The banner for errors sits at the top of a long page; a toast is seen wherever the
+      // operator is, and says the click did something.
+      toast.success(DONE[key] ?? (key.startsWith('del-') ? 'خدمت حذف شد' : 'ثبت شد'));
       // complete/cancel changes bay status — sync global store so BaysView reflects it
       if (syncStore) reloadAll().catch(() => {});
     }
@@ -97,8 +120,14 @@ export const OrderDetailView: React.FC = () => {
         // user action is based on the server RowVersion, not the stale detail view.
         await reload();
         setErr('سفارش در جای دیگری تغییر کرد؛ اطلاعات به‌روز شد. عملیات را دوباره انجام دهید.');
+        toast.error('سفارش در جای دیگری تغییر کرد؛ دوباره انجام دهید.');
       } else {
-        setErr(e instanceof ApiException ? e.message : 'خطا در عملیات');
+        const msg = e instanceof ApiException ? e.message : 'خطا در عملیات';
+        setErr(msg);
+        toast.error(msg);
+        // A refusal usually means the order moved on elsewhere (another screen, another
+        // operator); show where it really is rather than leave the stale step on screen.
+        await reload();
       }
     }
     finally {
@@ -109,7 +138,7 @@ export const OrderDetailView: React.FC = () => {
 
   const isMutating = busy !== null;
 
-  if (loading) return <div className="min-h-[40vh] grid place-items-center"><Loader2 className="animate-spin text-red-600" /></div>;
+  if (loading) return <div className="min-h-[40vh] grid place-items-center"><Loader2 className="animate-spin text-brand-600" /></div>;
   if (!order) return <div className="p-6 text-gray-500 text-sm">سفارش یافت نشد.</div>;
 
   const status = STATUS_LABEL[order.status];
@@ -138,10 +167,30 @@ export const OrderDetailView: React.FC = () => {
         <StatCard label="مانده" value={`${fmtToman(remaining)} تومان`} accent={remaining > 0 ? 'violet' : 'emerald'} />
       </div>
 
+      {order.status === OrderStatus.InProgress && (
+        <div className="mb-5">
+          <OrderStageControl
+            stage={order.stage}
+            outstandingRials={order.outstandingRials}
+            queuePosition={order.queuePosition}
+            currentBayId={order.currentBayId}
+            bays={bayList}
+            stageTimes={Object.fromEntries((order.stageEvents ?? []).map(e => [e.stage, e.atUtc]))}
+            disabled={isMutating}
+            lineCount={order.lines.length}
+            onAdvance={async (next, bayId) => {
+              // syncStore: leaving a bay frees it, and the bay board must not keep
+              // showing this car sitting in a bay it has already driven out of.
+              await wrap('stage', () => ordersApi.advanceStage(order.id, next, bayId), true);
+            }}
+          />
+        </div>
+      )}
+
       <div className="grid lg:grid-cols-3 gap-5">
         <Card className="lg:col-span-2">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="font-extrabold text-gray-900 flex items-center gap-2"><Receipt size={16} className="text-red-600" />آیتم‌های سفارش</h2>
+            <h2 className="font-extrabold text-gray-900 flex items-center gap-2"><Receipt size={16} className="text-brand-600" />آیتم‌های سفارش</h2>
             {canEdit && (
               <button disabled={isMutating}
                 onClick={() => setAddLineOpen(v => !v)}
@@ -152,7 +201,7 @@ export const OrderDetailView: React.FC = () => {
           </div>
 
           {addLineOpen && canEdit && (
-            <div className="rounded-2xl bg-gray-50 p-3 mb-3 grid grid-cols-1 md:grid-cols-4 gap-2">
+            <div className="rounded-2xl bg-gray-50 p-3 mb-3 grid grid-cols-1 md:grid-cols-3 gap-2">
               <select value={newServiceId} onChange={e => setNewServiceId(e.target.value)}
                 className="md:col-span-2 rounded-xl border bg-white px-3 py-2 text-sm">
                 <option value="">— خدمت —</option>
@@ -160,18 +209,32 @@ export const OrderDetailView: React.FC = () => {
               </select>
               <input type="number" min={1} value={newQty} onChange={e => setNewQty(Math.max(1, Number(e.target.value) || 1))}
                 className="rounded-xl border bg-white px-3 py-2 text-sm font-mono" />
-              <select value={newWorkerId} onChange={e => setNewWorkerId(e.target.value)}
-                className="rounded-xl border bg-white px-3 py-2 text-sm">
-                <option value="">بدون کارمند</option>
-                {workers.map(w => <option key={w.id} value={w.id}>{w.fullName}</option>)}
-              </select>
+              <div className="md:col-span-3">
+                <div className="mb-1.5 text-[11px] font-medium text-gray-500">پرسنل انجام‌دهنده</div>
+                <div className="flex gap-2 overflow-x-auto pb-1">
+                  <button type="button" onClick={() => setNewWorkerId('')}
+                    className={clsx('flex flex-shrink-0 items-center gap-2 rounded-xl border px-3 py-1.5 text-xs font-medium transition-colors',
+                      newWorkerId === '' ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50')}>
+                    <span className="grid size-6 place-items-center rounded-full bg-gray-100 text-gray-400"><UserX size={13} /></span>
+                    بدون کارمند
+                  </button>
+                  {workers.map(w => (
+                    <button key={w.id} type="button" onClick={() => setNewWorkerId(w.id)}
+                      className={clsx('flex flex-shrink-0 items-center gap-2 rounded-xl border px-3 py-1.5 text-xs font-medium transition-colors',
+                        newWorkerId === w.id ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50')}>
+                      <WorkerAvatar src={resolveUploadUrl(w.avatarUrl)} name={w.fullName} size={24} />
+                      <span className="whitespace-nowrap">{w.fullName}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
               <button
                 disabled={!newServiceId || isMutating}
                 onClick={() => wrap('add-line', async () => {
                   await ordersApi.addLine(order.id, { serviceId: newServiceId, quantity: newQty, workerId: newWorkerId || null });
                   setAddLineOpen(false); setNewServiceId(''); setNewQty(1); setNewWorkerId('');
                 })}
-                className="md:col-span-4 py-2 rounded-xl bg-red-600 text-white text-sm font-bold disabled:opacity-50">
+                className="md:col-span-3 py-2 rounded-xl bg-brand-600 text-white text-sm font-bold disabled:opacity-50">
                 {busy === 'add-line' ? <Loader2 size={14} className="inline animate-spin" /> : 'افزودن'}
               </button>
             </div>
@@ -185,9 +248,17 @@ export const OrderDetailView: React.FC = () => {
                 <div key={l.id} className="py-3 flex items-center justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="font-bold text-gray-900 text-sm truncate">{l.serviceName}</div>
-                    <div className="text-[11px] text-gray-500 mt-0.5">
-                      {toFa(l.quantity)} × {fmtToman(l.unitPriceRials)} تومان
-                      {l.workerName && <> • کارمند: {l.workerName}</>}
+                    <div className="text-[11px] text-gray-500 mt-0.5 flex items-center gap-1.5">
+                      <span>{toFa(l.quantity)} × {fmtToman(l.unitPriceRials)} تومان</span>
+                      {l.workerName && (
+                        <span className="flex items-center gap-1">
+                          <span className="text-gray-300">•</span>
+                          <WorkerAvatar
+                            src={resolveUploadUrl(workers.find(w => w.id === l.workerId)?.avatarUrl)}
+                            name={l.workerName} size={18} />
+                          {l.workerName}
+                        </span>
+                      )}
                     </div>
                   </div>
                   <div className="font-mono font-bold text-gray-900 text-sm">{fmtToman(l.lineTotalRials)} تومان</div>
@@ -222,12 +293,12 @@ export const OrderDetailView: React.FC = () => {
 
         <div className="space-y-5">
           <Card>
-            <h3 className="font-extrabold text-gray-900 mb-3 flex items-center gap-2"><User size={16} className="text-red-600" />مشتری و خودرو</h3>
+            <h3 className="font-extrabold text-gray-900 mb-3 flex items-center gap-2"><User size={16} className="text-brand-600" />مشتری و خودرو</h3>
             <Row label="مشتری" value={order.customerName} />
             {order.customerPhone && <Row label="تلفن" value={order.customerPhone} mono />}
             {order.customerId && (
               <div className="mt-1">
-                <Link to={`/app/customers/${order.customerId}`} className="text-xs text-red-600 hover:underline">مشاهده پروفایل مشتری ←</Link>
+                <Link to={`/app/customers/${order.customerId}`} className="text-xs text-brand-600 hover:underline">مشاهده پروفایل مشتری ←</Link>
               </div>
             )}
             <div className="my-3 border-t border-dashed" />
@@ -236,7 +307,7 @@ export const OrderDetailView: React.FC = () => {
           </Card>
 
           <Card>
-            <h3 className="font-extrabold text-gray-900 mb-3 flex items-center gap-2"><CreditCard size={16} className="text-red-600" />پرداخت‌ها</h3>
+            <h3 className="font-extrabold text-gray-900 mb-3 flex items-center gap-2"><CreditCard size={16} className="text-brand-600" />پرداخت‌ها</h3>
             {order.payments.length === 0 ? (
               <div className="text-center text-xs text-gray-500 py-4">هنوز پرداختی ثبت نشده</div>
             ) : (

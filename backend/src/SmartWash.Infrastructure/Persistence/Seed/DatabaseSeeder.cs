@@ -43,7 +43,7 @@ public sealed class DatabaseSeeder
         _logger.LogInformation("Seeding plans...");
 
         var starter = Plan.Create("starter", "پلن استارتر", PlanBillingModel.Subscription,
-            setupFee: 25_000_000_0, monthly: 8_000_000_0, yearly: 80_000_000_0, perCar: 0, sortOrder: 1);
+            setupFee: 3_000_000_0, monthly: 8_000_000_0, yearly: 80_000_000_0, perCar: 0, sortOrder: 1);
         starter.SetDescription("مناسب کارواش‌های کوچک تا ۲۰۰ خودرو در ماه");
         starter.AddFeature("max_bays", "3");
         starter.AddFeature("max_users", "5");
@@ -57,7 +57,7 @@ public sealed class DatabaseSeeder
         starter.AddFeature("branding", "false");
 
         var pro = Plan.Create("pro", "پلن حرفه‌ای", PlanBillingModel.Subscription,
-            setupFee: 25_000_000_0, monthly: 15_000_000_0, yearly: 150_000_000_0, perCar: 0, sortOrder: 2);
+            setupFee: 3_000_000_0, monthly: 15_000_000_0, yearly: 150_000_000_0, perCar: 0, sortOrder: 2);
         pro.SetDescription("مناسب کارواش‌های متوسط تا بزرگ با امکانات کامل");
         pro.AddFeature("max_bays", "10");
         pro.AddFeature("max_users", "25");
@@ -122,9 +122,10 @@ public sealed class DatabaseSeeder
             defaultBranch = branch;
             _db.Branches.Add(branch);
             _db.Bays.AddRange(
-                Bay.Create(tenant.Id, branch.Id, "جایگاه ۱", 1),
-                Bay.Create(tenant.Id, branch.Id, "جایگاه ۲", 2),
-                Bay.Create(tenant.Id, branch.Id, "جایگاه ۳", 3));
+                Bay.Create(tenant.Id, branch.Id, "شستشو ۱", 1, BayType.Wash, 1, 4),
+                Bay.Create(tenant.Id, branch.Id, "شستشو ۲", 2, BayType.Wash, 1, 4),
+                Bay.Create(tenant.Id, branch.Id, "شستشو ۳", 3, BayType.Wash, 1, 4),
+                Bay.Create(tenant.Id, branch.Id, "خشک ۹", 9, BayType.Dry, 1, 3));
             _db.Services.AddRange(
                 Service.Create(tenant.Id, "شستشوی معمولی", ServiceCategory.Main, 500_000, 30, 0.10m),
                 Service.Create(tenant.Id, "شستشوی کامل", ServiceCategory.Main, 900_000, 60, 0.10m),

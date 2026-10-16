@@ -105,8 +105,11 @@ public sealed class AddCustomerVehicleValidator : AbstractValidator<AddCustomerV
     public AddCustomerVehicleValidator()
     {
         RuleFor(x => x.Plate).NotEmpty().MaximumLength(20);
-        RuleFor(x => x.Brand).NotEmpty().MaximumLength(60);
-        RuleFor(x => x.Model).NotEmpty().MaximumLength(80);
+        // Optional: at the bay the operator knows the plate and little else, and demanding a
+        // make and model meant the car was never saved at all — so the customer's next visit
+        // started with an empty plate and the car had no history.
+        RuleFor(x => x.Brand).MaximumLength(60);
+        RuleFor(x => x.Model).MaximumLength(80);
         RuleFor(x => x.Year).InclusiveBetween(1300, 1500).When(x => x.Year.HasValue);
     }
 }

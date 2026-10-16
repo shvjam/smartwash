@@ -16,7 +16,25 @@ public sealed class Service : TenantAggregateRoot<Guid>
     public int SortOrder { get; private set; }
     public string? IconKey { get; private set; }
 
-    public static Service Create(Guid tenantId, string name, ServiceCategory category, long price, int duration, decimal commission, string? description = null)
+    /// <summary>
+    /// The kind of bay this service needs, or null when it can be done anywhere.
+    ///
+    /// Used to route a car: a polish belongs with the drying crew, not in a wash bay, and the
+    /// queue cannot put it in the right line without being told which line that is.
+    /// </summary>
+    public BayType? RequiredBayType { get; private set; }
+
+    /// <summary>
+    /// An add-on offered at the bay rather than booked at the desk — wax, polish and the like.
+    ///
+    /// Kept apart from ordinary services because the money can work differently: an optional
+    /// service is sometimes collected by the operator directly rather than through the till,
+    /// and a report that mixed the two would overstate what the carwash actually took.
+    /// </summary>
+    public bool IsOptional { get; private set; }
+
+    public static Service Create(Guid tenantId, string name, ServiceCategory category, long price, int duration, decimal commission, string? description = null,
+        BayType? requiredBayType = null, bool isOptional = false)
     {
         return new Service
         {
@@ -28,11 +46,14 @@ public sealed class Service : TenantAggregateRoot<Guid>
             PriceRials = price,
             DurationMinutes = duration,
             WorkerCommissionRate = commission,
+            RequiredBayType = requiredBayType,
+            IsOptional = isOptional,
             CreatedAtUtc = DateTime.UtcNow
         };
     }
 
-    public void Update(string name, string? description, ServiceCategory category, long price, int duration, decimal commission, int sortOrder, string? iconKey)
+    public void Update(string name, string? description, ServiceCategory category, long price, int duration, decimal commission, int sortOrder, string? iconKey,
+        BayType? requiredBayType = null, bool? isOptional = null)
     {
         Name = name.Trim();
         Description = description?.Trim();
@@ -42,6 +63,8 @@ public sealed class Service : TenantAggregateRoot<Guid>
         WorkerCommissionRate = commission;
         SortOrder = sortOrder;
         IconKey = iconKey;
+        RequiredBayType = requiredBayType;
+        if (isOptional.HasValue) IsOptional = isOptional.Value;
         UpdatedAtUtc = DateTime.UtcNow;
     }
 

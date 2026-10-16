@@ -23,6 +23,19 @@ public sealed class CustomersController : ControllerBase
     public sealed record AdjustWalletRequest(long AmountRials, string? Description);
     public sealed record AdjustLoyaltyRequest(int Points, string? Description);
 
+    /// <summary>فیلتر هوشمند مشتریان برای ارسال گروهی یادآوری</summary>
+    [HttpGet("segment")]
+    [HasPermission(Permissions.CustomersRead)]
+    public async Task<IActionResult> Segment(
+        [FromQuery] DateOnly? dueFrom, [FromQuery] DateOnly? dueTo,
+        [FromQuery] int? notVisitedInDays, [FromQuery] int? visitedInDays,
+        [FromQuery] int? minVisits, [FromQuery] int? maxVisits,
+        [FromQuery] LoyaltyTier? minTier, [FromQuery] Guid? serviceId,
+        [FromQuery] long? minTotalSpentRials, [FromQuery] int take = 500,
+        CancellationToken ct = default)
+        => (await _sender.Send(new GetCustomerSegmentQuery(dueFrom, dueTo, notVisitedInDays, visitedInDays,
+            minVisits, maxVisits, minTier, serviceId, minTotalSpentRials, take), ct)).ToActionResult();
+
     [HttpGet]
     [HasPermission(Permissions.CustomersRead)]
     public async Task<IActionResult> Search([FromQuery] string? search = null, [FromQuery] LoyaltyTier? tier = null,

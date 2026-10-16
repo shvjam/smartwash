@@ -26,7 +26,7 @@ public sealed class AuditWriter : IAuditWriter
         _http = http;
     }
 
-    public Task WriteAsync(string action, string entityName, string entityId, object? oldValues, object? newValues, CancellationToken ct = default)
+    public async Task WriteAsync(string action, string entityName, string entityId, object? oldValues, object? newValues, CancellationToken ct = default)
     {
         var ip = _http.HttpContext?.Connection.RemoteIpAddress?.ToString();
         var ua = _http.HttpContext?.Request.Headers.UserAgent.ToString();
@@ -44,7 +44,10 @@ public sealed class AuditWriter : IAuditWriter
             _correlation.CorrelationId);
 
         _db.AuditLogs.Add(log);
-        return Task.CompletedTask;
+        // Saved here rather than left for the caller: the unit of work commits the
+        // transaction without calling SaveChanges, so an entry merely added to the context
+        // would be discarded — which is why this table has stayed empty.
+        await _db.SaveChangesAsync(ct);
     }
 }
 // resync-marker

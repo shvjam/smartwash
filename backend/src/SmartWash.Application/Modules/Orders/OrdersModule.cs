@@ -1,7 +1,9 @@
+using SmartWash.Application.Abstractions.Identity;
 using SmartWash.Application.Abstractions.Multitenancy;
 using SmartWash.Application.Abstractions.Persistence;
 using SmartWash.Application.Behaviors;
 using SmartWash.Domain.Operations;
+using SmartWash.Shared.Exceptions;
 using SmartWash.Shared.Pagination;
 using SmartWash.Shared.Results;
 using FluentValidation;
@@ -12,18 +14,26 @@ namespace SmartWash.Application.Modules.Orders;
 
 public sealed record OrderLineDto(Guid Id, Guid ServiceId, string ServiceName, long UnitPriceRials, int Quantity, int DurationMinutes, long LineTotalRials, Guid? WorkerId, string? WorkerName, decimal WorkerCommissionRate, long WorkerCommissionRials, long TipRials);
 public sealed record OrderPaymentDto(Guid Id, PaymentMethod Method, long AmountRials, string? Reference, DateTime PaidAtUtc);
-public sealed record OrderDto(Guid Id, Guid BranchId, string Number, Guid BayId, Guid? CustomerId, string CustomerName, string? CustomerPhone, string VehiclePlate, string? VehicleBrand, string? VehicleModel,
-    OrderStatus Status, OrderSource Source, DateTime StartedAtUtc, DateTime? CompletedAtUtc, int ExpectedDurationMinutes,
+public sealed record OrderDto(Guid Id, Guid BranchId, string Number, Guid? BayId, Guid? CustomerId, string CustomerName, string? CustomerPhone, string VehiclePlate, string? VehicleBrand, string? VehicleModel,
+    OrderStatus Status, OrderStage Stage, OrderSource Source, DateTime StartedAtUtc, DateTime? CompletedAtUtc,
+    DateTime? WashStartedAtUtc, DateTime? WashCompletedAtUtc, long OutstandingRials,
+    Guid? CurrentBayId, int? QueuePosition, int ExpectedDurationMinutes,
     long SubtotalRials, long DiscountRials, long WalletUsedRials, int LoyaltyPointsUsed, long TotalRials, long PaidRials, PaymentMethod? FinalPaymentMethod, string? Notes,
-    IReadOnlyList<OrderLineDto> Lines, IReadOnlyList<OrderPaymentDto> Payments);
+    IReadOnlyList<OrderLineDto> Lines, IReadOnlyList<OrderPaymentDto> Payments,
+    IReadOnlyList<OrderStageEventDto> StageEvents);
+
+public sealed record OrderStageEventDto(OrderStage Stage, DateTime AtUtc, string? Note);
 
 public static class OrderMap
 {
     public static OrderDto ToDto(Order o) => new(o.Id, o.BranchId, o.Number, o.BayId, o.CustomerId, o.CustomerName, o.CustomerPhone, o.VehiclePlate, o.VehicleBrand, o.VehicleModel,
-        o.Status, o.Source, o.StartedAtUtc, o.CompletedAtUtc, o.ExpectedDurationMinutes,
+        o.Status, o.Stage, o.Source, o.StartedAtUtc, o.CompletedAtUtc,
+        o.WashStartedAtUtc, o.WashCompletedAtUtc, o.OutstandingRials,
+        o.CurrentBayId, o.QueuePosition, o.ExpectedDurationMinutes,
         o.SubtotalRials, o.DiscountRials, o.WalletUsedRials, o.LoyaltyPointsUsed, o.TotalRials, o.PaidRials, o.FinalPaymentMethod, o.Notes,
         o.Lines.Select(l => new OrderLineDto(l.Id, l.ServiceId, l.ServiceName, l.UnitPriceRials, l.Quantity, l.DurationMinutes, l.LineTotalRials, l.WorkerId, l.WorkerName, l.WorkerCommissionRate, l.WorkerCommissionRials, l.TipRials)).ToArray(),
-        o.Payments.Select(p => new OrderPaymentDto(p.Id, p.Method, p.AmountRials, p.Reference, p.PaidAtUtc)).ToArray());
+        o.Payments.Select(p => new OrderPaymentDto(p.Id, p.Method, p.AmountRials, p.Reference, p.PaidAtUtc)).ToArray(),
+        o.StageEvents.OrderBy(e => e.AtUtc).Select(e => new OrderStageEventDto(e.Stage, e.AtUtc, e.Note)).ToArray());
 }
 
 public sealed record SearchOrdersQuery(Guid? BranchId, OrderStatus? Status, DateTime? FromUtc, DateTime? ToUtc, string? Search, int Page, int PageSize) : IRequest<Result<PagedList<OrderDto>>>;
@@ -33,7 +43,8 @@ public sealed class SearchOrdersHandler : IRequestHandler<SearchOrdersQuery, Res
     public SearchOrdersHandler(IAppDbContext db) => _db = db;
     public async Task<Result<PagedList<OrderDto>>> Handle(SearchOrdersQuery q, CancellationToken ct)
     {
-        var query = _db.Orders.AsNoTracking().Include(x => x.Lines).Include(x => x.Payments).AsQueryable();
+        var query = _db.Orders.AsNoTracking().Include(x => x.Lines).Include(x => x.Payments)
+            .Include(x => x.StageEvents).Include(x => x.BayVisits).AsSplitQuery().AsQueryable();
         if (q.BranchId.HasValue) query = query.Where(x => x.BranchId == q.BranchId.Value);
         if (q.Status.HasValue) query = query.Where(x => x.Status == q.Status.Value);
         if (q.FromUtc.HasValue) query = query.Where(x => x.StartedAtUtc >= q.FromUtc.Value);
@@ -58,13 +69,13 @@ public sealed class GetOrderHandler : IRequestHandler<GetOrderQuery, Result<Orde
     public GetOrderHandler(IAppDbContext db) => _db = db;
     public async Task<Result<OrderDto>> Handle(GetOrderQuery q, CancellationToken ct)
     {
-        var o = await _db.Orders.AsNoTracking().Include(x => x.Lines).Include(x => x.Payments).FirstOrDefaultAsync(x => x.Id == q.Id, ct);
+        var o = await _db.Orders.AsNoTracking().Include(x => x.Lines).Include(x => x.Payments).Include(x => x.StageEvents).Include(x => x.BayVisits).FirstOrDefaultAsync(x => x.Id == q.Id, ct);
         return o is null ? Result.Failure<OrderDto>(Error.NotFound("Order.NotFound", "سفارش یافت نشد.")) : OrderMap.ToDto(o);
     }
 }
 
 public sealed record CreateOrderLineInput(Guid ServiceId, int Quantity, Guid? WorkerId);
-public sealed record CreateOrderCommand(Guid BranchId, Guid BayId, Guid? CustomerId, Guid? VehicleId, string CustomerName, string? CustomerPhone,
+public sealed record CreateOrderCommand(Guid BranchId, Guid? BayId, Guid? CustomerId, Guid? VehicleId, string CustomerName, string? CustomerPhone,
     string VehiclePlate, string? VehicleBrand, string? VehicleModel, OrderSource Source, Guid? ReservationId, IReadOnlyList<CreateOrderLineInput> Lines) : IRequest<Result<OrderDto>>, ITransactionalRequest;
 
 public sealed class CreateOrderValidator : AbstractValidator<CreateOrderCommand>
@@ -72,7 +83,6 @@ public sealed class CreateOrderValidator : AbstractValidator<CreateOrderCommand>
     public CreateOrderValidator()
     {
         RuleFor(x => x.BranchId).NotEmpty();
-        RuleFor(x => x.BayId).NotEmpty();
         RuleFor(x => x.CustomerName).NotEmpty().MaximumLength(150);
         RuleFor(x => x.VehiclePlate).NotEmpty().MaximumLength(20);
         // A bay can be occupied before services are selected; lines are added through /orders/{id}/lines.
@@ -92,11 +102,18 @@ public sealed class CreateOrderHandler : IRequestHandler<CreateOrderCommand, Res
     public async Task<Result<OrderDto>> Handle(CreateOrderCommand c, CancellationToken ct)
     {
         var tenantId = _tenant.TenantId ?? Guid.Empty;
-        var bay = await _db.Bays.FirstOrDefaultAsync(x => x.Id == c.BayId, ct);
-        if (bay is null) return Result.Failure<OrderDto>(Error.NotFound("Bay.NotFound", "جایگاه یافت نشد."));
-        // جایگاه باید به همان شعبه‌ی سفارش تعلق داشته باشد تا گزارش‌های شعبه‌ای مخدوش نشوند
-        if (bay.BranchId != c.BranchId) return Result.Failure<OrderDto>(Error.Validation("Bay.WrongBranch", "جایگاه انتخابی متعلق به این شعبه نیست."));
-        if (bay.Status != BayStatus.Free) return Result.Failure<OrderDto>(Error.Conflict("Bay.NotFree", "جایگاه آزاد نیست."));
+        // Without a bay the order joins the wash queue; that is how an arriving reservation waits
+        // when every wash bay is taken.
+        Bay? bay = null;
+        if (c.BayId.HasValue)
+        {
+            bay = await _db.Bays.FirstOrDefaultAsync(x => x.Id == c.BayId.Value, ct);
+            if (bay is null) return Result.Failure<OrderDto>(Error.NotFound("Bay.NotFound", "جایگاه یافت نشد."));
+            // جایگاه باید به همان شعبه‌ی سفارش تعلق داشته باشد تا گزارش‌های شعبه‌ای مخدوش نشوند
+            if (bay.BranchId != c.BranchId) return Result.Failure<OrderDto>(Error.Validation("Bay.WrongBranch", "جایگاه انتخابی متعلق به این شعبه نیست."));
+            if (!bay.IsActive) return Result.Failure<OrderDto>(Error.Validation("Bay.Inactive", "جایگاه غیرفعال است."));
+            if (bay.Status != BayStatus.Free) return Result.Failure<OrderDto>(Error.Conflict("Bay.NotFree", "جایگاه آزاد نیست."));
+        }
 
         var settings = await _db.TenantSettings.FirstOrDefaultAsync(ct);
         if (settings is null)
@@ -138,8 +155,9 @@ public sealed class CreateOrderHandler : IRequestHandler<CreateOrderCommand, Res
             order.AddLine(svc.Id, svc.Name, svc.PriceRials, line.Quantity, svc.DurationMinutes, svc.WorkerCommissionRate, line.WorkerId, workerName);
         }
 
-        bay.Occupy(order.Id);
+        bay?.Occupy(order.Id);
         _db.Orders.Add(order);
+        if (bay is null) await QueueNumbering.RenumberAsync(_db, c.BranchId, order, ct);
 
         if (c.ReservationId.HasValue)
         {
@@ -165,7 +183,8 @@ public sealed class AddOrderLineHandler : IRequestHandler<AddOrderLineCommand, R
     public AddOrderLineHandler(IAppDbContext db) => _db = db;
     public async Task<Result<OrderDto>> Handle(AddOrderLineCommand c, CancellationToken ct)
     {
-        var order = await _db.Orders.Include(o => o.Lines).Include(o => o.Payments).FirstOrDefaultAsync(o => o.Id == c.OrderId, ct);
+        var order = await _db.Orders.Include(o => o.Lines).Include(o => o.Payments)
+            .Include(o => o.StageEvents).Include(o => o.BayVisits).FirstOrDefaultAsync(o => o.Id == c.OrderId, ct);
         if (order is null) return Result.Failure<OrderDto>(Error.NotFound("Order.NotFound", "سفارش یافت نشد."));
         var svc = await _db.Services.FirstOrDefaultAsync(s => s.Id == c.ServiceId, ct);
         if (svc is null) return Result.Failure<OrderDto>(Error.NotFound("Service.NotFound", "خدمت یافت نشد."));
@@ -184,7 +203,8 @@ public sealed class RemoveOrderLineHandler : IRequestHandler<RemoveOrderLineComm
     public RemoveOrderLineHandler(IAppDbContext db) => _db = db;
     public async Task<Result<OrderDto>> Handle(RemoveOrderLineCommand c, CancellationToken ct)
     {
-        var order = await _db.Orders.Include(o => o.Lines).Include(o => o.Payments).FirstOrDefaultAsync(o => o.Id == c.OrderId, ct);
+        var order = await _db.Orders.Include(o => o.Lines).Include(o => o.Payments)
+            .Include(o => o.StageEvents).Include(o => o.BayVisits).FirstOrDefaultAsync(o => o.Id == c.OrderId, ct);
         if (order is null) return Result.Failure<OrderDto>(Error.NotFound("Order.NotFound", "سفارش یافت نشد."));
         order.RemoveLine(c.LineId);
         await _db.SaveChangesAsync(ct);
@@ -199,7 +219,7 @@ public sealed class ApplyDiscountHandler : IRequestHandler<ApplyDiscountCommand,
     public ApplyDiscountHandler(IAppDbContext db) => _db = db;
     public async Task<Result<OrderDto>> Handle(ApplyDiscountCommand c, CancellationToken ct)
     {
-        var o = await _db.Orders.Include(x => x.Lines).Include(x => x.Payments).FirstOrDefaultAsync(x => x.Id == c.OrderId, ct);
+        var o = await _db.Orders.Include(x => x.Lines).Include(x => x.Payments).Include(x => x.StageEvents).Include(x => x.BayVisits).FirstOrDefaultAsync(x => x.Id == c.OrderId, ct);
         if (o is null) return Result.Failure<OrderDto>(Error.NotFound("Order.NotFound", "سفارش یافت نشد."));
         o.ApplyDiscount(c.DiscountRials);
         await _db.SaveChangesAsync(ct);
@@ -214,7 +234,7 @@ public sealed class AddOrderPaymentHandler : IRequestHandler<AddOrderPaymentComm
     public AddOrderPaymentHandler(IAppDbContext db) => _db = db;
     public async Task<Result<OrderDto>> Handle(AddOrderPaymentCommand c, CancellationToken ct)
     {
-        var o = await _db.Orders.Include(x => x.Lines).Include(x => x.Payments).FirstOrDefaultAsync(x => x.Id == c.OrderId, ct);
+        var o = await _db.Orders.Include(x => x.Lines).Include(x => x.Payments).Include(x => x.StageEvents).Include(x => x.BayVisits).FirstOrDefaultAsync(x => x.Id == c.OrderId, ct);
         if (o is null) return Result.Failure<OrderDto>(Error.NotFound("Order.NotFound", "سفارش یافت نشد."));
         if (c.Method == PaymentMethod.Wallet)
         {
@@ -237,7 +257,7 @@ public sealed class CompleteOrderHandler : IRequestHandler<CompleteOrderCommand,
     public CompleteOrderHandler(IAppDbContext db) => _db = db;
     public async Task<Result<OrderDto>> Handle(CompleteOrderCommand c, CancellationToken ct)
     {
-        var o = await _db.Orders.Include(x => x.Lines).Include(x => x.Payments).FirstOrDefaultAsync(x => x.Id == c.OrderId, ct);
+        var o = await _db.Orders.Include(x => x.Lines).Include(x => x.Payments).Include(x => x.StageEvents).Include(x => x.BayVisits).FirstOrDefaultAsync(x => x.Id == c.OrderId, ct);
         if (o is null) return Result.Failure<OrderDto>(Error.NotFound("Order.NotFound", "سفارش یافت نشد."));
 
         // اگر روش پرداخت «کیف پول» است، موجودی باید قبل از Complete کسر شود
@@ -260,9 +280,10 @@ public sealed class CompleteOrderHandler : IRequestHandler<CompleteOrderCommand,
 
         o.Complete(c.FinalMethod);
 
-        // Free the bay
-        var bay = await _db.Bays.FirstOrDefaultAsync(b => b.Id == o.BayId, ct);
-        bay?.Free();
+        // Free the bay the car is actually in. It may not be the one it was booked onto, and
+        // after the car moved on that bay may already hold someone else.
+        var bay = await _db.Bays.FirstOrDefaultAsync(b => b.CurrentOrderId == o.Id, ct);
+        bay?.ReleaseIfHeldBy(o.Id);
 
         // Update customer stats + loyalty
         if (o.CustomerId.HasValue)
@@ -332,7 +353,7 @@ public sealed class SetLineTipHandler : IRequestHandler<SetLineTipCommand, Resul
     public SetLineTipHandler(IAppDbContext db) => _db = db;
     public async Task<Result<OrderDto>> Handle(SetLineTipCommand c, CancellationToken ct)
     {
-        var o = await _db.Orders.Include(x => x.Lines).Include(x => x.Payments).FirstOrDefaultAsync(x => x.Id == c.OrderId, ct);
+        var o = await _db.Orders.Include(x => x.Lines).Include(x => x.Payments).Include(x => x.StageEvents).Include(x => x.BayVisits).FirstOrDefaultAsync(x => x.Id == c.OrderId, ct);
         if (o is null) return Result.Failure<OrderDto>(Error.NotFound("Order.NotFound", "سفارش یافت نشد."));
         if (o.Status != OrderStatus.InProgress) return Result.Failure<OrderDto>(Error.Conflict("Order.NotEditable", "سفارش قابل ویرایش نیست."));
         var line = o.Lines.FirstOrDefault(l => l.Id == c.LineId);
@@ -351,7 +372,7 @@ public sealed class AssignLineWorkerHandler : IRequestHandler<AssignLineWorkerCo
     public AssignLineWorkerHandler(IAppDbContext db) => _db = db;
     public async Task<Result<OrderDto>> Handle(AssignLineWorkerCommand c, CancellationToken ct)
     {
-        var o = await _db.Orders.Include(x => x.Lines).Include(x => x.Payments).FirstOrDefaultAsync(x => x.Id == c.OrderId, ct);
+        var o = await _db.Orders.Include(x => x.Lines).Include(x => x.Payments).Include(x => x.StageEvents).Include(x => x.BayVisits).FirstOrDefaultAsync(x => x.Id == c.OrderId, ct);
         if (o is null) return Result.Failure<OrderDto>(Error.NotFound("Order.NotFound", "سفارش یافت نشد."));
         if (o.Status != OrderStatus.InProgress) return Result.Failure<OrderDto>(Error.Conflict("Order.NotEditable", "سفارش قابل ویرایش نیست."));
         var line = o.Lines.FirstOrDefault(l => l.Id == c.LineId);
@@ -372,7 +393,7 @@ public sealed class ApplyLoyaltyFreeHandler : IRequestHandler<ApplyLoyaltyFreeCo
     public ApplyLoyaltyFreeHandler(IAppDbContext db) => _db = db;
     public async Task<Result<OrderDto>> Handle(ApplyLoyaltyFreeCommand c, CancellationToken ct)
     {
-        var o = await _db.Orders.Include(x => x.Lines).Include(x => x.Payments).FirstOrDefaultAsync(x => x.Id == c.OrderId, ct);
+        var o = await _db.Orders.Include(x => x.Lines).Include(x => x.Payments).Include(x => x.StageEvents).Include(x => x.BayVisits).FirstOrDefaultAsync(x => x.Id == c.OrderId, ct);
         if (o is null) return Result.Failure<OrderDto>(Error.NotFound("Order.NotFound", "سفارش یافت نشد."));
         if (o.Status != OrderStatus.InProgress) return Result.Failure<OrderDto>(Error.Conflict("Order.NotEditable", "سفارش قابل ویرایش نیست."));
         if (!o.CustomerId.HasValue) return Result.Failure<OrderDto>(Error.Validation("Order.NoCustomer", "برای اعمال خدمت رایگان، مشتری باید مشخص باشد."));
@@ -412,7 +433,7 @@ public sealed class CancelOrderHandler : IRequestHandler<CancelOrderCommand, Res
     public CancelOrderHandler(IAppDbContext db) => _db = db;
     public async Task<Result<OrderDto>> Handle(CancelOrderCommand c, CancellationToken ct)
     {
-        var o = await _db.Orders.Include(x => x.Lines).Include(x => x.Payments).FirstOrDefaultAsync(x => x.Id == c.OrderId, ct);
+        var o = await _db.Orders.Include(x => x.Lines).Include(x => x.Payments).Include(x => x.StageEvents).Include(x => x.BayVisits).FirstOrDefaultAsync(x => x.Id == c.OrderId, ct);
         if (o is null) return Result.Failure<OrderDto>(Error.NotFound("Order.NotFound", "سفارش یافت نشد."));
 
         // برگشت اثرهای جانبیِ سفارش روی مشتری (کیف پول و خدمت رایگان) هنگام لغو
@@ -439,10 +460,192 @@ public sealed class CancelOrderHandler : IRequestHandler<CancelOrderCommand, Res
         }
 
         o.Cancel(c.Reason);
-        var bay = await _db.Bays.FirstOrDefaultAsync(b => b.Id == o.BayId, ct);
-        bay?.Free();
+        var bay = await _db.Bays.FirstOrDefaultAsync(b => b.CurrentOrderId == o.Id, ct);
+        bay?.ReleaseIfHeldBy(o.Id);
+        await QueueNumbering.RenumberAsync(_db, o.BranchId, o, ct);
         await _db.SaveChangesAsync(ct);
         return OrderMap.ToDto(o);
     }
 }
+
+public sealed record AdvanceOrderStageCommand(Guid OrderId, OrderStage Stage, Guid? BayId, string? Note)
+    : IRequest<Result<OrderDto>>, ITransactionalRequest;
+
+/// <summary>
+/// Moves a car to its next stage, and releases the bay the moment the washing is done.
+///
+/// Before this existed, a bay stayed occupied until the sale was closed, so a car that had
+/// finished being washed but was still drying — or whose owner had wandered off — held a bay
+/// that was standing empty. On a four-bay site that is a quarter of the capacity lost to
+/// bookkeeping. The bay is now let go as soon as the car leaves it, which is what the person
+/// on the floor means when they say the bay is free.
+///
+/// Closing the sale still frees the bay too, for the ordinary case where a car is washed and
+/// driven away without anyone touching the stage buttons.
+/// </summary>
+public sealed class AdvanceOrderStageHandler : IRequestHandler<AdvanceOrderStageCommand, Result<OrderDto>>
+{
+    private readonly IAppDbContext _db;
+    private readonly ICurrentUser _currentUser;
+    public AdvanceOrderStageHandler(IAppDbContext db, ICurrentUser currentUser)
+    {
+        _db = db;
+        _currentUser = currentUser;
+    }
+
+    public async Task<Result<OrderDto>> Handle(AdvanceOrderStageCommand c, CancellationToken ct)
+    {
+        var o = await _db.Orders
+            .Include(x => x.Lines).Include(x => x.Payments)
+            .Include(x => x.StageEvents).Include(x => x.BayVisits)
+            .FirstOrDefaultAsync(x => x.Id == c.OrderId, ct);
+        if (o is null) return Result.Failure<OrderDto>(Error.NotFound("Order.NotFound", "سفارش یافت نشد."));
+
+        // The bay record decides which bay the car is in. The order only remembers the last bay
+        // it used: an order booked onto a bay is in it from the start, and a car that has left a
+        // bay must not still be treated as holding it.
+        var holding = await _db.Bays.FirstOrDefaultAsync(b => b.CurrentOrderId == o.Id, ct);
+        var allowed = AllowedBays(c.Stage);
+
+        Bay? target = null;
+        if (allowed.Length > 0)
+        {
+            if (c.BayId.HasValue)
+            {
+                target = holding?.Id == c.BayId ? holding : await _db.Bays.FirstOrDefaultAsync(b => b.Id == c.BayId.Value, ct);
+                if (target is null)
+                    return Result.Failure<OrderDto>(Error.NotFound("Bay.NotFound", "جایگاه یافت نشد."));
+            }
+            else if (holding is not null)
+            {
+                // Already in a bay, so the next step happens there. A car booked onto bay 3 is
+                // washed, dried and finished in bay 3; it only moves when the operator moves it.
+                // Asking for a bay here is what used to stop the operator mid-journey.
+                target = holding;
+            }
+            else
+            {
+                return Result.Failure<OrderDto>(Error.Validation("Order.BayRequired",
+                    $"برای «{StageLabel(c.Stage)}» یک جایگاه {string.Join(" یا ", allowed.Select(BayTypeLabel))} انتخاب کنید."));
+            }
+
+            if (target.Id != holding?.Id && !allowed.Contains(target.Type))
+                return Result.Failure<OrderDto>(Error.Validation("Bay.WrongType",
+                    $"«{StageLabel(c.Stage)}» در جایگاه {BayTypeLabel(target.Type)} انجام نمی‌شود."));
+
+            if (target.Id != holding?.Id)
+            {
+                if (!target.IsActive)
+                    return Result.Failure<OrderDto>(Error.Validation("Bay.Inactive", "جایگاه مقصد غیرفعال است."));
+                if (target.Status == BayStatus.Maintenance)
+                    return Result.Failure<OrderDto>(Error.Conflict("Bay.InMaintenance", "جایگاه مقصد در تعمیر است."));
+                if (target.Status == BayStatus.Occupied)
+                    return Result.Failure<OrderDto>(Error.Conflict("Bay.NotFree", "جایگاه مقصد آزاد نیست."));
+            }
+        }
+
+        try
+        {
+            o.AdvanceStage(c.Stage, target?.Id, _currentUser.UserId, c.Note);
+        }
+        catch (DomainException ex)
+        {
+            return Result.Failure<OrderDto>(Error.Validation(ex.Code, ex.Message));
+        }
+
+        // Leave the old bay, unless the next step happens in it.
+        if (holding is not null && holding.Id != target?.Id)
+            holding.ReleaseIfHeldBy(o.Id);
+
+        if (target is not null && target.Id != holding?.Id)
+            target.Occupy(o.Id);
+
+        // Positions are renumbered in the same save, because a car leaving a line moves everyone
+        // behind it forward and the number read out to the customer has to stay true.
+        await QueueNumbering.RenumberAsync(_db, o.BranchId, o, ct);
+        await _db.SaveChangesAsync(ct);
+
+        return Result.Success(OrderMap.ToDto(o));
+    }
+
+    /// <summary>The kinds of bay a stage may happen in; empty when the car is not in a bay.</summary>
+    private static BayType[] AllowedBays(OrderStage stage) => stage switch
+    {
+        OrderStage.Washing => new[] { BayType.Wash, BayType.EngineWash, BayType.Special },
+        OrderStage.Drying => new[] { BayType.Dry },
+        // Wax and polish usually happen where the car was dried, but a site with its own
+        // polishing bay can send it there instead.
+        OrderStage.OptionServices => new[] { BayType.Dry, BayType.Wax, BayType.Polish, BayType.Special },
+        _ => Array.Empty<BayType>(),
+    };
+
+    private static string StageLabel(OrderStage s) => s switch
+    {
+        OrderStage.Washing => "شستشو",
+        OrderStage.Drying => "خشک‌کردن",
+        OrderStage.OptionServices => "خدمات آپشن",
+        _ => s.ToString(),
+    };
+
+    private static string BayTypeLabel(BayType t) => t switch
+    {
+        BayType.Wash => "شستشو",
+        BayType.Dry => "خشک",
+        BayType.Wax => "واکس",
+        BayType.Polish => "پولیش",
+        BayType.EngineWash => "موتورشویی",
+        _ => "ویژه",
+    };
+}
+
+/// <summary>
+/// Keeps the waiting lines numbered from one.
+///
+/// A position is only meaningful next to everyone else waiting, so it cannot be assigned when a
+/// car joins and then left alone — the moment a car ahead is pulled into a bay, every number
+/// behind it is wrong. Renumbering the whole line after any movement is cheap at carwash scale
+/// (a line is a handful of cars, never thousands) and it is the only version that is always
+/// right, which matters when the number has been read out loud to a customer.
+/// </summary>
+public static class QueueNumbering
+{
+    /// <param name="moving">
+    /// The order whose stage just changed in memory. The database still holds its old stage, so
+    /// it is placed in, or taken out of, the lines by its new stage here.
+    /// </param>
+    public static async Task RenumberAsync(IAppDbContext db, Guid branchId, Order? moving, CancellationToken ct)
+    {
+        var waiting = await db.Orders
+            .Include(o => o.StageEvents)
+            .Where(o => o.BranchId == branchId
+                        && o.Status == OrderStatus.InProgress
+                        && (o.Stage == OrderStage.QueuedForWash || o.Stage == OrderStage.QueuedForDry))
+            .ToListAsync(ct);
+
+        if (moving is not null)
+        {
+            waiting.RemoveAll(o => o.Id == moving.Id);
+            if (moving.Status == OrderStatus.InProgress && OrderStageRules.IsQueue(moving.Stage))
+                waiting.Add(moving);
+            else if (moving.QueuePosition is not null)
+                moving.SetQueuePosition(null);
+        }
+
+        // Earliest to join the line goes first; joining is the moment it entered the queue stage.
+        foreach (var line in waiting.GroupBy(o => o.Stage))
+        {
+            var position = 1;
+            foreach (var order in line.OrderBy(JoinedAt))
+            {
+                if (order.QueuePosition != position) order.SetQueuePosition(position);
+                position++;
+            }
+        }
+    }
+
+    private static DateTime JoinedAt(Order o)
+        => o.StageEvents.Where(e => e.Stage == o.Stage).Select(e => (DateTime?)e.AtUtc).Max()
+           ?? o.UpdatedAtUtc ?? o.StartedAtUtc;
+}
+
 // resync-marker

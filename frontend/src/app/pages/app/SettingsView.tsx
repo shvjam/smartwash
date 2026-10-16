@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Save, Palette, Award, Receipt, MessageSquare, CalendarClock, Check, Lock, Upload, X, Loader2 } from 'lucide-react';
 import { settingsApi, filesApi, TenantSettingsDto, ApiException } from '../../api';
+import { applyBrandColor, useBranding } from '../../lib/branding';
 import { resolveUploadUrl } from '../../api/adapters';
 import { PageHeader, Card } from '../../components/app/PageHeader';
 import { clsx } from 'clsx';
@@ -28,7 +29,7 @@ const UpgradeNotice = ({ feature }: { feature: string }) => (
       برای دسترسی به تنظیمات <strong>{feature}</strong>، پلن اشتراک خود را ارتقا دهید.
     </p>
     <a href="/app/billing"
-      className="mt-2 bg-gradient-to-br from-red-500 to-red-700 text-white px-6 py-3 rounded-2xl font-bold text-sm shadow-lg shadow-red-500/30 hover:from-red-600 hover:to-red-800 transition-all">
+      className="mt-2 bg-gradient-to-br from-brand-500 to-brand-700 text-white px-6 py-3 rounded-2xl font-bold text-sm shadow-lg shadow-brand-500/30 hover:from-brand-600 hover:to-brand-800 transition-all">
       مشاهده پلن‌ها و ارتقا
     </a>
   </div>
@@ -52,6 +53,8 @@ export const SettingsView = () => {
   useEffect(() => { settingsApi.get().then(setData).catch(() => { }); }, []);
   if (!data) return <div className="text-center text-gray-400 py-10">در حال بارگذاری…</div>;
 
+  const { refresh: refreshBranding } = useBranding();
+
   const set = <K extends keyof TenantSettingsDto>(k: K, v: TenantSettingsDto[K]) => setData(d => d ? { ...d, [k]: v } : d);
 
   const save = async () => {
@@ -62,6 +65,7 @@ export const SettingsView = () => {
       else if (tab === 'receipt')    await settingsApi.receipt({ header: data.receiptHeader, footer: data.receiptFooter ?? null, invoicePrefix: data.invoicePrefix ?? null });
       else if (tab === 'sms')        await settingsApi.sms({ enabled: data.smsEnabled });
       else if (tab === 'reservation') await settingsApi.reservation({ enabled: data.reservationEnabled, leadMinutes: data.reservationLeadMinutes, maxAdvanceDays: data.reservationMaxAdvanceDays });
+      if (tab === 'branding') refreshBranding();
       setToast('تنظیمات با موفقیت ذخیره شد');
       setTimeout(() => setToast(null), 2500);
     } catch (e) {
@@ -113,7 +117,7 @@ export const SettingsView = () => {
             {tab === 'branding' && (
               <div className="grid sm:grid-cols-2 gap-4">
                 <LogoField value={data.logoUrl ?? null} onChange={v => set('logoUrl', v)} />
-                <Input label="رنگ اصلی (مثلاً #ef4444)" value={data.primaryColor ?? ''} onChange={v => set('primaryColor', v || null)} dir="ltr" />
+                <ColorField value={data.primaryColor ?? null} onChange={v => set('primaryColor', v)} />
                 <Input label="شعار برند" value={data.tagline ?? ''} onChange={v => set('tagline', v || null)} className="sm:col-span-2" />
                 <label className="block sm:col-span-2">
                   <span className="text-xs font-medium text-gray-600 mb-2 block">قالب نمایشی</span>
@@ -173,7 +177,7 @@ export const SettingsView = () => {
 
             <div className="mt-6 pt-6 border-t border-gray-50">
               <button onClick={save} disabled={busy}
-                className="bg-gradient-to-br from-red-500 to-red-700 text-white px-5 py-3 rounded-2xl font-bold flex items-center gap-2 disabled:opacity-60 shadow-lg shadow-red-500/30">
+                className="bg-gradient-to-br from-brand-500 to-brand-700 text-white px-5 py-3 rounded-2xl font-bold flex items-center gap-2 disabled:opacity-60 shadow-lg shadow-brand-500/30">
                 <Save size={16} />ذخیره تغییرات
               </button>
             </div>
@@ -191,6 +195,91 @@ export const SettingsView = () => {
  * somewhere themselves and paste a link — for a field whose whole purpose is "show me your
  * logo". The upload endpoint already existed.
  */
+/** Ready-made colours, so choosing one is a decision about taste rather than about hex codes. */
+const PRESETS: Array<[hex: string, label: string]> = [
+  ['#ef4444', 'قرمز'], ['#f97316', 'نارنجی'], ['#eab308', 'زرد'], ['#22c55e', 'سبز'],
+  ['#14b8a6', 'فیروزه‌ای'], ['#3b82f6', 'آبی'], ['#6366f1', 'بنفش'], ['#ec4899', 'صورتی'],
+  ['#64748b', 'خاکستری'],
+];
+
+/**
+ * The panel's accent colour.
+ *
+ * The field used to be a text box captioned "for example #ef4444", which asked a carwash
+ * owner to know what a hex code is. The swatches cover what almost everyone wants, the
+ * native picker is there for a brand that has an exact colour to match, and the preview
+ * shows the shades the app will actually build from it — the accent is spread across a
+ * whole scale, not used at one strength, so a single dot would not tell the truth.
+ */
+const ColorField = ({ value, onChange }: { value: string | null; onChange: (v: string | null) => void }) => {
+  const current = value?.trim() || null;
+  const shades = [50, 100, 500, 600, 700, 900];
+  const { primaryColor: saved } = useBranding();
+
+  // Paint the picked colour across the panel while the field is open, so the choice is
+  // judged against the real thing rather than a swatch. Leaving without saving puts the
+  // stored colour back — the preview must not outlive the screen that offered it.
+  useEffect(() => {
+    applyBrandColor(current);
+    return () => applyBrandColor(saved);
+  }, [current, saved]);
+
+  return (
+    <label className="block sm:col-span-2">
+      <span className="mb-2 block text-xs font-medium text-gray-600">رنگ اصلی برنامه</span>
+
+      <div className="flex flex-wrap items-center gap-2">
+        {PRESETS.map(([hex, label]) => (
+          <button
+            key={hex}
+            type="button"
+            title={label}
+            onClick={() => onChange(hex)}
+            style={{ backgroundColor: hex }}
+            className={clsx(
+              'size-8 rounded-xl transition-transform hover:scale-110',
+              current?.toLowerCase() === hex ? 'ring-2 ring-gray-900 ring-offset-2' : 'ring-1 ring-black/10',
+            )}
+          />
+        ))}
+
+        <span className="mx-1 h-6 w-px bg-gray-200" />
+
+        <input
+          type="color"
+          value={current ?? '#ef4444'}
+          onChange={e => onChange(e.target.value)}
+          className="size-8 cursor-pointer rounded-xl border border-gray-200 bg-white p-0.5"
+          title="انتخاب رنگ دلخواه"
+        />
+
+        {current && (
+          <button type="button" onClick={() => onChange(null)}
+            className="rounded-xl bg-gray-50 px-3 py-1.5 text-[11px] font-bold text-gray-600 hover:bg-gray-100">
+            بازگشت به پیش‌فرض
+          </button>
+        )}
+      </div>
+
+      {current && (
+        <div className="mt-3 flex items-center gap-3">
+          <div className="flex overflow-hidden rounded-xl ring-1 ring-black/5">
+            {shades.map(s => (
+              <span key={s} className="size-7" style={{ backgroundColor: `var(--color-brand-${s})` }} />
+            ))}
+          </div>
+          <span className="font-mono text-[11px] text-gray-400" dir="ltr">{current}</span>
+        </div>
+      )}
+
+      <p className="mt-2 text-[11px] leading-5 text-gray-500">
+        این رنگ همین حالا روی دکمه‌ها، منو و فاکتور اعمال شده تا نتیجه را ببینید؛ تا وقتی ذخیره نکنید ماندگار نیست.
+        رنگ پیام‌های خطا عمداً قرمز می‌ماند تا هشدارها دیده شوند.
+      </p>
+    </label>
+  );
+};
+
 const LogoField = ({ value, onChange }: { value: string | null; onChange: (v: string | null) => void }) => {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -211,12 +300,12 @@ const LogoField = ({ value, onChange }: { value: string | null; onChange: (v: st
   return (
     <label className="block sm:col-span-2">
       <span className="text-xs font-medium text-gray-600 mb-2 block">لوگوی کارواش</span>
-      <div className="flex items-center gap-3 rounded-xl border border-dashed border-red-200 bg-white p-3">
-        <div className="size-14 overflow-hidden rounded-xl bg-red-50 flex items-center justify-center text-[10px] text-red-500 flex-shrink-0">
+      <div className="flex items-center gap-3 rounded-xl border border-dashed border-brand-200 bg-white p-3">
+        <div className="size-14 overflow-hidden rounded-xl bg-brand-50 flex items-center justify-center text-[10px] text-brand-500 flex-shrink-0">
           {value ? <img src={resolveUploadUrl(value)} alt="لوگو" className="h-full w-full object-contain" /> : 'بدون لوگو'}
         </div>
         <div className="flex-1 min-w-0">
-          <span className="cursor-pointer text-xs font-bold text-red-600 flex items-center gap-1.5">
+          <span className="cursor-pointer text-xs font-bold text-brand-600 flex items-center gap-1.5">
             {busy ? <Loader2 size={13} className="animate-spin" /> : <Upload size={13} />}
             {busy ? 'در حال بارگذاری…' : value ? 'انتخاب لوگوی دیگر' : 'انتخاب فایل لوگو'}
             <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden"
@@ -227,7 +316,7 @@ const LogoField = ({ value, onChange }: { value: string | null; onChange: (v: st
         </div>
         {value && !busy && (
           <button type="button" onClick={() => onChange(null)} title="حذف لوگو"
-            className="text-gray-400 hover:text-red-500 p-2 rounded-xl hover:bg-red-50 transition-colors flex-shrink-0">
+            className="text-gray-400 hover:text-brand-500 p-2 rounded-xl hover:bg-brand-50 transition-colors flex-shrink-0">
             <X size={15} />
           </button>
         )}
@@ -240,7 +329,7 @@ const Input = ({ label, value, onChange, type = 'text', dir, className = '' }: {
   <label className={`block ${className}`}>
     <span className="text-xs font-medium text-gray-600 mb-2 block">{label}</span>
     <input type={type} value={value} dir={dir} onChange={e => onChange(e.target.value)}
-      className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-500/20" />
+      className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500/20" />
   </label>
 );
 

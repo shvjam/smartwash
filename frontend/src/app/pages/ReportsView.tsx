@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useCarWash } from '../store';
 import { reportsApi, type DashboardDto } from '../api';
 import { PunctualityTab } from './reports/PunctualityTab';
+import { OrderArchive } from './reports/OrderArchive';
+import { BayPerformanceTab, WaitingTab, StaffingTab, RevenueTab, ActivityLogTab } from './reports/OperationsTabs';
 import { WorkerScorecards } from './reports/WorkerScorecards';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -10,10 +12,11 @@ import {
 import { motion } from 'motion/react';
 import {
   CheckCircle, Wallet, Users, DollarSign, Award,
-  Calendar, BarChart3, PieChart as PieIcon, UserCheck, Crown, ArrowUp, ArrowDown, Timer, ClipboardList
-} from 'lucide-react';
+  Calendar, BarChart3, PieChart as PieIcon, UserCheck, Crown, ArrowUp, ArrowDown, Timer, ClipboardList, Archive, Gauge, Hourglass, Users2, ScrollText } from 'lucide-react';
 import { clsx } from 'clsx';
 import { PageHeader, Card, StatCard } from '../components/app/PageHeader';
+import { WorkerAvatar } from '../components/WorkerAvatar';
+import { localIsoDate } from '../lib/dates';
 
 const PERSIAN_MONTHS = [
   'فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور',
@@ -24,7 +27,8 @@ const MONTH_LABELS = ['دی', 'بهمن', 'اسفند', 'فروردین', 'ار�
 
 const PIE_COLORS = ['#dc2626', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#06b6d4'];
 
-type Tab = 'overview' | 'workers' | 'scorecards' | 'punctuality' | 'customers' | 'monthly' | 'services';
+type Tab = 'overview' | 'revenue' | 'archive' | 'bays' | 'waiting' | 'staffing'
+  | 'workers' | 'scorecards' | 'punctuality' | 'activity' | 'customers' | 'monthly' | 'services';
 
 export const ReportsView = () => {
   const { orders, workers, services, customers, getOrderTotals, branchId } = useCarWash();
@@ -45,7 +49,7 @@ export const ReportsView = () => {
   const apiRange = useMemo(() => {
     const from = new Date();
     from.setMonth(from.getMonth() - rangeMonths);
-    const iso = (d: Date) => d.toISOString().slice(0, 10);
+    const iso = (d: Date) => localIsoDate(d);
     return { fromDate: iso(from), toDate: iso(new Date()) };
   }, [rangeMonths]);
 
@@ -216,10 +220,16 @@ export const ReportsView = () => {
       <div className="flex flex-wrap gap-2 bg-white p-1.5 rounded-2xl border border-gray-100 shadow-sm">
         {([
           { key: 'overview' as Tab, label: 'مرور کلی', icon: BarChart3 },
+          { key: 'revenue' as Tab, label: 'درآمد', icon: Wallet },
+          { key: 'archive' as Tab, label: 'آرشیو سفارش‌ها', icon: Archive },
+          { key: 'bays' as Tab, label: 'عملکرد جایگاه‌ها', icon: Gauge },
+          { key: 'waiting' as Tab, label: 'انتظار و گلوگاه', icon: Hourglass },
+          { key: 'staffing' as Tab, label: 'نیروی انسانی', icon: Users2 },
           { key: 'monthly' as Tab, label: 'ماهانه', icon: Calendar },
           { key: 'workers' as Tab, label: 'پرسنل', icon: UserCheck },
           { key: 'scorecards' as Tab, label: 'کارنامه پرسنل', icon: ClipboardList },
           { key: 'punctuality' as Tab, label: 'دقت زمان‌بندی', icon: Timer },
+          { key: 'activity' as Tab, label: 'عملکرد کاربران', icon: ScrollText },
           { key: 'customers' as Tab, label: 'مشتریان', icon: Users },
           { key: 'services' as Tab, label: 'خدمات', icon: PieIcon },
         ]).map(t => {
@@ -231,7 +241,7 @@ export const ReportsView = () => {
               onClick={() => setTab(t.key)}
               className={clsx(
                 'flex-1 min-w-[90px] flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all',
-                active ? 'bg-red-500 text-white shadow-md shadow-red-500/30' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
+                active ? 'bg-brand-500 text-white shadow-md shadow-brand-500/30' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
               )}
             >
               <Icon size={14} /> {t.label}
@@ -289,7 +299,7 @@ export const ReportsView = () => {
               {workerSeries.slice(0, 5).map((w, i) => (
                 <div key={w.id} className="flex items-center gap-3 p-3 rounded-2xl bg-gray-50 border border-gray-100">
                   <div className="relative">
-                    <img src={w.avatar} className="w-11 h-11 rounded-2xl object-cover" alt="" />
+                    <WorkerAvatar src={w.avatar} name={w.name} size={44} rounded="2xl" />
                     {i === 0 && <Crown size={14} className="absolute -top-1 -right-1 text-yellow-500 fill-yellow-400 drop-shadow" />}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -310,7 +320,7 @@ export const ReportsView = () => {
               {customerSeries.slice(0, 5).map(c => (
                 <div key={c.id} className="flex items-center justify-between p-3 rounded-2xl bg-gray-50">
                   <div className="flex items-center gap-2 min-w-0">
-                    <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-red-400 to-red-600 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">
+                    <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-brand-400 to-brand-600 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">
                       {c.name.charAt(0)}
                     </div>
                     <div className="min-w-0">
@@ -374,6 +384,30 @@ export const ReportsView = () => {
         </div>
       )}
 
+      {tab === 'revenue' && (
+        <RevenueTab fromDate={apiRange.fromDate} toDate={apiRange.toDate} />
+      )}
+
+      {tab === 'bays' && (
+        <BayPerformanceTab fromDate={apiRange.fromDate} toDate={apiRange.toDate} />
+      )}
+
+      {tab === 'waiting' && (
+        <WaitingTab fromDate={apiRange.fromDate} toDate={apiRange.toDate} />
+      )}
+
+      {tab === 'staffing' && (
+        <StaffingTab fromDate={apiRange.fromDate} toDate={apiRange.toDate} />
+      )}
+
+      {tab === 'activity' && (
+        <ActivityLogTab fromDate={apiRange.fromDate} toDate={apiRange.toDate} />
+      )}
+
+      {tab === 'archive' && (
+        <OrderArchive fromDate={apiRange.fromDate} toDate={apiRange.toDate} />
+      )}
+
       {tab === 'scorecards' && (
         <WorkerScorecards fromDate={apiRange.fromDate} toDate={apiRange.toDate} />
       )}
@@ -407,7 +441,7 @@ export const ReportsView = () => {
                   <td className="py-2.5 px-3">
                     <div className="flex items-center gap-2">
                       {i === 0 && <Crown size={14} className="text-yellow-500" />}
-                      <img src={w.avatar} className="w-7 h-7 rounded-full object-cover" alt="" />
+                      <WorkerAvatar src={w.avatar} name={w.name} size={28} />
                       <div>
                         <div className="font-bold text-xs">{w.name}</div>
                         <div className="text-[10px] text-gray-500">{w.role}</div>
@@ -433,7 +467,7 @@ export const ReportsView = () => {
               <tr key={c.id} className="border-b border-gray-50 last:border-0">
                 <td className="py-2.5 px-3">
                   <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-red-400 to-red-600 text-white flex items-center justify-center text-xs font-bold">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-brand-400 to-brand-600 text-white flex items-center justify-center text-xs font-bold">
                       {c.name.charAt(0)}
                     </div>
                     <div>

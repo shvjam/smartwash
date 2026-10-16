@@ -8,10 +8,12 @@ using Microsoft.EntityFrameworkCore;
 
 namespace SmartWash.Application.Modules.Services;
 
-public sealed record ServiceDto(Guid Id, string Name, string? Description, ServiceCategory Category, long PriceRials, int DurationMinutes, decimal WorkerCommissionRate, bool IsActive, int SortOrder, string? IconKey);
+public sealed record ServiceDto(Guid Id, string Name, string? Description, ServiceCategory Category, long PriceRials, int DurationMinutes, decimal WorkerCommissionRate, bool IsActive, int SortOrder, string? IconKey,
+    BayType? RequiredBayType, bool IsOptional);
 public static class ServiceMap
 {
-    public static ServiceDto ToDto(Service s) => new(s.Id, s.Name, s.Description, s.Category, s.PriceRials, s.DurationMinutes, s.WorkerCommissionRate, s.IsActive, s.SortOrder, s.IconKey);
+    public static ServiceDto ToDto(Service s) => new(s.Id, s.Name, s.Description, s.Category, s.PriceRials, s.DurationMinutes, s.WorkerCommissionRate, s.IsActive, s.SortOrder, s.IconKey,
+        s.RequiredBayType, s.IsOptional);
 }
 
 public sealed record ListServicesQuery(bool OnlyActive, ServiceCategory? Category) : IRequest<Result<IReadOnlyList<ServiceDto>>>;
@@ -29,7 +31,8 @@ public sealed class ListServicesHandler : IRequestHandler<ListServicesQuery, Res
     }
 }
 
-public sealed record CreateServiceCommand(string Name, string? Description, ServiceCategory Category, long PriceRials, int DurationMinutes, decimal WorkerCommissionRate) : IRequest<Result<ServiceDto>>, ITransactionalRequest;
+public sealed record CreateServiceCommand(string Name, string? Description, ServiceCategory Category, long PriceRials, int DurationMinutes, decimal WorkerCommissionRate,
+    BayType? RequiredBayType = null, bool IsOptional = false) : IRequest<Result<ServiceDto>>, ITransactionalRequest;
 public sealed class CreateServiceValidator : AbstractValidator<CreateServiceCommand>
 {
     public CreateServiceValidator()
@@ -47,14 +50,15 @@ public sealed class CreateServiceHandler : IRequestHandler<CreateServiceCommand,
     public async Task<Result<ServiceDto>> Handle(CreateServiceCommand c, CancellationToken ct)
     {
         // c.Description قبلاً نادیده گرفته می‌شد و هنگام ایجادِ خدمت از دست می‌رفت.
-        var s = Service.Create(Guid.Empty, c.Name, c.Category, c.PriceRials, c.DurationMinutes, c.WorkerCommissionRate, c.Description);
+        var s = Service.Create(Guid.Empty, c.Name, c.Category, c.PriceRials, c.DurationMinutes, c.WorkerCommissionRate, c.Description, c.RequiredBayType, c.IsOptional);
         _db.Services.Add(s);
         await _db.SaveChangesAsync(ct);
         return ServiceMap.ToDto(s);
     }
 }
 
-public sealed record UpdateServiceCommand(Guid Id, string Name, string? Description, ServiceCategory Category, long PriceRials, int DurationMinutes, decimal WorkerCommissionRate, int SortOrder, string? IconKey) : IRequest<Result<ServiceDto>>, ITransactionalRequest;
+public sealed record UpdateServiceCommand(Guid Id, string Name, string? Description, ServiceCategory Category, long PriceRials, int DurationMinutes, decimal WorkerCommissionRate, int SortOrder, string? IconKey,
+    BayType? RequiredBayType = null, bool? IsOptional = null) : IRequest<Result<ServiceDto>>, ITransactionalRequest;
 public sealed class UpdateServiceHandler : IRequestHandler<UpdateServiceCommand, Result<ServiceDto>>
 {
     private readonly IAppDbContext _db;
@@ -63,7 +67,7 @@ public sealed class UpdateServiceHandler : IRequestHandler<UpdateServiceCommand,
     {
         var s = await _db.Services.FirstOrDefaultAsync(x => x.Id == c.Id, ct);
         if (s is null) return Result.Failure<ServiceDto>(Error.NotFound("Service.NotFound", "خدمت یافت نشد."));
-        s.Update(c.Name, c.Description, c.Category, c.PriceRials, c.DurationMinutes, c.WorkerCommissionRate, c.SortOrder, c.IconKey);
+        s.Update(c.Name, c.Description, c.Category, c.PriceRials, c.DurationMinutes, c.WorkerCommissionRate, c.SortOrder, c.IconKey, c.RequiredBayType, c.IsOptional);
         await _db.SaveChangesAsync(ct);
         return ServiceMap.ToDto(s);
     }

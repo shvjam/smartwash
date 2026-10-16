@@ -80,7 +80,7 @@ export const CampaignsView = () => {
               برای ارسال کمپین‌های هدفمند پیامکی، پلن اشتراک خود را به پلن حرفه‌ای یا بالاتر ارتقا دهید.
             </p>
             <a href="/app/billing"
-              className="mt-2 bg-gradient-to-br from-red-500 to-red-700 text-white px-6 py-3 rounded-2xl font-bold text-sm shadow-lg shadow-red-500/30 hover:from-red-600 hover:to-red-800 transition-all">
+              className="mt-2 bg-gradient-to-br from-brand-500 to-brand-700 text-white px-6 py-3 rounded-2xl font-bold text-sm shadow-lg shadow-brand-500/30 hover:from-brand-600 hover:to-brand-800 transition-all">
               مشاهده پلن‌ها و ارتقا
             </a>
           </div>
@@ -96,7 +96,7 @@ export const CampaignsView = () => {
         subtitle="ارسال پیام هدفمند به گروه‌های مشتریان"
         actions={
           <button onClick={() => setShowForm(s => !s)}
-            className="bg-gradient-to-br from-red-500 to-red-700 text-white px-4 py-2.5 rounded-2xl text-sm font-bold flex items-center gap-1.5 shadow-lg shadow-red-500/30">
+            className="bg-gradient-to-br from-brand-500 to-brand-700 text-white px-4 py-2.5 rounded-2xl text-sm font-bold flex items-center gap-1.5 shadow-lg shadow-brand-500/30">
             <Plus size={16} />کمپین جدید
           </button>
         }
@@ -108,19 +108,19 @@ export const CampaignsView = () => {
             <label className="block sm:col-span-2">
               <span className="text-xs font-medium text-gray-600 mb-2 block">نام کمپین</span>
               <input required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}
-                className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-500/20" />
+                className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500/20" />
             </label>
             <label className="block">
               <span className="text-xs font-medium text-gray-600 mb-2 block">هدف</span>
               <select value={form.target} onChange={e => setForm({ ...form, target: Number(e.target.value) })}
-                className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-500/20">
+                className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500/20">
                 {Object.entries(targetLabel).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
               </select>
             </label>
             <label className="block">
               <span className="text-xs font-medium text-gray-600 mb-2 block">نوع پیام</span>
               <select value={form.type} onChange={e => setForm({ ...form, type: Number(e.target.value) })}
-                className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-500/20">
+                className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500/20">
                 <option value={CampaignType.Sms}>پیامک</option>
                 <option value={CampaignType.Email}>ایمیل</option>
                 <option value={CampaignType.Push}>اعلان موبایل</option>
@@ -130,24 +130,24 @@ export const CampaignsView = () => {
               <span className="text-xs font-medium text-gray-600 mb-2 block">متن پیام</span>
               <textarea required rows={4} value={form.messageTemplate} onChange={e => setForm({ ...form, messageTemplate: e.target.value })}
                 placeholder="سلام {name} عزیز، SmartWash از شما دعوت می‌کند…"
-                className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 resize-none focus:outline-none focus:ring-2 focus:ring-red-500/20" />
+                className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 resize-none focus:outline-none focus:ring-2 focus:ring-brand-500/20" />
               <p className="text-[11px] text-gray-400 mt-1.5">می‌توانید از {'{name}'} و {'{plate}'} استفاده کنید.</p>
             </label>
             <label className="block">
               <span className="text-xs font-medium text-gray-600 mb-2 block">زمان ارسال (خالی = فوری)</span>
               <input type="datetime-local" value={form.scheduledAt} onChange={e => setForm({ ...form, scheduledAt: e.target.value })}
-                className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-500/20" />
+                className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500/20" />
             </label>
             <div className="grid grid-cols-2 gap-3">
               <label className="block">
                 <span className="text-xs font-medium text-gray-600 mb-2 block">حداقل بازدید</span>
                 <input type="number" value={form.minVisits} onChange={e => setForm({ ...form, minVisits: e.target.value })}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-500/20" />
+                  className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500/20" />
               </label>
               <label className="block">
                 <span className="text-xs font-medium text-gray-600 mb-2 block">روز عدم مراجعه</span>
                 <input type="number" value={form.daysSinceLastVisit} onChange={e => setForm({ ...form, daysSinceLastVisit: e.target.value })}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-500/20" />
+                  className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500/20" />
               </label>
             </div>
             {err && <div className="sm:col-span-2 bg-red-50 text-red-600 text-sm px-4 py-3 rounded-2xl flex items-center gap-2"><AlertCircle size={16} />{err}</div>}
@@ -183,7 +183,7 @@ export const CampaignsView = () => {
                 {(c.status === CampaignStatus.Draft || c.status === CampaignStatus.Scheduled) && (
                   <div className="flex gap-2 mt-4 pt-4 border-t border-gray-50">
                     <button onClick={() => campaignsApi.cancel(c.id).then(reload)}
-                      className="text-xs px-3 py-1.5 rounded-xl bg-red-50 text-red-700 font-bold hover:bg-red-100 flex items-center gap-1">
+                      className="text-xs px-3 py-1.5 rounded-xl bg-brand-50 text-brand-700 font-bold hover:bg-brand-100 flex items-center gap-1">
                       <X size={12} />لغو
                     </button>
                   </div>

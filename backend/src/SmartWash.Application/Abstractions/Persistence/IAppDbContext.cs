@@ -40,6 +40,12 @@ public interface IAppDbContext
     DbSet<Order> Orders { get; }
     DbSet<OrderLine> OrderLines { get; }
     DbSet<OrderPayment> OrderPayments { get; }
+    DbSet<OrderStageEvent> OrderStageEvents { get; }
+    DbSet<OrderBayVisit> OrderBayVisits { get; }
+    DbSet<BayDowntime> BayDowntimes { get; }
+    DbSet<ShiftRoster> ShiftRosters { get; }
+    DbSet<ShiftAssignment> ShiftAssignments { get; }
+    DbSet<TipSettlement> TipSettlements { get; }
     DbSet<Reservation> Reservations { get; }
     DbSet<ReservationService> ReservationServices { get; }
     DbSet<Expense> Expenses { get; }

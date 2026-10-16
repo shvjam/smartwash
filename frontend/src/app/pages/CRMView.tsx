@@ -109,7 +109,7 @@ export const CRMView = () => {
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="جستجو بر اساس نام، تلفن یا پلاک..."
-            className="w-full bg-gray-50 border border-gray-200 rounded-2xl pr-12 pl-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500"
+            className="w-full bg-gray-50 border border-gray-200 rounded-2xl pr-12 pl-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
           />
         </div>
         <div className="flex gap-1.5 overflow-x-auto scrollbar-hide">
@@ -124,7 +124,7 @@ export const CRMView = () => {
               onClick={() => setFilter(f.key)}
               className={clsx(
                 'px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all',
-                filter === f.key ? 'bg-red-500 text-white shadow' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                filter === f.key ? 'bg-brand-500 text-white shadow' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               )}
             >
               {f.label} <span className="opacity-60">({counts[f.key as keyof typeof counts]})</span>
@@ -156,11 +156,11 @@ export const CRMView = () => {
             )}
 
             <div className="flex items-start gap-3 mb-3">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-red-400 to-red-600 text-white flex items-center justify-center font-extrabold text-lg flex-shrink-0">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-brand-400 to-brand-600 text-white flex items-center justify-center font-extrabold text-lg flex-shrink-0">
                 {c.name.charAt(0)}
               </div>
               <div className="flex-1 min-w-0">
-                <Link to={`/app/customers/${c.id}`} className="font-extrabold text-gray-900 truncate hover:text-red-600 block">{c.name}</Link>
+                <Link to={`/app/customers/${c.id}`} className="font-extrabold text-gray-900 truncate hover:text-brand-600 block">{c.name}</Link>
                 <div className="text-[11px] text-gray-500 font-mono mt-0.5 truncate">{c.phone}</div>
                 <div className="text-[11px] text-gray-400 font-mono mt-0.5 truncate">{c.plate}</div>
               </div>
@@ -218,7 +218,7 @@ export const CRMView = () => {
                 className={clsx(
                   'px-3 py-1.5 rounded-xl text-[11px] font-bold flex items-center gap-1 transition-colors',
                   c.status === 'danger'
-                    ? 'bg-red-50 text-red-600 hover:bg-red-100'
+                    ? 'bg-brand-50 text-brand-600 hover:bg-brand-100'
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 )}
               >
@@ -242,13 +242,13 @@ export const CRMView = () => {
             <p className="text-xs text-gray-500 mb-5">اطلاعات تماس و خودرو مشتری را وارد کنید</p>
             <form onSubmit={handleAdd} className="space-y-3">
               <input required autoFocus value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="نام و نام خانوادگی" minLength={2} maxLength={100} autoComplete="name"
-                className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20" />
+                className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20" />
               <input required value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} placeholder="09123456789" type="tel" dir="ltr" inputMode="tel" pattern="09[0-9]{9}" title="شماره موبایل ۱۱ رقمی"
                 autoComplete="tel"
-                className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-red-500/20" />
+                className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-500/20" />
               <IranPlateInput value={form.plate} onChange={plate => setForm({ ...form, plate })} />
               {formErr && <div className="bg-red-50 text-red-700 text-xs px-3 py-2 rounded-xl">{formErr}</div>}
-              <button type="submit" disabled={saving} className="w-full bg-gradient-to-br from-red-500 to-red-700 hover:from-red-600 hover:to-red-800 text-white font-bold py-3 rounded-2xl shadow-lg shadow-red-500/25 disabled:opacity-60">
+              <button type="submit" disabled={saving} className="w-full bg-gradient-to-br from-brand-500 to-brand-700 hover:from-brand-600 hover:to-brand-800 text-white font-bold py-3 rounded-2xl shadow-lg shadow-brand-500/25 disabled:opacity-60">
                 {saving ? 'در حال ثبت…' : 'ثبت مشتری'}
               </button>
             </form>
@@ -346,7 +346,7 @@ const ReminderModal = ({ customer, onClose, onSend }: any) => {
         value={msg}
         onChange={e => setMsg(e.target.value)}
         rows={5}
-        className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 mb-3"
+        className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 mb-3"
       />
 
       {customer.loyalty.available && (
@@ -358,7 +358,7 @@ const ReminderModal = ({ customer, onClose, onSend }: any) => {
       <button
         onClick={handleSend}
         disabled={sending || !msg.trim()}
-        className="w-full bg-gradient-to-br from-red-500 to-red-700 text-white font-bold py-3 rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-red-500/25 disabled:opacity-60"
+        className="w-full bg-gradient-to-br from-brand-500 to-brand-700 text-white font-bold py-3 rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-brand-500/25 disabled:opacity-60"
       >
         <Send size={16} /> {sending ? 'در حال ارسال…' : 'ارسال پیامک'}
       </button>

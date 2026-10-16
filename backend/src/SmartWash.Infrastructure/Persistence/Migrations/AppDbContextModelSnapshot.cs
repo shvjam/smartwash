@@ -25,7 +25,6 @@ namespace SmartWash.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("SmartWash.Domain.Audit.AuditLog", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Action")
@@ -82,7 +81,6 @@ namespace SmartWash.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("SmartWash.Domain.Audit.CronJobRun", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("CorrelationId")
@@ -119,7 +117,6 @@ namespace SmartWash.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("SmartWash.Domain.Billing.Invoice", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreatedAtUtc")
@@ -192,7 +189,6 @@ namespace SmartWash.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("SmartWash.Domain.Billing.InvoiceLine", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Description")
@@ -222,7 +218,6 @@ namespace SmartWash.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("SmartWash.Domain.Billing.Payment", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<long>("AmountRials")
@@ -290,7 +285,6 @@ namespace SmartWash.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("SmartWash.Domain.Billing.Plan", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<int>("BillingModel")
@@ -376,7 +370,6 @@ namespace SmartWash.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("SmartWash.Domain.Billing.PlanFeature", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Key")
@@ -403,7 +396,6 @@ namespace SmartWash.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("SmartWash.Domain.Billing.PlatformSmsSettings", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("ApiKey")
@@ -461,7 +453,6 @@ namespace SmartWash.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("SmartWash.Domain.Billing.PlatformSmsTemplate", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<int>("Category")
@@ -518,7 +509,6 @@ namespace SmartWash.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("SmartWash.Domain.Billing.SmsUsageRecord", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Error")
@@ -574,7 +564,6 @@ namespace SmartWash.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("SmartWash.Domain.Billing.Subscription", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<bool>("AutoRenew")
@@ -640,7 +629,6 @@ namespace SmartWash.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("SmartWash.Domain.Billing.TenantSmsTemplate", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("EnabledAtUtc")
@@ -663,7 +651,6 @@ namespace SmartWash.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("SmartWash.Domain.Identity.OtpCode", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<int>("AttemptCount")
@@ -706,7 +693,6 @@ namespace SmartWash.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("SmartWash.Domain.Identity.RefreshToken", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreatedAtUtc")
@@ -751,7 +737,6 @@ namespace SmartWash.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("SmartWash.Domain.Identity.User", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("AvatarUrl")
@@ -837,7 +822,6 @@ namespace SmartWash.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("SmartWash.Domain.Identity.UserRole", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("AssignedAtUtc")
@@ -866,7 +850,6 @@ namespace SmartWash.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("SmartWash.Domain.Operations.AppNotification", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Body")
@@ -916,7 +899,6 @@ namespace SmartWash.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("SmartWash.Domain.Operations.Bay", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("BranchId")
@@ -955,17 +937,26 @@ namespace SmartWash.Infrastructure.Persistence.Migrations
                     b.Property<int>("Number")
                         .HasColumnType("int");
 
+                    b.Property<int>("QueueCapacity")
+                        .HasColumnType("int");
+
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
                         .IsRequired()
                         .HasMaxLength(16)
                         .HasColumnType("varbinary(16)");
 
+                    b.Property<int>("ServiceCapacity")
+                        .HasColumnType("int");
+
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
 
                     b.Property<DateTime?>("UpdatedAtUtc")
                         .HasColumnType("datetime2");
@@ -983,10 +974,45 @@ namespace SmartWash.Infrastructure.Persistence.Migrations
                     b.ToTable("Bays", (string)null);
                 });
 
+            modelBuilder.Entity("SmartWash.Domain.Operations.BayDowntime", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("BayId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("ByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("FromUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(400)
+                        .HasColumnType("nvarchar(400)");
+
+                    b.Property<int>("Reason")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("ToUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BayId", "FromUtc");
+
+                    b.HasIndex("TenantId", "ToUtc");
+
+                    b.ToTable("BayDowntimes", (string)null);
+                });
+
             modelBuilder.Entity("SmartWash.Domain.Operations.Branch", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Address")
@@ -1058,7 +1084,6 @@ namespace SmartWash.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("SmartWash.Domain.Operations.Campaign", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<long>("ActualCostRials")
@@ -1155,7 +1180,6 @@ namespace SmartWash.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("SmartWash.Domain.Operations.Customer", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Address")
@@ -1261,7 +1285,6 @@ namespace SmartWash.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("SmartWash.Domain.Operations.CustomerVehicle", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Brand")
@@ -1309,7 +1332,6 @@ namespace SmartWash.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("SmartWash.Domain.Operations.Expense", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<long>("AmountRials")
@@ -1385,7 +1407,6 @@ namespace SmartWash.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("SmartWash.Domain.Operations.LoyaltyTransaction", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<int>("BalanceAfter")
@@ -1423,10 +1444,9 @@ namespace SmartWash.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("SmartWash.Domain.Operations.Order", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("BayId")
+                    b.Property<Guid?>("BayId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("BranchId")
@@ -1489,6 +1509,9 @@ namespace SmartWash.Infrastructure.Persistence.Migrations
                     b.Property<long>("PaidRials")
                         .HasColumnType("bigint");
 
+                    b.Property<int?>("QueuePosition")
+                        .HasColumnType("int");
+
                     b.Property<Guid?>("ReservationId")
                         .HasColumnType("uniqueidentifier");
 
@@ -1499,6 +1522,9 @@ namespace SmartWash.Infrastructure.Persistence.Migrations
                         .HasColumnType("varbinary(16)");
 
                     b.Property<int>("Source")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Stage")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("StartedAtUtc")
@@ -1541,6 +1567,12 @@ namespace SmartWash.Infrastructure.Persistence.Migrations
                     b.Property<long>("WalletUsedRials")
                         .HasColumnType("bigint");
 
+                    b.Property<DateTime?>("WashCompletedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("WashStartedAtUtc")
+                        .HasColumnType("datetime2");
+
                     b.HasKey("Id");
 
                     b.HasIndex("TenantId", "CreatedAtUtc");
@@ -1552,6 +1584,8 @@ namespace SmartWash.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("TenantId", "StartedAtUtc");
 
+                    b.HasIndex("TenantId", "BranchId", "Stage");
+
                     b.HasIndex("TenantId", "BranchId", "Status");
 
                     b.HasIndex("TenantId", "Status", "CreatedAtUtc");
@@ -1559,10 +1593,41 @@ namespace SmartWash.Infrastructure.Persistence.Migrations
                     b.ToTable("Orders", (string)null);
                 });
 
+            modelBuilder.Entity("SmartWash.Domain.Operations.OrderBayVisit", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("BayId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("EnteredAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("LeftAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("OrderId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Stage")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrderId", "EnteredAtUtc");
+
+                    b.HasIndex("TenantId", "BayId", "EnteredAtUtc");
+
+                    b.ToTable("OrderBayVisits", (string)null);
+                });
+
             modelBuilder.Entity("SmartWash.Domain.Operations.OrderLine", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<int>("DurationMinutes")
@@ -1573,6 +1638,9 @@ namespace SmartWash.Infrastructure.Persistence.Migrations
 
                     b.Property<Guid>("OrderId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("PaidDirectlyToWorker")
+                        .HasColumnType("bit");
 
                     b.Property<int>("Quantity")
                         .HasColumnType("int");
@@ -1622,7 +1690,6 @@ namespace SmartWash.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("SmartWash.Domain.Operations.OrderPayment", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<long>("AmountRials")
@@ -1653,10 +1720,42 @@ namespace SmartWash.Infrastructure.Persistence.Migrations
                     b.ToTable("OrderPayments", (string)null);
                 });
 
+            modelBuilder.Entity("SmartWash.Domain.Operations.OrderStageEvent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("AtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("ByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(400)
+                        .HasColumnType("nvarchar(400)");
+
+                    b.Property<Guid>("OrderId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Stage")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrderId", "AtUtc");
+
+                    b.HasIndex("TenantId", "AtUtc");
+
+                    b.ToTable("OrderStageEvents", (string)null);
+                });
+
             modelBuilder.Entity("SmartWash.Domain.Operations.Reservation", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("BranchId")
@@ -1765,7 +1864,6 @@ namespace SmartWash.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("SmartWash.Domain.Operations.ReservationService", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<int>("DurationMinutes")
@@ -1800,7 +1898,6 @@ namespace SmartWash.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("SmartWash.Domain.Operations.Service", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<int>("Category")
@@ -1835,6 +1932,9 @@ namespace SmartWash.Infrastructure.Persistence.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsOptional")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(120)
@@ -1842,6 +1942,9 @@ namespace SmartWash.Infrastructure.Persistence.Migrations
 
                     b.Property<long>("PriceRials")
                         .HasColumnType("bigint");
+
+                    b.Property<int?>("RequiredBayType")
+                        .HasColumnType("int");
 
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
@@ -1875,7 +1978,6 @@ namespace SmartWash.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("SmartWash.Domain.Operations.ServiceReminder", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreatedAtUtc")
@@ -1919,7 +2021,6 @@ namespace SmartWash.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("SmartWash.Domain.Operations.Shift", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("BranchId")
@@ -2013,10 +2114,110 @@ namespace SmartWash.Infrastructure.Persistence.Migrations
                     b.ToTable("Shifts", (string)null);
                 });
 
+            modelBuilder.Entity("SmartWash.Domain.Operations.ShiftAssignment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("BayId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<int>("Role")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("ShiftRosterId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("WorkerId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ShiftRosterId");
+
+                    b.HasIndex("TenantId", "BayId");
+
+                    b.HasIndex("TenantId", "WorkerId");
+
+                    b.ToTable("ShiftAssignments", (string)null);
+                });
+
+            modelBuilder.Entity("SmartWash.Domain.Operations.ShiftRoster", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("BranchId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date");
+
+                    b.Property<DateTime?>("DeletedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("DeletedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<TimeOnly>("EndsAt")
+                        .HasColumnType("time");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("varbinary(16)");
+
+                    b.Property<TimeOnly>("StartsAt")
+                        .HasColumnType("time");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "BranchId", "Date");
+
+                    b.ToTable("ShiftRosters", (string)null);
+                });
+
             modelBuilder.Entity("SmartWash.Domain.Operations.SmsMessage", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Body")
@@ -2068,7 +2269,6 @@ namespace SmartWash.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("SmartWash.Domain.Operations.TenantSettings", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("InvoicePrefix")
@@ -2156,10 +2356,84 @@ namespace SmartWash.Infrastructure.Persistence.Migrations
                     b.ToTable("TenantSettings", (string)null);
                 });
 
+            modelBuilder.Entity("SmartWash.Domain.Operations.TipSettlement", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("BranchId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("DeletedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("DeletedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<long>("EarnedRials")
+                        .HasColumnType("bigint");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<long>("PaidRials")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("PeriodFromUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("PeriodToUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("varbinary(16)");
+
+                    b.Property<DateTime>("SettledAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("SettledByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("WorkerId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("WorkerName")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "WorkerId", "PeriodToUtc");
+
+                    b.ToTable("TipSettlements", (string)null);
+                });
+
             modelBuilder.Entity("SmartWash.Domain.Operations.UsageEvent", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid?>("InvoiceId")
@@ -2198,7 +2472,6 @@ namespace SmartWash.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("SmartWash.Domain.Operations.WalletTransaction", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<long>("AmountRials")
@@ -2236,7 +2509,6 @@ namespace SmartWash.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("SmartWash.Domain.Operations.Worker", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("AvatarUrl")
@@ -2322,7 +2594,6 @@ namespace SmartWash.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("SmartWash.Domain.Support.Ticket", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime?>("AssignedAtUtc")
@@ -2464,7 +2735,6 @@ namespace SmartWash.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("SmartWash.Domain.Support.TicketAttachment", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("ContentType")
@@ -2517,7 +2787,6 @@ namespace SmartWash.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("SmartWash.Domain.Support.TicketEvent", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("ActorName")
@@ -2565,7 +2834,6 @@ namespace SmartWash.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("SmartWash.Domain.Support.TicketMessage", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("AuthorName")
@@ -2608,7 +2876,6 @@ namespace SmartWash.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("SmartWash.Domain.Tenancy.Tenant", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid?>("ActiveSubscriptionId")
@@ -2743,6 +3010,15 @@ namespace SmartWash.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("SmartWash.Domain.Operations.OrderBayVisit", b =>
+                {
+                    b.HasOne("SmartWash.Domain.Operations.Order", null)
+                        .WithMany("BayVisits")
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("SmartWash.Domain.Operations.OrderLine", b =>
                 {
                     b.HasOne("SmartWash.Domain.Operations.Order", null)
@@ -2761,11 +3037,29 @@ namespace SmartWash.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("SmartWash.Domain.Operations.OrderStageEvent", b =>
+                {
+                    b.HasOne("SmartWash.Domain.Operations.Order", null)
+                        .WithMany("StageEvents")
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("SmartWash.Domain.Operations.ReservationService", b =>
                 {
                     b.HasOne("SmartWash.Domain.Operations.Reservation", null)
                         .WithMany("Services")
                         .HasForeignKey("ReservationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("SmartWash.Domain.Operations.ShiftAssignment", b =>
+                {
+                    b.HasOne("SmartWash.Domain.Operations.ShiftRoster", null)
+                        .WithMany("Assignments")
+                        .HasForeignKey("ShiftRosterId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
@@ -2794,14 +3088,23 @@ namespace SmartWash.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("SmartWash.Domain.Operations.Order", b =>
                 {
+                    b.Navigation("BayVisits");
+
                     b.Navigation("Lines");
 
                     b.Navigation("Payments");
+
+                    b.Navigation("StageEvents");
                 });
 
             modelBuilder.Entity("SmartWash.Domain.Operations.Reservation", b =>
                 {
                     b.Navigation("Services");
+                });
+
+            modelBuilder.Entity("SmartWash.Domain.Operations.ShiftRoster", b =>
+                {
+                    b.Navigation("Assignments");
                 });
 #pragma warning restore 612, 618
         }

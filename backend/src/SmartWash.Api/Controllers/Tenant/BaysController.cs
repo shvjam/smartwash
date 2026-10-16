@@ -5,6 +5,7 @@ using SmartWash.Shared.Constants;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SmartWash.Domain.Operations;
 
 namespace SmartWash.Api.Controllers.Tenant;
 
@@ -16,8 +17,8 @@ public sealed class BaysController : ControllerBase
     private readonly ISender _sender;
     public BaysController(ISender sender) => _sender = sender;
 
-    public sealed record CreateBayRequest(Guid BranchId, string Name, int Number);
-    public sealed record UpdateBayRequest(string Name, int Number, string? Notes);
+    public sealed record CreateBayRequest(Guid BranchId, string Name, int Number, BayType Type = BayType.Wash, int ServiceCapacity = 1, int QueueCapacity = 0);
+    public sealed record UpdateBayRequest(string Name, int Number, string? Notes, BayType? Type = null, int? ServiceCapacity = null, int? QueueCapacity = null);
     public sealed record MaintenanceRequest(string? Notes);
 
     [HttpGet]
@@ -28,12 +29,12 @@ public sealed class BaysController : ControllerBase
     [HttpPost]
     [HasPermission(Permissions.BaysManage)]
     public async Task<IActionResult> Create([FromBody] CreateBayRequest req, CancellationToken ct)
-        => (await _sender.Send(new CreateBayCommand(req.BranchId, req.Name, req.Number), ct)).ToCreatedResult();
+        => (await _sender.Send(new CreateBayCommand(req.BranchId, req.Name, req.Number, req.Type, req.ServiceCapacity, req.QueueCapacity), ct)).ToCreatedResult();
 
     [HttpPut("{id:guid}")]
     [HasPermission(Permissions.BaysManage)]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateBayRequest req, CancellationToken ct)
-        => (await _sender.Send(new UpdateBayCommand(id, req.Name, req.Number, req.Notes), ct)).ToActionResult();
+        => (await _sender.Send(new UpdateBayCommand(id, req.Name, req.Number, req.Notes, req.Type, req.ServiceCapacity, req.QueueCapacity), ct)).ToActionResult();
 
     [HttpPost("{id:guid}/maintenance")]
     [HasPermission(Permissions.BaysManage)]

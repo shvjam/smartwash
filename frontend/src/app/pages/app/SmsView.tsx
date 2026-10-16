@@ -125,7 +125,7 @@ export const SmsView = () => {
       <div className="grid gap-5 lg:grid-cols-[1fr_1fr]">
         <Card className="overflow-hidden p-0">
           <div className="flex items-center gap-2 border-b border-gray-100 px-5 py-4 font-extrabold">
-            <FileText size={18} className="text-red-600" />قالب‌های مجاز شما
+            <FileText size={18} className="text-brand-600" />قالب‌های مجاز شما
           </div>
           {loading && templates.length === 0 ? <div className="p-5"><SkeletonRows rows={4} /></div>
             : templates.length === 0 ? <EmptyState icon={MessageSquare} title="قالبی در اختیار شما نیست" hint="برای دریافت قالب‌های پیامکی با پشتیبانی پلتفرم تماس بگیرید." />
@@ -160,7 +160,7 @@ export const SmsView = () => {
 
         <Card className="overflow-hidden p-0">
           <div className="flex flex-wrap items-center gap-3 border-b border-gray-100 px-5 py-4">
-            <div className="flex items-center gap-2 font-extrabold"><MessageSquare size={18} className="text-red-600" />دفتر ارسال</div>
+            <div className="flex items-center gap-2 font-extrabold"><MessageSquare size={18} className="text-brand-600" />دفتر ارسال</div>
             <select
               value={statusFilter}
               onChange={e => { setStatusFilter(e.target.value === '' ? '' : Number(e.target.value) as SmsUsageStatus); setPage(1); }}
@@ -216,7 +216,7 @@ export const SmsView = () => {
 
 const Metric = ({ icon: Icon, label, value, hint }: { icon: any; label: string; value: string; hint: string }) => (
   <Card className="border-0 bg-gray-900 text-white">
-    <Icon size={18} className="mb-4 text-red-300" />
+    <Icon size={18} className="mb-4 text-brand-300" />
     <div className="text-xl font-black">{value}</div>
     <div className="mt-1 text-sm font-bold">{label}</div>
     <div className="mt-1 text-[11px] text-gray-400">{hint}</div>

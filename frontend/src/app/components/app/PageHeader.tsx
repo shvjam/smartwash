@@ -20,7 +20,7 @@ export const StatCard = ({
   label, value, hint, accent = 'red',
 }: { label: string; value: string | number; hint?: string; accent?: 'red' | 'emerald' | 'amber' | 'sky' | 'violet' }) => {
   const map: Record<string, string> = {
-    red: 'from-red-50 to-rose-50 dark:from-red-950/40 dark:to-rose-950/40 text-red-600 dark:text-red-400',
+    red: 'from-brand-50 to-rose-50 dark:from-brand-950/40 dark:to-rose-950/40 text-brand-600 dark:text-brand-400',
     emerald: 'from-emerald-50 to-teal-50 dark:from-emerald-950/40 dark:to-teal-950/40 text-emerald-600 dark:text-emerald-400',
     amber: 'from-amber-50 to-orange-50 dark:from-amber-950/40 dark:to-orange-950/40 text-amber-600 dark:text-amber-400',
     sky: 'from-sky-50 to-blue-50 dark:from-sky-950/40 dark:to-blue-950/40 text-sky-600 dark:text-sky-400',

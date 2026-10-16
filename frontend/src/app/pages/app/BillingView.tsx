@@ -53,7 +53,7 @@ export const BillingView: React.FC = () => {
     })();
   }, [subscribeSuccess]);
 
-  if (loading) return <div className="min-h-[40vh] grid place-items-center"><Loader2 className="animate-spin text-red-600" /></div>;
+  if (loading) return <div className="min-h-[40vh] grid place-items-center"><Loader2 className="animate-spin text-brand-600" /></div>;
 
   return (
     <div className="max-w-5xl mx-auto pb-10">
@@ -67,13 +67,13 @@ export const BillingView: React.FC = () => {
       {err && <div className="mb-4 rounded-md border border-destructive/40 bg-destructive/10 text-destructive p-3">{err}</div>}
 
       <div className="grid lg:grid-cols-[1fr_320px] gap-4">
-        <Card className="bg-gradient-to-br from-gray-900 via-gray-900 to-red-900 text-white border-0 relative overflow-hidden">
-          <div className="absolute -top-20 -left-20 w-72 h-72 bg-red-500/20 rounded-full blur-3xl" />
+        <Card className="bg-gradient-to-br from-gray-900 via-gray-900 to-brand-900 text-white border-0 relative overflow-hidden">
+          <div className="absolute -top-20 -left-20 w-72 h-72 bg-brand-500/20 rounded-full blur-3xl" />
           <div className="absolute -bottom-20 -right-20 w-72 h-72 bg-amber-500/20 rounded-full blur-3xl" />
           <div className="relative">
             {sub ? (
               <>
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 text-red-300 text-[10px] font-bold mb-4">
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 text-brand-300 text-[10px] font-bold mb-4">
                   <Sparkles size={12} />وضعیت: {STATUS_LABEL[sub.status] ?? '—'}
                 </div>
                 <h2 className="text-3xl font-black mb-2">{CYCLE_LABEL[sub.cycle]}</h2>
@@ -120,7 +120,7 @@ export const BillingView: React.FC = () => {
           <p className="text-gray-500 text-sm mb-4">پرداخت اشتراک از طریق درگاه‌های امن (زرین‌پال، آی‌دی‌پی، نِکست‌پی) انجام می‌شود.</p>
           {!sub && (
             <Link to="/pricing"
-              className="inline-flex items-center gap-2 bg-gradient-to-br from-red-500 to-red-700 text-white px-5 py-2.5 rounded-2xl font-bold text-sm shadow-lg shadow-red-500/25 hover:from-red-600 hover:to-red-800 transition-all">
+              className="inline-flex items-center gap-2 bg-gradient-to-br from-brand-500 to-brand-700 text-white px-5 py-2.5 rounded-2xl font-bold text-sm shadow-lg shadow-brand-500/25 hover:from-brand-600 hover:to-brand-800 transition-all">
               <ExternalLink size={14} />مشاهده پلن‌ها و شروع اشتراک
             </Link>
           )}
@@ -192,7 +192,7 @@ const PayButton: React.FC<{ invoiceId: string; onErr: (m: string) => void }> = (
     } finally { setBusy(false); }
   };
   return (
-    <button onClick={pay} disabled={busy} className="text-xs text-red-600 font-bold hover:underline disabled:opacity-50">
+    <button onClick={pay} disabled={busy} className="text-xs text-brand-600 font-bold hover:underline disabled:opacity-50">
       {busy ? 'در حال انتقال…' : 'پرداخت'}
     </button>
   );

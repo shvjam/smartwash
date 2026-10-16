@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Timer, TrendingUp, TrendingDown, AlertTriangle, Info } from 'lucide-react';
 import { reportsApi, type PunctualityReport } from '../../api';
 import { Card } from '../../components/app/PageHeader';
+import { WorkerAvatar } from '../../components/WorkerAvatar';
+import { useCarWash } from '../../store';
 
 const fa = (n: number) => n.toLocaleString('fa-IR');
 
@@ -9,7 +11,7 @@ const fa = (n: number) => n.toLocaleString('fa-IR');
 const rateTone = (percent: number) =>
   percent >= 85 ? { text: 'text-emerald-600', bg: 'bg-emerald-500', soft: 'bg-emerald-50' }
     : percent >= 60 ? { text: 'text-amber-600', bg: 'bg-amber-500', soft: 'bg-amber-50' }
-      : { text: 'text-red-600', bg: 'bg-red-500', soft: 'bg-red-50' };
+      : { text: 'text-brand-600', bg: 'bg-brand-500', soft: 'bg-brand-50' };
 
 const Tile = ({ label, value, hint, tone = 'text-gray-900' }: {
   label: string; value: string; hint?: string; tone?: string;
@@ -36,13 +38,16 @@ const DurationBars = ({ estimated, actual, scale }: { estimated: number; actual:
         <div className="h-full rounded-full bg-gray-300" style={{ width: `${pct(estimated)}%` }} />
       </div>
       <div className="h-1.5 rounded-full bg-gray-100 overflow-hidden">
-        <div className={`h-full rounded-full ${over ? 'bg-red-500' : 'bg-emerald-500'}`} style={{ width: `${pct(actual)}%` }} />
+        <div className={`h-full rounded-full ${over ? 'bg-brand-500' : 'bg-emerald-500'}`} style={{ width: `${pct(actual)}%` }} />
       </div>
     </div>
   );
 };
 
 export const PunctualityTab = ({ fromDate, toDate }: { fromDate: string; toDate: string }) => {
+  const { workers } = useCarWash();
+  const photoOf = (id: string) => workers.find(w => w.id === id)?.avatar;
+
   const [data, setData] = useState<PunctualityReport | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
@@ -89,7 +94,7 @@ export const PunctualityTab = ({ fromDate, toDate }: { fromDate: string; toDate:
           hint={`${fa(data.onTimeOrders)} از ${fa(data.completedOrders)} سفارش`} />
         <Tile label="میانگین تخمین" value={`${fa(data.averageEstimatedMinutes)} دقیقه`} hint="بر اساس تعرفه‌ها" />
         <Tile label="میانگین واقعی" value={`${fa(data.averageActualMinutes)} دقیقه`}
-          tone={gap > 0 ? 'text-red-600' : 'text-emerald-600'}
+          tone={gap > 0 ? 'text-brand-600' : 'text-emerald-600'}
           hint={gap === 0 ? 'برابر تخمین' : gap > 0 ? `${fa(gap)} دقیقه بیشتر از تخمین` : `${fa(Math.abs(gap))} دقیقه کمتر از تخمین`} />
       </div>
 
@@ -128,7 +133,7 @@ export const PunctualityTab = ({ fromDate, toDate }: { fromDate: string; toDate:
                     <td className="px-3 py-2.5 font-bold text-gray-900">{s.serviceName}</td>
                     <td className="px-3 py-2.5 text-gray-600">{fa(s.timesPerformed)}</td>
                     <td className="px-3 py-2.5 font-mono text-gray-500">{fa(s.estimatedMinutes)}′</td>
-                    <td className={`px-3 py-2.5 font-mono font-bold ${s.averageActualMinutes > s.estimatedMinutes ? 'text-red-600' : 'text-emerald-600'}`}>
+                    <td className={`px-3 py-2.5 font-mono font-bold ${s.averageActualMinutes > s.estimatedMinutes ? 'text-brand-600' : 'text-emerald-600'}`}>
                       {fa(s.averageActualMinutes)}′
                     </td>
                     <td className="px-3 py-2.5">
@@ -156,6 +161,7 @@ export const PunctualityTab = ({ fromDate, toDate }: { fromDate: string; toDate:
             const t = rateTone(w.onTimePercent);
             return (
               <div key={w.workerId} className="flex items-center gap-3 rounded-2xl border border-gray-100 bg-gray-50 p-3">
+                <WorkerAvatar src={photoOf(w.workerId)} name={w.fullName} size={34} rounded="xl" />
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-sm font-bold text-gray-900">{w.fullName}</div>
                   <div className="mt-0.5 text-[11px] text-gray-500">

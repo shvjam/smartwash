@@ -3,10 +3,12 @@ import { Link } from 'react-router';
 import { Loader2, Plus, Search, Receipt, X, ChevronLeft, ChevronRight, User, Car, Sparkles, Wallet, ShoppingBag } from 'lucide-react';
 import { PageHeader, Card, EmptyState, StatCard } from '../../components/app/PageHeader';
 import { ordersApi, branchesApi, baysApi, customersApi, servicesApi, ApiException } from '../../api';
+import { ensureCustomerAndVehicle } from '../../lib/customerRecords';
 import {
   OrderStatus, OrderSource, BayStatus,
-  type OrderDto, type BranchDto, type BayDto, type CustomerDto, type ServiceDto, type CreateOrderLineInput,
+  type OrderDto, type BranchDto, type BayDto, type CustomerDto, type ServiceDto,
 } from '../../api/types';
+import type { CreateOrderLineInput } from '../../api/modules';
 
 const STATUS_LABEL: Record<number, { label: string; cls: string }> = {
   [OrderStatus.InProgress]: { label: 'در حال انجام', cls: 'bg-sky-50 text-sky-700 border-sky-200' },
@@ -15,7 +17,8 @@ const STATUS_LABEL: Record<number, { label: string; cls: string }> = {
 };
 
 const toFa = (v: number | string) => String(v).replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[+d]);
-const fmtRials = (n: number) => toFa(n.toLocaleString('fa-IR'));
+// Rials from the API, shown in tomans like every other screen.
+const fmtRials = (n: number) => toFa(Math.round(n / 10).toLocaleString('fa-IR'));
 const fmtDate = (iso: string) => new Date(iso).toLocaleString('fa-IR', { dateStyle: 'short', timeStyle: 'short' });
 
 export const OrdersView: React.FC = () => {
@@ -60,7 +63,7 @@ export const OrdersView: React.FC = () => {
         subtitle="ثبت سفارش، فیلتر بر اساس وضعیت و مدیریت چرخه‌ی صندوق"
         actions={
           <button onClick={() => setWizardOpen(true)}
-            className="px-4 py-2.5 rounded-2xl bg-red-600 text-white text-sm font-bold flex items-center gap-1.5 hover:bg-red-700">
+            className="px-4 py-2.5 rounded-2xl bg-brand-600 text-white text-sm font-bold flex items-center gap-1.5 hover:bg-brand-700">
             <Plus size={16} />سفارش جدید
           </button>}
       />
@@ -70,7 +73,7 @@ export const OrdersView: React.FC = () => {
         <StatCard label="در حال انجام" value={toFa(stats.inProgress)} accent="violet" />
         <StatCard label="تکمیل شده" value={toFa(stats.completed)} accent="emerald" />
         <StatCard label="لغو شده" value={toFa(stats.cancelled)} accent="amber" />
-        <StatCard label="درآمد صفحه" value={`${fmtRials(stats.revenue)} ﷼`} accent="red" />
+        <StatCard label="درآمد صفحه" value={`${fmtRials(stats.revenue)} تومان`} accent="red" />
       </div>
 
       <div className="flex flex-wrap items-center gap-2 mb-4">
@@ -83,7 +86,7 @@ export const OrdersView: React.FC = () => {
             <Search size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input value={search} onChange={e => setSearch(e.target.value)}
               placeholder="پلاک، نام مشتری یا شماره سفارش"
-              className="bg-white border border-gray-200 rounded-xl pl-3 pr-9 py-2 text-xs w-64 focus:outline-none focus:ring-2 focus:ring-red-500/20" />
+              className="bg-white border border-gray-200 rounded-xl pl-3 pr-9 py-2 text-xs w-64 focus:outline-none focus:ring-2 focus:ring-brand-500/20" />
           </div>
           <button type="submit" className="px-3 py-2 rounded-xl bg-gray-900 text-white text-xs font-bold">جستجو</button>
         </form>
@@ -92,7 +95,7 @@ export const OrdersView: React.FC = () => {
       {err && <div className="mb-4 rounded-md border border-rose-200 bg-rose-50 text-rose-700 p-3 text-sm">{err}</div>}
 
       {loading ? (
-        <div className="min-h-[30vh] grid place-items-center"><Loader2 className="animate-spin text-red-600" /></div>
+        <div className="min-h-[30vh] grid place-items-center"><Loader2 className="animate-spin text-brand-600" /></div>
       ) : items.length === 0 ? (
         <Card><EmptyState icon={Receipt} title="سفارشی یافت نشد" hint="با کلیک «سفارش جدید» اولین سفارش را ثبت کنید." /></Card>
       ) : (
@@ -119,7 +122,7 @@ export const OrdersView: React.FC = () => {
                       <td className="px-4 py-3">{o.customerName}</td>
                       <td className="px-4 py-3 font-mono text-xs text-gray-600">{o.vehiclePlate}</td>
                       <td className="px-4 py-3"><span className={`px-2 py-0.5 rounded-md border text-[10px] font-bold ${st.cls}`}>{st.label}</span></td>
-                      <td className="px-4 py-3 font-mono">{fmtRials(o.totalRials)} ﷼</td>
+                      <td className="px-4 py-3 font-mono">{fmtRials(o.totalRials)} تومان</td>
                       <td className="px-4 py-3 text-xs text-gray-500">{fmtDate(o.startedAtUtc)}</td>
                       <td className="px-4 py-3 text-left">
                         <Link to={`/app/orders/${o.id}`}
@@ -157,7 +160,7 @@ export const OrdersView: React.FC = () => {
 const FilterChip = ({ active, children, onClick }: { active: boolean; children: React.ReactNode; onClick: () => void }) => (
   <button onClick={onClick}
     className={`px-3 py-1.5 rounded-full text-xs font-bold transition-colors ${
-      active ? 'bg-red-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>{children}</button>
+      active ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>{children}</button>
 );
 
 // ============ Wizard ============
@@ -244,10 +247,23 @@ const CreateOrderWizard: React.FC<{ onClose: () => void; onCreated: (id: string)
     if (!branchId || !bayId || lines.length === 0) return;
     setSaving(true); setErr(null);
     try {
+      // Anyone with a phone number becomes a customer with their car on file, exactly as when
+      // booking from the bay board — otherwise this form quietly made them a guest.
+      let resolvedCustomerId = customer?.id ?? null;
+      let resolvedVehicleId = vehicleId;
+      try {
+        const ensured = await ensureCustomerAndVehicle({
+          known: customer, phone: customerPhone, name: customerName,
+          plate: vehiclePlate, brand: vehicleBrand, model: vehicleModel,
+        });
+        resolvedCustomerId = ensured.customer?.id ?? resolvedCustomerId;
+        resolvedVehicleId = resolvedVehicleId ?? ensured.vehicleId;
+      } catch { /* the order still goes through as a guest order */ }
+
       const created = await ordersApi.create({
         branchId, bayId,
-        customerId: customer?.id ?? null,
-        vehicleId,
+        customerId: resolvedCustomerId,
+        vehicleId: resolvedVehicleId,
         customerName: customerName.trim(),
         customerPhone: customerPhone.trim() || null,
         vehiclePlate: vehiclePlate.trim(),
@@ -279,7 +295,7 @@ const CreateOrderWizard: React.FC<{ onClose: () => void; onCreated: (id: string)
 
         <div className="px-6 pt-4 flex items-center gap-2">
           {[1, 2, 3, 4].map(n => (
-            <div key={n} className={`flex-1 h-1.5 rounded-full ${n <= step ? 'bg-red-500' : 'bg-gray-100'}`} />
+            <div key={n} className={`flex-1 h-1.5 rounded-full ${n <= step ? 'bg-brand-500' : 'bg-gray-100'}`} />
           ))}
         </div>
 
@@ -305,7 +321,7 @@ const CreateOrderWizard: React.FC<{ onClose: () => void; onCreated: (id: string)
                     {freeBays.map(b => (
                       <button key={b.id} type="button" onClick={() => setBayId(b.id)}
                         className={`rounded-2xl border-2 p-3 text-center transition ${
-                          bayId === b.id ? 'bg-red-50 border-red-500' : 'bg-white border-gray-200 hover:border-gray-300'}`}>
+                          bayId === b.id ? 'bg-brand-50 border-brand-500' : 'bg-white border-gray-200 hover:border-gray-300'}`}>
                         <div className="text-[10px] text-gray-500">جایگاه</div>
                         <div className="font-extrabold text-lg text-gray-900 mt-0.5">{toFa(b.number)}</div>
                         <div className="text-[10px] text-gray-500 mt-0.5">{b.name}</div>
@@ -324,7 +340,7 @@ const CreateOrderWizard: React.FC<{ onClose: () => void; onCreated: (id: string)
                 <Search size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input value={customerSearch} onChange={e => setCustomerSearch(e.target.value)}
                   placeholder="جستجو با نام یا موبایل..."
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl pr-9 pl-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20" />
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl pr-9 pl-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20" />
               </div>
               {customerResults.length > 0 && (
                 <div className="rounded-xl border border-gray-100 overflow-hidden">
@@ -354,7 +370,7 @@ const CreateOrderWizard: React.FC<{ onClose: () => void; onCreated: (id: string)
                     {customer.vehicles.map(v => (
                       <button key={v.id} type="button"
                         onClick={() => { setVehicleId(v.id); setVehiclePlate(v.plate); setVehicleBrand(v.brand); setVehicleModel(v.model); }}
-                        className={`rounded-xl border-2 p-2 text-right ${vehicleId === v.id ? 'bg-red-50 border-red-500' : 'bg-white border-gray-200'}`}>
+                        className={`rounded-xl border-2 p-2 text-right ${vehicleId === v.id ? 'bg-brand-50 border-brand-500' : 'bg-white border-gray-200'}`}>
                         <div className="font-mono font-bold text-xs">{v.plate}</div>
                         <div className="text-[10px] text-gray-500">{v.brand} {v.model}</div>
                       </button>
@@ -378,10 +394,10 @@ const CreateOrderWizard: React.FC<{ onClose: () => void; onCreated: (id: string)
                   const line = lines.find(l => l.serviceId === s.id);
                   return (
                     <div key={s.id}
-                      className={`rounded-xl border p-3 transition ${line ? 'bg-red-50 border-red-500' : 'bg-white border-gray-200'}`}>
+                      className={`rounded-xl border p-3 transition ${line ? 'bg-brand-50 border-brand-500' : 'bg-white border-gray-200'}`}>
                       <button type="button" onClick={() => toggleLine(s.id)} className="w-full text-right">
                         <div className="font-bold text-sm text-gray-900">{s.name}</div>
-                        <div className="text-[10px] text-gray-500 font-mono mt-0.5">{fmtRials(s.priceRials)} ﷼ • {toFa(s.durationMinutes)}د</div>
+                        <div className="text-[10px] text-gray-500 font-mono mt-0.5">{fmtRials(s.priceRials)} تومان • {toFa(s.durationMinutes)}د</div>
                       </button>
                       {line && (
                         <div className="flex items-center gap-1 mt-2">
@@ -397,7 +413,7 @@ const CreateOrderWizard: React.FC<{ onClose: () => void; onCreated: (id: string)
               {subtotal > 0 && (
                 <div className="rounded-xl bg-gray-900 text-white px-4 py-3 flex items-center justify-between">
                   <span className="text-xs">جمع کل تخمینی</span>
-                  <span className="font-mono font-extrabold">{fmtRials(subtotal)} ﷼</span>
+                  <span className="font-mono font-extrabold">{fmtRials(subtotal)} تومان</span>
                 </div>
               )}
             </>
@@ -414,7 +430,7 @@ const CreateOrderWizard: React.FC<{ onClose: () => void; onCreated: (id: string)
                 const s = services.find(x => x.id === l.serviceId);
                 return `${s?.name ?? '?'} ×${toFa(l.quantity)}`;
               }).join('، ')} />
-              <Review label="جمع تخمینی" value={`${fmtRials(subtotal)} ﷼`} />
+              <Review label="جمع تخمینی" value={`${fmtRials(subtotal)} تومان`} />
             </>
           )}
         </div>
@@ -427,12 +443,12 @@ const CreateOrderWizard: React.FC<{ onClose: () => void; onCreated: (id: string)
           </button>
           {step < 4 ? (
             <button type="button" disabled={!canNext()} onClick={() => setStep(s => (s + 1) as WizardStep)}
-              className="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-bold disabled:opacity-50 inline-flex items-center gap-1">
+              className="px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-sm font-bold disabled:opacity-50 inline-flex items-center gap-1">
               ادامه<ChevronLeft size={14} />
             </button>
           ) : (
             <button type="button" disabled={saving} onClick={submit}
-              className="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-bold disabled:opacity-50 inline-flex items-center gap-2">
+              className="px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-sm font-bold disabled:opacity-50 inline-flex items-center gap-2">
               {saving ? <Loader2 size={16} className="animate-spin" /> : <Wallet size={16} />}ثبت سفارش
             </button>
           )}
@@ -444,7 +460,7 @@ const CreateOrderWizard: React.FC<{ onClose: () => void; onCreated: (id: string)
 
 const StepHeader = ({ icon: Icon, title, hint }: { icon: any; title: string; hint: string }) => (
   <div className="flex items-center gap-3 mb-1">
-    <div className="w-9 h-9 rounded-xl bg-red-50 text-red-600 grid place-items-center"><Icon size={18} /></div>
+    <div className="w-9 h-9 rounded-xl bg-brand-50 text-brand-600 grid place-items-center"><Icon size={18} /></div>
     <div>
       <div className="font-extrabold text-gray-900 text-sm">{title}</div>
       <div className="text-[11px] text-gray-500">{hint}</div>
@@ -459,7 +475,7 @@ const TxtField = ({ label, value, onChange, required, placeholder, mono }: {
   <label className="block">
     <span className="block mb-1 text-[11px] text-gray-600">{label}{required && ' *'}</span>
     <input value={value} onChange={e => onChange(e.target.value)} required={required} placeholder={placeholder}
-      className={`w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 ${mono ? 'font-mono' : ''}`} />
+      className={`w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 ${mono ? 'font-mono' : ''}`} />
   </label>
 );
 

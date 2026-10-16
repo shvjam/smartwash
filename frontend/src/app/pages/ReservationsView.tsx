@@ -10,10 +10,13 @@ import { useCarWash } from '../store';
 import type { ReservationStatus } from '../types';
 import { PageHeader, Card, StatCard } from '../components/app/PageHeader';
 import { useFeature } from '../lib/features';
+import { localIsoDate } from '../lib/dates';
 
 const HOURS = Array.from({ length: 13 }, (_, i) => i + 8); // 8 to 20
+/** Bookable hours in the new-reservation form: the whole day, since carwashes keep late hours. */
+const ALL_HOURS = Array.from({ length: 24 }, (_, i) => i);
 
-const dateKey = (d: Date) => d.toISOString().slice(0, 10);
+const dateKey = (d: Date) => localIsoDate(d);
 const fmtDay = (d: Date) => d.toLocaleDateString('fa-IR', { weekday: 'long', day: 'numeric', month: 'long' });
 const fmtTime = (iso: string) => new Date(iso).toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' });
 
@@ -22,7 +25,7 @@ const statusBadge: Record<ReservationStatus, { label: string; cls: string }> = {
   confirmed: { label: 'تایید شده', cls: 'bg-blue-100 text-blue-700 border-blue-200' },
   arrived: { label: 'حاضر شد', cls: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
   cancelled: { label: 'لغو شده', cls: 'bg-gray-100 text-gray-500 border-gray-200' },
-  no_show: { label: 'عدم حضور', cls: 'bg-red-100 text-red-700 border-red-200' },
+  no_show: { label: 'عدم حضور', cls: 'bg-brand-100 text-brand-700 border-brand-200' },
 };
 
 export const ReservationsView = () => {
@@ -33,7 +36,8 @@ export const ReservationsView = () => {
   } = useCarWash();
 
   const [selectedDate, setSelectedDate] = useState(() => {
-    const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(0, 0, 0, 0);
+    // Open on today: that is where the cars about to arrive are.
+    const d = new Date(); d.setHours(0, 0, 0, 0);
     return d;
   });
   const [showForm, setShowForm] = useState<{ hour: number } | null>(null);
@@ -54,6 +58,14 @@ export const ReservationsView = () => {
     [reservations, selectedDate]
   );
 
+  // The usual day, widened to any hour that has a booking: a reservation at 22:00 used to fall
+  // outside the grid and simply not appear anywhere on the page.
+  const visibleHours = useMemo(() => {
+    const hours = new Set(HOURS);
+    for (const r of dayReservations) hours.add(new Date(r.scheduledAt).getHours());
+    return [...hours].sort((a, b) => a - b);
+  }, [dayReservations]);
+
   const reservationsByHour = useMemo(() => {
     const map: Record<number, typeof dayReservations> = {};
     for (const r of dayReservations) {
@@ -68,9 +80,11 @@ export const ReservationsView = () => {
 
   const handleArrive = async (id: string) => {
     try {
-      const orderId = await arriveReservation(id);
-      if (orderId) showToast('مشتری وارد شد و سفارش فعال شد ✓');
-      else showToast('جایگاه آزاد یافت نشد!');
+      const arrived = await arriveReservation(id);
+      const queued = arrived?.queuePosition;
+      if (!arrived) showToast('پذیرش رزرو انجام نشد.');
+      else if (queued) showToast(`همه‌ی جایگاه‌ها پرند؛ خودرو نفر ${queued.toLocaleString('fa-IR')} صف شستشو شد`);
+      else showToast('مشتری وارد جایگاه شد و سفارش فعال شد ✓');
     } catch {
       showToast('خطا در پذیرش رزرو');
     }
@@ -106,7 +120,7 @@ export const ReservationsView = () => {
               برای فعال‌سازی رزرواسیون آنلاین و حضوری، پلن اشتراک خود را ارتقا دهید.
             </p>
             <a href="/app/billing"
-              className="mt-2 bg-gradient-to-br from-red-500 to-red-700 text-white px-6 py-3 rounded-2xl font-bold text-sm shadow-lg shadow-red-500/30 hover:from-red-600 hover:to-red-800 transition-all">
+              className="mt-2 bg-gradient-to-br from-brand-500 to-brand-700 text-white px-6 py-3 rounded-2xl font-bold text-sm shadow-lg shadow-brand-500/30 hover:from-brand-600 hover:to-brand-800 transition-all">
               مشاهده پلن‌ها و ارتقا
             </a>
           </div>
@@ -144,21 +158,21 @@ export const ReservationsView = () => {
                 className={clsx(
                   'relative flex-shrink-0 flex flex-col items-center justify-center px-4 py-2.5 rounded-2xl border-2 min-w-[80px] transition-all',
                   isSelected
-                    ? 'bg-gradient-to-br from-red-500 to-red-700 text-white border-red-600 shadow-lg shadow-red-500/30'
+                    ? 'bg-gradient-to-br from-brand-500 to-brand-700 text-white border-brand-600 shadow-lg shadow-brand-500/30'
                     : 'bg-white border-gray-100 text-gray-700 hover:border-gray-300'
                 )}
               >
-                <span className={clsx('text-[10px]', isSelected ? 'text-red-100' : 'text-gray-400')}>
+                <span className={clsx('text-[10px]', isSelected ? 'text-brand-100' : 'text-gray-400')}>
                   {isToday ? 'امروز' : i === 1 ? 'فردا' : d.toLocaleDateString('fa-IR', { weekday: 'short' })}
                 </span>
                 <span className="text-lg font-extrabold mt-0.5">{d.toLocaleDateString('fa-IR', { day: 'numeric' })}</span>
-                <span className={clsx('text-[10px]', isSelected ? 'text-red-100' : 'text-gray-400')}>
+                <span className={clsx('text-[10px]', isSelected ? 'text-brand-100' : 'text-gray-400')}>
                   {d.toLocaleDateString('fa-IR', { month: 'short' })}
                 </span>
                 {count > 0 && (
                   <span className={clsx(
                     'absolute top-1 left-1 w-4 h-4 rounded-full text-[9px] font-bold flex items-center justify-center',
-                    isSelected ? 'bg-white text-red-600' : 'bg-red-500 text-white'
+                    isSelected ? 'bg-white text-brand-600' : 'bg-brand-500 text-white'
                   )}>{count}</span>
                 )}
               </button>
@@ -189,7 +203,7 @@ export const ReservationsView = () => {
       {/* Time slots */}
       <Card>
         <div className="space-y-2">
-          {HOURS.map(hour => {
+          {visibleHours.map(hour => {
             const items = reservationsByHour[hour] ?? [];
             const isPast = (() => {
               const slot = new Date(selectedDate); slot.setHours(hour, 0, 0, 0);
@@ -210,7 +224,7 @@ export const ReservationsView = () => {
                     <button
                       onClick={() => setShowForm({ hour })}
                       disabled={isPast}
-                      className="w-full h-full min-h-[60px] rounded-2xl border-2 border-dashed border-gray-200 hover:border-red-400 hover:bg-red-50/40 disabled:hover:border-gray-200 disabled:hover:bg-transparent text-gray-400 hover:text-red-500 disabled:hover:text-gray-400 text-xs font-medium flex items-center justify-center gap-1.5 transition-all"
+                      className="w-full h-full min-h-[60px] rounded-2xl border-2 border-dashed border-gray-200 hover:border-brand-400 hover:bg-brand-50/40 disabled:hover:border-gray-200 disabled:hover:bg-transparent text-gray-400 hover:text-brand-500 disabled:hover:text-gray-400 text-xs font-medium flex items-center justify-center gap-1.5 transition-all"
                     >
                       <Plus size={14} /> {isPast ? 'گذشته' : 'افزودن رزرو در این ساعت'}
                     </button>
@@ -294,7 +308,7 @@ const ReservationCard = ({ r, serviceNames, servicePrice, onCancel, onArrive }: 
           {serviceNames.length > 0 && (
             <div className="flex flex-wrap gap-1 mt-2">
               {serviceNames.map((n: string, i: number) => (
-                <span key={i} className="text-[10px] bg-red-50 text-red-700 px-2 py-0.5 rounded-md font-medium">{n}</span>
+                <span key={i} className="text-[10px] bg-brand-50 text-brand-700 px-2 py-0.5 rounded-md font-medium">{n}</span>
               ))}
               {servicePrice > 0 && (
                 <span className="text-[10px] bg-gray-100 text-gray-700 px-2 py-0.5 rounded-md font-mono font-bold">
@@ -316,7 +330,7 @@ const ReservationCard = ({ r, serviceNames, servicePrice, onCancel, onArrive }: 
             <button
               onClick={onCancel}
               title="لغو"
-              className="bg-gray-100 hover:bg-red-100 hover:text-red-600 text-gray-500 rounded-xl p-2 transition-colors"
+              className="bg-gray-100 hover:bg-brand-100 hover:text-brand-600 text-gray-500 rounded-xl p-2 transition-colors"
             >
               <X size={14} />
             </button>
@@ -390,11 +404,11 @@ const ReservationForm = ({
                 type="date"
                 value={dateKey(date)}
                 onChange={e => setDate(new Date(e.target.value))}
-                className="bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20"
+                className="bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20"
               />
               <div className="flex gap-1">
                 <select value={hour} onChange={e => setHour(Number(e.target.value))} className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-2 py-2.5 text-sm font-mono focus:outline-none">
-                  {HOURS.map(h => <option key={h} value={h}>{String(h).padStart(2, '0')}</option>)}
+                  {ALL_HOURS.map(h => <option key={h} value={h}>{String(h).padStart(2, '0')}</option>)}
                 </select>
                 <select value={minute} onChange={e => setMinute(Number(e.target.value))} className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-2 py-2.5 text-sm font-mono focus:outline-none">
                   {[0, 15, 30, 45].map(m => <option key={m} value={m}>{String(m).padStart(2, '0')}</option>)}
@@ -407,11 +421,11 @@ const ReservationForm = ({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
             <div>
               <label className="text-[10px] text-gray-500 mb-1 block">تلفن</label>
-              <input required value={phone} onChange={e => handlePhone(e.target.value)} placeholder="0912..." className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-red-500/20" />
+              <input required value={phone} onChange={e => handlePhone(e.target.value)} placeholder="0912..." className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-500/20" />
             </div>
             <div>
               <label className="text-[10px] text-gray-500 mb-1 block">نام مشتری</label>
-              <input required value={name} onChange={e => setName(e.target.value)} placeholder="نام و نام خانوادگی" className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20" />
+              <input required value={name} onChange={e => setName(e.target.value)} placeholder="نام و نام خانوادگی" className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20" />
             </div>
             <div>
               <label className="text-[10px] text-gray-500 mb-1 block">پلاک</label>
@@ -433,7 +447,7 @@ const ReservationForm = ({
                     onClick={() => setServiceIds(prev => active ? prev.filter(x => x !== s.id) : [...prev, s.id])}
                     className={clsx(
                       'text-right border rounded-xl px-3 py-2 transition-all',
-                      active ? 'bg-red-50 border-red-500 ring-1 ring-red-500/20' : 'bg-white border-gray-200 hover:border-gray-300'
+                      active ? 'bg-brand-50 border-brand-500 ring-1 ring-brand-500/20' : 'bg-white border-gray-200 hover:border-gray-300'
                     )}
                   >
                     <div className="text-xs font-bold text-gray-900">{s.name}</div>
@@ -461,10 +475,10 @@ const ReservationForm = ({
             <label className="text-xs font-bold text-gray-700 mb-2 flex items-center gap-1.5">
               <MessageSquare size={13} /> توضیحات (اختیاری)
             </label>
-            <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} placeholder="درخواست خاص مشتری..." className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20" />
+            <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} placeholder="درخواست خاص مشتری..." className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20" />
           </div>
 
-          <button type="submit" className="w-full bg-gradient-to-br from-red-500 to-red-700 hover:from-red-600 hover:to-red-800 text-white font-bold py-3.5 rounded-2xl transition-all shadow-lg shadow-red-500/25">
+          <button type="submit" className="w-full bg-gradient-to-br from-brand-500 to-brand-700 hover:from-brand-600 hover:to-brand-800 text-white font-bold py-3.5 rounded-2xl transition-all shadow-lg shadow-brand-500/25">
             ثبت رزرو
           </button>
         </div>

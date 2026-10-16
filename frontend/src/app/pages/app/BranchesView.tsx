@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { Plus, Building2, Star, MapPin, Phone, Power, Pencil, X, Car, Wrench } from 'lucide-react';
 import { branchesApi, baysApi, type BranchDto, type BayDto, ApiException } from '../../api';
+import { BayType } from '../../api/types';
+import { BAY_TYPE_LABEL } from '../../lib/orderStages';
 import { PageHeader, Card, EmptyState } from '../../components/app/PageHeader';
 
 const emptyForm = () => ({ name: '', address: '', phone: '', isDefault: false });
@@ -17,6 +19,9 @@ export const BranchesView = () => {
   const [selectedBranch, setSelectedBranch] = useState<BranchDto | null>(null);
   const [bays, setBays] = useState<BayDto[]>([]);
   const [bayName, setBayName] = useState('جایگاه شست‌وشو');
+  const [bayType, setBayType] = useState<BayType>(BayType.Wash);
+  const [bayCapacity, setBayCapacity] = useState(1);
+  const [bayQueue, setBayQueue] = useState(4);
   const [bayNumber, setBayNumber] = useState(1);
 
   const reload = async () => {
@@ -57,22 +62,50 @@ export const BranchesView = () => {
         subtitle="مدیریت شعبه‌های کارواش — ویرایش، فعال‌سازی و تعیین پیش‌فرض"
         actions={
           <button onClick={openCreate}
-            className="bg-gradient-to-br from-red-500 to-red-700 text-white px-4 py-2.5 rounded-2xl text-sm font-bold flex items-center gap-1.5 shadow-lg shadow-red-500/30">
+            className="bg-gradient-to-br from-brand-500 to-brand-700 text-white px-4 py-2.5 rounded-2xl text-sm font-bold flex items-center gap-1.5 shadow-lg shadow-brand-500/30">
             <Plus size={16} />شعبه جدید
           </button>
         }
       />
 
       {selectedBranch && (
-        <Card className="mb-6 border-red-100 bg-red-50/40">
+        <Card className="mb-6 border-brand-100 bg-brand-50/40">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4"><div><h3 className="font-extrabold">مدیریت جایگاه‌های «{selectedBranch.name}»</h3><p className="text-xs text-gray-500 mt-1">تعداد، نام و وضعیت جایگاه‌ها را از اینجا کنترل کنید.</p></div><button onClick={() => setSelectedBranch(null)} className="text-xs text-gray-500">بستن</button></div>
-          <form onSubmit={async e => { e.preventDefault(); try { await baysApi.create({ branchId: selectedBranch.id, name: bayName.trim() || `جایگاه ${bayNumber}`, number: bayNumber }); await loadBays(selectedBranch); } catch (e) { setErr(e instanceof ApiException ? e.message : 'خطا در ایجاد جایگاه'); } }} className="grid grid-cols-1 sm:grid-cols-[1fr_110px_auto] gap-2 mb-4">
-            <input value={bayName} onChange={e => setBayName(e.target.value)} className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm" placeholder="نوع یا نام جایگاه؛ مثلاً اتوماتیک" />
-            <input value={bayNumber} onChange={e => setBayNumber(Number(e.target.value) || 1)} type="number" min="1" className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm" />
-            <button className="rounded-xl bg-red-600 px-4 py-2.5 text-sm font-bold text-white"><Plus size={15} className="inline ml-1" />افزودن</button>
+          <form onSubmit={async e => {
+            e.preventDefault();
+            try {
+              await baysApi.create({
+                branchId: selectedBranch.id,
+                name: bayName.trim() || `جایگاه ${bayNumber}`,
+                number: bayNumber,
+                type: bayType, serviceCapacity: bayCapacity, queueCapacity: bayQueue,
+              });
+              await loadBays(selectedBranch);
+            } catch (e) { setErr(e instanceof ApiException ? e.message : 'خطا در ایجاد جایگاه'); }
+          }} className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-5">
+            <label className="col-span-2 block sm:col-span-1">
+              <span className="mb-1 block text-[10px] font-medium text-gray-500">نام جایگاه</span>
+              <input value={bayName} onChange={e => setBayName(e.target.value)} className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm" placeholder="مثلاً شستشو ۱" />
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-[10px] font-medium text-gray-500">شماره</span>
+              <input value={bayNumber} onChange={e => setBayNumber(Number(e.target.value) || 1)} type="number" min="1" className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm" />
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-[10px] font-medium text-gray-500">نوع</span>
+              <select value={bayType} onChange={e => setBayType(Number(e.target.value) as BayType)}
+                className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm">
+                {Object.entries(BAY_TYPE_LABEL).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+              </select>
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-[10px] font-medium text-gray-500">ظرفیت صف</span>
+              <input value={bayQueue} onChange={e => setBayQueue(Math.max(0, Number(e.target.value) || 0))} type="number" min="0" className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm" />
+            </label>
+            <button className="col-span-2 rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-bold text-white sm:col-span-1 sm:self-end"><Plus size={15} className="inline ml-1" />افزودن</button>
           </form>
           {err && <p className="mb-3 text-xs text-red-600">{err}</p>}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">{bays.map(b => <div key={b.id} className="flex items-center justify-between rounded-2xl bg-white border border-gray-100 p-3"><div className="flex items-center gap-2"><span className="grid size-9 place-items-center rounded-xl bg-red-50 text-red-600"><Car size={17}/></span><div><b className="text-sm">{b.name}</b><p className="text-[11px] text-gray-500">جایگاه {b.number}</p></div></div><button onClick={async () => { await baysApi.maintenance(b.id, 'غیرفعال‌سازی از پنل مدیریت'); await loadBays(selectedBranch); }} className="rounded-lg p-2 text-amber-600 hover:bg-amber-50" title="تعمیرات"><Wrench size={16}/></button></div>)}</div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">{bays.map(b => <div key={b.id} className="flex items-center justify-between rounded-2xl bg-white border border-gray-100 p-3"><div className="flex items-center gap-2"><span className="grid size-9 place-items-center rounded-xl bg-brand-50 text-brand-600"><Car size={17}/></span><div><b className="text-sm">{b.name}</b><p className="text-[11px] text-gray-500">جایگاه {b.number} · {BAY_TYPE_LABEL[b.type]}{b.queueCapacity > 0 ? ` · صف ${b.queueLength}/${b.queueCapacity}` : ''}</p></div></div><button onClick={async () => { await baysApi.maintenance(b.id, 'غیرفعال‌سازی از پنل مدیریت'); await loadBays(selectedBranch); }} className="rounded-lg p-2 text-amber-600 hover:bg-amber-50" title="تعمیرات"><Wrench size={16}/></button></div>)}</div>
         </Card>
       )}
 
@@ -87,21 +120,21 @@ export const BranchesView = () => {
               <label className="block sm:col-span-2">
                 <span className="text-xs font-medium text-gray-600 mb-2 block">نام شعبه</span>
                 <input required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500" />
+                  className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500" />
               </label>
               <label className="block sm:col-span-2">
                 <span className="text-xs font-medium text-gray-600 mb-2 block">نشانی</span>
                 <input value={form.address} onChange={e => setForm({ ...form, address: e.target.value })}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500" />
+                  className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500" />
               </label>
               <label className="block">
                 <span className="text-xs font-medium text-gray-600 mb-2 block">تلفن</span>
                 <input dir="ltr" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500" />
+                  className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500" />
               </label>
               <label className="flex items-center gap-3 cursor-pointer">
                 <input type="checkbox" checked={form.isDefault} onChange={e => setForm({ ...form, isDefault: e.target.checked })}
-                  className="w-4 h-4 accent-red-600" />
+                  className="w-4 h-4 accent-brand-600" />
                 <span className="text-sm">شعبه پیش‌فرض</span>
               </label>
               {err && <div className="sm:col-span-2 bg-red-50 text-red-600 text-sm px-4 py-3 rounded-2xl">{err}</div>}
@@ -125,7 +158,7 @@ export const BranchesView = () => {
           {list.map(b => (
             <Card key={b.id} className="group hover:shadow-lg transition-shadow">
               <div className="flex items-start justify-between mb-3">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-red-500 to-red-700 text-white flex items-center justify-center">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 text-white flex items-center justify-center">
                   <Building2 size={20} />
                 </div>
                 <div className="flex items-center gap-2">
@@ -135,7 +168,7 @@ export const BranchesView = () => {
                     </span>
                   )}
                   <button onClick={() => openEdit(b)}
-                    className="p-1.5 rounded-xl text-gray-400 hover:text-red-600 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-all" title="ویرایش شعبه">
+                    className="p-1.5 rounded-xl text-gray-400 hover:text-brand-600 hover:bg-brand-50 opacity-0 group-hover:opacity-100 transition-all" title="ویرایش شعبه">
                     <Pencil size={14} />
                   </button>
                 </div>
@@ -144,7 +177,7 @@ export const BranchesView = () => {
               {b.address && <div className="text-xs text-gray-500 mb-2 flex items-center gap-1.5"><MapPin size={12} />{b.address}</div>}
               {b.phone && <div className="text-xs text-gray-500 flex items-center gap-1.5" dir="ltr"><Phone size={12} />{b.phone}</div>}
               <button onClick={() => loadBays(b)}
-                className="w-full mt-4 flex items-center justify-center gap-2 rounded-xl bg-red-600 px-3 py-2.5 text-xs font-bold text-white hover:bg-red-700 transition-colors">
+                className="w-full mt-4 flex items-center justify-center gap-2 rounded-xl bg-brand-600 px-3 py-2.5 text-xs font-bold text-white hover:bg-brand-700 transition-colors">
                 <Car size={14} /> مدیریت جایگاه‌های این شعبه
               </button>
               <div className="flex items-center gap-2 mt-3 pt-4 border-t border-gray-50">

@@ -15,6 +15,17 @@ using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Deployment secrets live in a file shipped beside the app rather than only in web.config.
+// On this host the file manager's Extract has twice left an older web.config in place, which
+// silently dropped every environment variable with it; a settings file inside the package
+// cannot be lost that way. The .config extension is deliberate: IIS request filtering refuses
+// to serve *.config files, so even if the ASP.NET Core handler were ever missing the secrets
+// could not be downloaded, which is exactly what happened to appsettings.json on a bad deploy.
+// Environment variables are added again afterwards so a value set on the host still wins.
+var secretsFile = Path.Combine(builder.Environment.ContentRootPath, "appsettings.secrets.config");
+builder.Configuration.AddJsonFile(secretsFile, optional: true, reloadOnChange: false);
+builder.Configuration.AddEnvironmentVariables();
+
 Log.Logger = new LoggerConfiguration()
     .ReadFrom.Configuration(builder.Configuration)
     .Enrich.FromLogContext()
@@ -59,6 +70,9 @@ if (builder.Configuration.GetValue("Cron:UseInternalScheduler", true))
 }
 
 var healthChecks = builder.Services.AddHealthChecks();
+// Connectivity and schema are separate questions: the database can answer a ping while
+// being a version behind the code, which is exactly the state a failed deploy leaves.
+healthChecks.AddCheck<SmartWash.Api.Configuration.SchemaHealthCheck>("database-schema", tags: ["ready"]);
 // اگر connection string واقعی تنظیم نشده باشد، ثبت health-checkِ SqlServer نباید
 // باعث کرشِ استارتاپ شود؛ در آن صورت اپ همچنان بالا می‌آید و /health/live پاسخ می‌دهد
 // تا بتوان «بالا بودن اپ» را از «سلامت دیتابیس» تفکیک کرد.
@@ -143,48 +157,76 @@ finally
 /// <summary>
 /// Applies pending EF migrations, but only when explicitly asked to.
 ///
-/// The schema is normally created by running sql/migration.sql against the database, which
-/// keeps schema changes reviewable and separate from a deploy. Shared hosting can leave no
-/// way to do that: no remote SQL access, and newer Plesk no longer ships a web SQL client.
-/// This switch is the escape hatch for exactly that case — turn it on for one restart, watch
-/// the log, then turn it off again, the same discipline as Seed:RunOnStartup.
+/// This deployment applies them on startup, because the host offers no remote SQL access and
+/// no web SQL client — there is genuinely no other way to change the schema here. Set
+/// Database__MigrateOnStartup to false to turn it off on a host where a script can be run.
 ///
-/// Leaving it on is a standing risk: the next deploy carrying a migration would alter the
-/// production schema the moment the app pool recycles, with no review and no backup taken.
+/// The trade-off is real and worth stating: the schema changes the moment the app pool
+/// recycles after a deploy that carries a migration, with no review step and no backup taken
+/// automatically. Take a database backup before deploying anything that migrates.
 /// </summary>
 static async Task MigrateAsync(WebApplication app)
 {
-    if (!app.Configuration.GetValue("Database:MigrateOnStartup", false)) return;
+    if (!app.Configuration.GetValue("Database:MigrateOnStartup", true))
+    {
+        SmartWash.Api.Configuration.SchemaState.RecordSkipped();
+        return;
+    }
+
+    string[] pending = Array.Empty<string>();
     try
     {
         using var scope = app.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SmartWash.Infrastructure.Persistence.AppDbContext>();
 
-        var pending = (await db.Database.GetPendingMigrationsAsync()).ToArray();
+        pending = (await db.Database.GetPendingMigrationsAsync()).ToArray();
         if (pending.Length == 0)
         {
-            Log.Information("Database:MigrateOnStartup is on, but the schema is already up to date.");
+            Log.Information("Database schema is already up to date.");
+            SmartWash.Api.Configuration.SchemaState.RecordCurrent();
             return;
         }
 
         Log.Warning("Applying {Count} pending migration(s): {Migrations}", pending.Length, string.Join(", ", pending));
         await db.Database.MigrateAsync();
-        Log.Warning("Migrations applied. Set Database__MigrateOnStartup back to false and restart.");
+
+        Log.Warning("Database schema updated: {Migrations}", string.Join(", ", pending));
+        SmartWash.Api.Configuration.SchemaState.RecordApplied(pending);
     }
     catch (Exception ex)
     {
-        // Same reasoning as the seed below: crashing here produces an opaque HTTP 500.30
-        // under IIS and hides the real cause. Come up, fail every request, and say why.
+        // Crashing here produces an opaque HTTP 500.30 under IIS and hides the real cause, so
+        // the app still comes up — but it comes up *saying* it is broken. /health now reports
+        // Unhealthy with this message, which is the only way to find out without a log file
+        // when the host offers no remote database access.
         Log.Error(ex, "Applying migrations on startup failed. The schema is unchanged.");
+        SmartWash.Api.Configuration.SchemaState.RecordFailed(pending, ex);
     }
 }
 
 static async Task SeedAsync(WebApplication app)
 {
-    if (!app.Configuration.GetValue("Seed:RunOnStartup", false)) return;
     try
     {
         using var scope = app.Services.CreateScope();
+
+        if (!app.Configuration.GetValue("Seed:RunOnStartup", false))
+        {
+            // A database with no plans and no users has never been set up, and an app pointed
+            // at one cannot be signed into at all — every login reports a wrong password because
+            // there is no account to match. That is exactly what a fresh database looks like
+            // after the migrations have built its tables, so it is bootstrapped once here.
+            //
+            // It stays switched off for any database that already holds data. The seeder
+            // reconciles the platform owner's password back to the configured value, so running
+            // it on every start would quietly undo a password the owner had changed.
+            var db = scope.ServiceProvider.GetRequiredService<SmartWash.Infrastructure.Persistence.AppDbContext>();
+            var isEmpty = !await db.Plans.IgnoreQueryFilters().AnyAsync()
+                          && !await db.Users.IgnoreQueryFilters().AnyAsync();
+            if (!isEmpty) return;
+            Log.Warning("Database has no plans and no users; seeding the initial data once.");
+        }
+
         var seeder = scope.ServiceProvider.GetRequiredService<DatabaseSeeder>();
         await seeder.SeedAsync();
     }

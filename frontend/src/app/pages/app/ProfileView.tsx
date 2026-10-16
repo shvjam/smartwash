@@ -18,7 +18,7 @@ export const ProfileView = () => {
 
       <Card className="mb-4">
         <div className="flex items-center gap-5">
-          <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-red-500 to-red-700 text-white flex items-center justify-center font-black text-3xl">
+          <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-brand-500 to-brand-700 text-white flex items-center justify-center font-black text-3xl">
             {user.name.charAt(0)}
           </div>
           <div className="flex-1 min-w-0">
@@ -26,7 +26,7 @@ export const ProfileView = () => {
             <div className="text-sm text-gray-500 truncate">{user.username}</div>
             <div className="flex flex-wrap gap-1.5 mt-2">
               {user.isPlatformAdmin && <span className="px-2 py-0.5 rounded-full bg-violet-50 text-violet-700 text-[10px] font-bold">ادمین پلتفرم</span>}
-              {user.role === 'admin' && <span className="px-2 py-0.5 rounded-full bg-red-50 text-red-700 text-[10px] font-bold">مدیر کارواش</span>}
+              {user.role === 'admin' && <span className="px-2 py-0.5 rounded-full bg-brand-50 text-brand-700 text-[10px] font-bold">مدیر کارواش</span>}
               {user.role === 'user' && <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-bold">کاربر</span>}
             </div>
           </div>
@@ -61,7 +61,7 @@ export const ProfileView = () => {
             تغییر رمز عبور
           </button>
           <button onClick={() => { logout(); navigate('/login', { replace: true }); }}
-            className="w-full text-right p-4 rounded-2xl bg-red-50 text-red-700 hover:bg-red-100 transition-colors text-sm font-bold flex items-center gap-2">
+            className="w-full text-right p-4 rounded-2xl bg-brand-50 text-brand-700 hover:bg-brand-100 transition-colors text-sm font-bold flex items-center gap-2">
             <LogOut size={16} />خروج از همه دستگاه‌ها
           </button>
         </div>
@@ -112,7 +112,7 @@ const ChangePasswordModal = ({ onClose }: { onClose: () => void }) => {
           {ok && <div className="bg-emerald-50 text-emerald-700 text-xs px-3 py-2 rounded-xl">گذرواژه با موفقیت تغییر کرد.</div>}
           <div className="flex gap-2 pt-2">
             <button type="submit" disabled={loading}
-              className="flex-1 bg-red-600 hover:bg-red-500 disabled:opacity-60 text-white font-bold py-3 rounded-2xl">
+              className="flex-1 bg-brand-600 hover:bg-brand-500 disabled:opacity-60 text-white font-bold py-3 rounded-2xl">
               {loading ? 'در حال ذخیره…' : 'ذخیره'}
             </button>
             <button type="button" onClick={onClose}
@@ -129,7 +129,7 @@ const Field = ({ label, value, onChange, autoComplete }: { label: string; value:
     <span className="text-xs text-gray-600 mb-1.5 block">{label}</span>
     <input type="password" value={value} onChange={e => onChange(e.target.value)}
       autoComplete={autoComplete ?? 'new-password'}
-      className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-300" />
+      className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-300" />
   </label>
 );
 

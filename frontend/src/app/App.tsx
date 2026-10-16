@@ -48,7 +48,10 @@ import { SupportView } from './pages/app/SupportView';
 import { SmsView } from './pages/app/SmsView';
 import { SupportTicketDetailView } from './pages/app/SupportTicketDetailView';
 import { CarWashProvider, useCarWash } from './store';
-import { ThemeSyncer } from './components/ThemeSyncer';
+import { RostersView } from './pages/app/RostersView';
+import { TipSettlementView } from './pages/app/TipSettlementView';
+import { BrandingProvider } from './lib/branding';
+import { NetworkActivityBar } from './components/NetworkActivityBar';
 import { Toaster } from './components/ui/sonner';
 import { normalizeDigits } from './lib/persian';
 import { RouteErrorBoundary } from './components/RouteErrorBoundary';
@@ -63,7 +66,7 @@ const RequireAuth = ({ children, loginPath = '/login' }: { children: React.React
   const { user, ready } = useCarWash();
   if (!ready) return (
     <div dir="rtl" className="min-h-screen flex items-center justify-center bg-[#f5f5f7]">
-      <div className="w-10 h-10 border-4 border-red-200 border-t-red-600 rounded-full animate-spin" />
+      <div className="w-10 h-10 border-4 border-brand-200 border-t-brand-600 rounded-full animate-spin" />
     </div>
   );
   if (!user) return <Navigate to={loginPath} replace />;
@@ -109,6 +112,8 @@ const router = createBrowserRouter([
       { path: 'branches', element: <AdminOnly><BranchesView /></AdminOnly> },
       { path: 'users', element: <AdminOnly><UsersView /></AdminOnly> },
       { path: 'shifts', Component: ShiftsView },
+      { path: 'rosters', element: <AdminOnly><RostersView /></AdminOnly> },
+      { path: 'tips', element: <AdminOnly><TipSettlementView /></AdminOnly> },
       { path: 'expenses', element: <AdminOnly><ExpensesView /></AdminOnly> },
       { path: 'campaigns', element: <AdminOnly><CampaignsView /></AdminOnly> },
       { path: 'settings', element: <AdminOnly><SettingsView /></AdminOnly> },
@@ -161,11 +166,13 @@ export default function App() {
       <CarWashProvider>
         <RbacProvider>
           <FeaturesProvider>
-            <div className="notranslate" translate="no">
-              <ThemeSyncer />
-              <RouterProvider router={router} />
-              <Toaster position="top-center" richColors closeButton dir="rtl" />
-            </div>
+            <BrandingProvider>
+              <div className="notranslate" translate="no">
+                <NetworkActivityBar />
+                <RouterProvider router={router} />
+                <Toaster position="top-center" richColors closeButton dir="rtl" />
+              </div>
+            </BrandingProvider>
           </FeaturesProvider>
         </RbacProvider>
       </CarWashProvider>

@@ -42,6 +42,48 @@ public sealed class ReportsController : ControllerBase
     public async Task<IActionResult> WorkerScorecards([FromQuery] DateOnly fromDate, [FromQuery] DateOnly toDate, CancellationToken ct = default)
         => (await _sender.Send(new GetWorkerScorecardsQuery(fromDate, toDate), ct)).ToActionResult();
 
+    /// <summary>آرشیو دقیق سفارش‌ها: کدام جایگاه، چه کسی، چه زمانی، چه خودرویی</summary>
+    [HttpGet("order-archive")]
+    [HasPermission(Permissions.ReportsView)]
+    public async Task<IActionResult> OrderArchive(
+        [FromQuery] DateOnly fromDate, [FromQuery] DateOnly toDate,
+        [FromQuery] Guid? bayId, [FromQuery] Guid? workerId,
+        [FromQuery] int page = 1, [FromQuery] int pageSize = 50, CancellationToken ct = default)
+        => (await _sender.Send(new GetOrderArchiveQuery(fromDate, toDate, bayId, workerId, page, pageSize), ct)).ToActionResult();
+
+    /// <summary>عملکرد جایگاه‌ها: کار انجام‌شده، زمان غیرفعالی و علتش</summary>
+    [HttpGet("bay-performance")]
+    [HasPermission(Permissions.ReportsView)]
+    public async Task<IActionResult> BayPerformance([FromQuery] DateOnly fromDate, [FromQuery] DateOnly toDate, CancellationToken ct = default)
+        => (await _sender.Send(new GetBayPerformanceQuery(fromDate, toDate), ct)).ToActionResult();
+
+    /// <summary>زمان انتظار در هر مرحله و شناسایی گلوگاه عملیاتی</summary>
+    [HttpGet("waiting")]
+    [HasPermission(Permissions.ReportsView)]
+    public async Task<IActionResult> Waiting([FromQuery] DateOnly fromDate, [FromQuery] DateOnly toDate, CancellationToken ct = default)
+        => (await _sender.Send(new GetWaitingReportQuery(fromDate, toDate), ct)).ToActionResult();
+
+    /// <summary>تعداد نیروی انسانی در بازه، کنار تعداد خودروی سرویس‌شده</summary>
+    [HttpGet("staffing")]
+    [HasPermission(Permissions.ReportsView)]
+    public async Task<IActionResult> Staffing([FromQuery] DateOnly fromDate, [FromQuery] DateOnly toDate, CancellationToken ct = default)
+        => (await _sender.Send(new GetStaffingReportQuery(fromDate, toDate), ct)).ToActionResult();
+
+    /// <summary>گزارش درآمد لایه‌ای با مقایسه‌ی دوره‌ی قبل</summary>
+    [HttpGet("revenue")]
+    [HasPermission(Permissions.ReportsView)]
+    public async Task<IActionResult> Revenue([FromQuery] DateOnly fromDate, [FromQuery] DateOnly toDate,
+        [FromQuery] string bucket = "day", CancellationToken ct = default)
+        => (await _sender.Send(new GetRevenueReportQuery(fromDate, toDate, bucket), ct)).ToActionResult();
+
+    /// <summary>گزارش عملکرد کاربران — چه کسی چه کاری و چه ساعتی انجام داده</summary>
+    [HttpGet("activity-log")]
+    [HasPermission(Permissions.ReportsView)]
+    public async Task<IActionResult> ActivityLog([FromQuery] DateOnly fromDate, [FromQuery] DateOnly toDate,
+        [FromQuery] Guid? userId, [FromQuery] string? entityName,
+        [FromQuery] int page = 1, [FromQuery] int pageSize = 50, CancellationToken ct = default)
+        => (await _sender.Send(new GetActivityLogQuery(fromDate, toDate, userId, entityName, page, pageSize), ct)).ToActionResult();
+
     [HttpGet("punctuality")]
     [HasPermission(Permissions.ReportsView)]
     public async Task<IActionResult> Punctuality([FromQuery] DateOnly fromDate, [FromQuery] DateOnly toDate, CancellationToken ct = default)

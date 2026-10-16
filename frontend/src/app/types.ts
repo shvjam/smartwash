@@ -1,3 +1,4 @@
+import type { OrderStage as ApiOrderStage } from './api/types';
 export type Role = 'admin' | 'user';
 
 export type Worker = {
@@ -33,12 +34,21 @@ export type OrderStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled';
 
 export type Order = {
   id: string;
-  bayId: string;
+  /** The bay it was last in; empty for a reservation still waiting in the wash queue. */
+  bayId?: string;
   customerId?: string;
   customerPlate: string;
   customerPhone?: string;
   lineItems: OrderLineItem[];
   status: OrderStatus;
+  /** جایگاه خودرو در چرخه — مستقل از باز یا بسته بودن سفارش. */
+  stage: ApiOrderStage;
+  /** مانده‌ی پرداخت‌نشده؛ تا صفر نشود تحویل ممکن نیست. */
+  outstanding: number;
+  /** نوبت خودرو در صف، یا undefined وقتی در صف نیست. */
+  queuePosition?: number;
+  /** جایگاهی که خودرو همین حالا در آن است؛ خالی یعنی در صف یا منتظر تحویل. */
+  currentBayId?: string;
   createdAt: string;
   completedAt?: string;
   isWalkIn: boolean;
@@ -53,6 +63,8 @@ export type Bay = {
   name: string;
   status: BayStatus;
   type: 'standard' | 'vip';
+  /** What the bay is for (wash, dry, …), as the server records it. */
+  kind?: number;
   currentOrderId?: string;
 };
 

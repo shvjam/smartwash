@@ -233,3 +233,74 @@
   th { font-weight: 600; font-size: 0.8125rem; letter-spacing: 0.02em; }
   td { font-size: 0.9375rem; line-height: 1.6; }
 }
+
+/**
+ * The brand accent, as its own colour scale rather than Tailwind's red.
+ *
+ * Red used to carry two unrelated jobs in this app: it was the brand accent
+ * (buttons, gradients, focus rings, the active menu item) and it was also the
+ * colour of failure (validation errors, delete actions, overdue warnings).
+ * That is fine while the accent happens to be red, but a carwash that picks
+ * green for its panel would have got green error messages too.
+ *
+ * So the accent moved here and danger stayed on red. The values below are
+ * Tailwind's own red scale, which means nothing looks different until a carwash
+ * actually chooses a colour — at which point applyBrandColor() in
+ * app/lib/branding.tsx rewrites these variables and every utility built on them
+ * follows, without a single component knowing about it.
+ *
+ * Deliberately not `@theme inline`: the utilities have to keep referring to
+ * these variables at runtime, which is the whole mechanism.
+ */
+@theme {
+  --color-brand-50:  oklch(97.1% 0.013 17.38);
+  --color-brand-100: oklch(93.6% 0.032 17.717);
+  --color-brand-200: oklch(88.5% 0.062 18.334);
+  --color-brand-300: oklch(80.8% 0.114 19.571);
+  --color-brand-400: oklch(70.4% 0.191 22.216);
+  --color-brand-500: oklch(63.7% 0.237 25.331);
+  --color-brand-600: oklch(57.7% 0.245 27.325);
+  --color-brand-700: oklch(50.5% 0.213 27.518);
+  --color-brand-800: oklch(44.4% 0.177 26.899);
+  --color-brand-900: oklch(39.6% 0.141 25.723);
+  --color-brand-950: oklch(25.8% 0.092 26.042);
+}
+
+/*
+ * Every button answers a press.
+ *
+ * Most buttons in the panel trigger a request and wait, and without any visible response to
+ * the press itself people could not tell whether a click had registered, so they clicked
+ * again. A short scale on press, applied to every button in one place, gives each of them the
+ * same immediate acknowledgement; the activity bar then shows the request itself.
+ */
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  a[class*="rounded"] {
+    transition-property: color, background-color, border-color, box-shadow, transform, opacity;
+    transition-duration: 120ms;
+    transition-timing-function: ease-out;
+  }
+  button:not(:disabled):active,
+  [role="button"]:not([aria-disabled="true"]):active {
+    transform: scale(0.96);
+  }
+  button:not(:disabled) { cursor: pointer; }
+  button:disabled { cursor: not-allowed; }
+  button:focus-visible,
+  [role="button"]:focus-visible {
+    outline: 2px solid var(--color-brand-500);
+    outline-offset: 2px;
+  }
+}
+
+@keyframes sw-activity {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(400%); }
+}
+.sw-activity-bar { animation: sw-activity 1s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .sw-activity-bar { animation: none; width: 100%; }
+  button:not(:disabled):active { transform: none; }
+}

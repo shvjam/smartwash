@@ -3,11 +3,12 @@ import { motion } from 'motion/react';
 import { Droplets, Sparkles, ArrowLeft, Crown } from 'lucide-react';
 import { clsx } from 'clsx';
 import type { Bay } from '../types';
+import { WorkerAvatar } from './WorkerAvatar';
 
 type Props = {
   bays: Bay[];
   workers: { id: string; name: string; avatar: string }[];
-  ordersByBay: Record<string, { plate: string; workerIds: string[]; total: number; itemsCount: number; minutesElapsed: number } | undefined>;
+  ordersByBay: Record<string, { plate: string; workerIds: string[]; total: number; itemsCount: number; minutesElapsed: number; stageLabel?: string } | undefined>;
   onSelect: (bayId: string) => void;
 };
 
@@ -80,16 +81,16 @@ const FloorMarkings = () => (
 
 const statusConfig: Record<Bay['status'], { card: string; tag: string; tagText: string; dot: string }> = {
   empty: {
-    card: 'bg-gradient-to-br from-white to-slate-50 border-2 border-dashed border-slate-300 hover:border-red-400 hover:from-red-50 hover:to-white',
+    card: 'bg-gradient-to-br from-white to-slate-50 border-2 border-dashed border-slate-300 hover:border-brand-400 hover:from-brand-50 hover:to-white',
     tag: 'bg-emerald-50 text-emerald-600 border border-emerald-200',
     tagText: 'آزاد',
     dot: 'bg-emerald-500',
   },
   occupied: {
-    card: 'bg-gradient-to-br from-red-50 via-white to-blue-50 border border-red-200 shadow-[0_15px_40px_-10px_rgba(239,68,68,0.3)]',
-    tag: 'bg-red-100 text-red-600 border border-red-200',
+    card: 'bg-gradient-to-br from-brand-50 via-white to-blue-50 border border-brand-200 shadow-[0_15px_40px_-10px_rgba(239,68,68,0.3)]',
+    tag: 'bg-brand-100 text-brand-600 border border-brand-200',
     tagText: 'در حال شستشو',
-    dot: 'bg-red-500 animate-pulse',
+    dot: 'bg-brand-500 animate-pulse',
   },
   reserved: {
     card: 'bg-gradient-to-br from-amber-50 to-white border border-amber-200',
@@ -185,7 +186,7 @@ export const CarwashLayout = ({ bays, workers, ordersByBay, onSelect }: Props) =
                   </div>
                   <span className={clsx('text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1.5', cfg.tag)}>
                     <span className={clsx('w-1.5 h-1.5 rounded-full', cfg.dot)} />
-                    {cfg.tagText}
+                    {order?.stageLabel ?? cfg.tagText}
                   </span>
                 </div>
 
@@ -194,7 +195,7 @@ export const CarwashLayout = ({ bays, workers, ordersByBay, onSelect }: Props) =
                   {bay.status === 'occupied' && <WaterArch />}
 
                   {bay.status === 'empty' || bay.status === 'maintenance' ? (
-                    <div className="flex flex-col items-center justify-center text-slate-300 group-hover:text-red-400 transition-colors">
+                    <div className="flex flex-col items-center justify-center text-slate-300 group-hover:text-brand-400 transition-colors">
                       <svg viewBox="0 0 80 140" className="w-14 md:w-16 h-auto opacity-60">
                         <rect x="6" y="6" width="68" height="128" rx="12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeDasharray="6 6" />
                         <line x1="20" y1="70" x2="60" y2="70" stroke="currentColor" strokeWidth="2" strokeDasharray="3 3" />
@@ -247,7 +248,7 @@ export const CarwashLayout = ({ bays, workers, ordersByBay, onSelect }: Props) =
                       <div className="flex items-center gap-2">
                         <div className="flex -space-x-2 space-x-reverse">
                           {assignedWorkers.slice(0, 3).map(w => w && (
-                            <img key={w.id} src={w.avatar} alt={w.name} className="w-5 h-5 rounded-full border-2 border-white" />
+                            <WorkerAvatar key={w.id} src={w.avatar} name={w.name} size={20} className="border-2 border-white" />
                           ))}
                         </div>
                         {assignedWorkers.length > 1 && (
@@ -273,7 +274,7 @@ export const CarwashLayout = ({ bays, workers, ordersByBay, onSelect }: Props) =
       {/* Legend */}
       <div className="relative z-10 mt-4 flex flex-wrap items-center justify-center gap-3 text-[11px] text-gray-500">
         <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-500" />آزاد</div>
-        <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />در حال شستشو</div>
+        <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-brand-500 animate-pulse" />در حال شستشو</div>
         <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-amber-500" />رزرو</div>
         <div className="flex items-center gap-1"><Sparkles size={11} className="text-yellow-500" />جایگاه VIP</div>
       </div>

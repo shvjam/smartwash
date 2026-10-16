@@ -17,13 +17,14 @@ public sealed class OrdersController : ControllerBase
     private readonly ISender _sender;
     public OrdersController(ISender sender) => _sender = sender;
 
-    public sealed record CreateOrderRequest(Guid BranchId, Guid BayId, Guid? CustomerId, Guid? VehicleId,
+    public sealed record CreateOrderRequest(Guid BranchId, Guid? BayId, Guid? CustomerId, Guid? VehicleId,
         string CustomerName, string? CustomerPhone, string VehiclePlate, string? VehicleBrand, string? VehicleModel,
         OrderSource Source, Guid? ReservationId, IReadOnlyList<CreateOrderLineInput> Lines);
     public sealed record AddLineRequest(Guid ServiceId, int Quantity, Guid? WorkerId);
     public sealed record DiscountRequest(long DiscountRials);
     public sealed record PaymentRequest(PaymentMethod Method, long AmountRials, string? Reference);
     public sealed record CompleteRequest(PaymentMethod FinalMethod);
+    public sealed record AdvanceStageRequest(OrderStage Stage, Guid? BayId, string? Note);
     public sealed record CancelRequest(string? Reason);
     public sealed record SetTipRequest(long TipRials);
     public sealed record AssignWorkerRequest(Guid WorkerId);
@@ -71,6 +72,12 @@ public sealed class OrdersController : ControllerBase
     [HasPermission(Permissions.OrdersManage)]
     public async Task<IActionResult> Complete(Guid id, [FromBody] CompleteRequest req, CancellationToken ct)
         => (await _sender.Send(new CompleteOrderCommand(id, req.FinalMethod), ct)).ToActionResult();
+
+    /// <summary>انتقال سفارش به مرحله‌ی بعدی چرخه‌ی خودرو</summary>
+    [HttpPost("{id:guid}/stage")]
+    [HasPermission(Permissions.OrdersManage)]
+    public async Task<IActionResult> AdvanceStage(Guid id, [FromBody] AdvanceStageRequest req, CancellationToken ct)
+        => (await _sender.Send(new AdvanceOrderStageCommand(id, req.Stage, req.BayId, req.Note), ct)).ToActionResult();
 
     [HttpPost("{id:guid}/cancel")]
     [HasPermission(Permissions.OrdersManage)]

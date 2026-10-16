@@ -156,8 +156,8 @@ public sealed class CustomerVehicle : Entity<Guid>, ITenantScoped
         CustomerId = customerId;
         TenantId = tenantId;
         Plate = plate.Trim();
-        Brand = brand.Trim();
-        Model = model.Trim();
+        Brand = (brand ?? string.Empty).Trim();
+        Model = (model ?? string.Empty).Trim();
         Color = color?.Trim();
         Year = year;
         CreatedAtUtc = DateTime.UtcNow;
