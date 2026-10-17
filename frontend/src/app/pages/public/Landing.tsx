@@ -4,6 +4,7 @@ import { ScrollProgress } from '../../components/landing/kit';
 import { Hero } from './landing/Hero';
 import { SiteFooter, SiteNav } from './landing/SiteChrome';
 import '../../../styles/landing.css';
+import '../../../styles/console.css';
 
 /**
  * The public home page.
@@ -18,9 +19,8 @@ import '../../../styles/landing.css';
  * a board that is already moving.
  */
 
-const DayStory = lazy(() => import('./landing/DayStory').then(m => ({ default: m.DayStory })));
-const WashStory = lazy(() => import('./landing/WashStory').then(m => ({ default: m.WashStory })));
-const Atmosphere = lazy(() => import('./landing/Atmosphere').then(m => ({ default: m.Atmosphere })));
+const StageRun = lazy(() => import('./landing/StageRun').then(m => ({ default: m.StageRun })));
+const Services = lazy(() => import('./landing/Services').then(m => ({ default: m.Services })));
 const Pillars = lazy(() => import('./landing/Pillars').then(m => ({ default: m.Pillars })));
 const Payback = lazy(() => import('./landing/Payback').then(m => ({ default: m.Payback })));
 const Insight = lazy(() => import('./landing/Insight').then(m => ({ default: m.Insight })));
@@ -52,14 +52,13 @@ export const Landing: React.FC = () => {
   const headline = plans.find(p => p.code === 'pro') ?? plans[0];
 
   return (
-    <div className="sw-public" dir="rtl">
+    <div className="sw-public sw-console" dir="rtl">
       <ScrollProgress />
       <SiteNav />
       <main>
         <Hero />
-        <Hold><DayStory /></Hold>
-        <Hold><WashStory /></Hold>
-        <Hold><Atmosphere /></Hold>
+        <Hold><StageRun /></Hold>
+        <Hold><Services /></Hold>
         <Hold><Pillars /></Hold>
         <Hold><Payback monthlyPriceRials={headline?.monthlyPriceRials} /></Hold>
         <Hold><Insight /></Hold>

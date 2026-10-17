@@ -1,177 +1,123 @@
-import React, { Suspense, lazy, useEffect, useRef, useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router';
 import { motion, useReducedMotion } from 'motion/react';
-import { ArrowLeft, PlayCircle, ShieldCheck, Sparkles } from 'lucide-react';
-import { Container, CountUp, Magnetic, Marquee, MeshBackdrop, Reveal, fa } from '../../../components/landing/kit';
-import { BubbleField, CarWashScene, Drop, LaptopFrame } from '../../../components/landing/art';
+import { ArrowLeft, ShieldCheck } from 'lucide-react';
+import { Container, CountUp, Reveal, faNum } from '../../../components/landing/kit';
 import { LiveBoard } from './LiveBoard';
 
-// The 3D car is its own chunk, fetched only when the hero is actually on screen: a visitor
-// who bounces in two seconds should never pay for three.js.
-const CarModel = lazy(() => import('../../../components/landing/CarModel'));
-
 /**
- * The first screen answers one question: what is this, and does it understand my carwash?
+ * The first screen: a claim, and the instrument that backs it.
  *
- * The headline makes a plain operational promise, and the proof sits beside it already
- * running — the live board, in a laptop, because that is where it is read. Behind and below
- * it the carwash itself is drawn: a car under foam, jets, soap drifting up the page. The
- * words say "no waiting"; the picture says "carwash"; the board says "and here it is".
+ * The claim is operational — no waiting — and the proof beside it is the board itself,
+ * running, with its buttons live. Someone who presses one has used the product before they
+ * have read a feature list, and that is the only kind of demonstration that survives a
+ * sceptical carwash owner.
  *
- * The headline arrives a word at a time from the right, the side a Persian reader starts on.
- * It is the one flourish, and it exists so the eye lands on "بدون معطلی" last.
+ * The headline arrives a line at a time from behind its own edge. Masked lines read as a
+ * machine setting type; words flying in from the side read as a slide deck.
  */
 
-const TITLE_WORDS = ['کارواش', 'شما،', 'بدون', 'معطلی.'];
-
 const PROOF = [
-  '۲۵۰+ کارواش فعال',
-  '۱.۲ میلیون سفارش پردازش‌شده',
-  'رزرو آنلاین و باشگاه مشتریان',
-  'گزارش زنده‌ی هر جایگاه',
-  'تسویه‌ی انعام و کارمزد پرسنل',
-  'پشتیبانی فارسی',
+  { value: 250, suffix: '+', label: 'کارواش فعال' },
+  { value: 1_200_000, suffix: '', label: 'سفارش پردازش‌شده' },
+  { value: 24, suffix: ' دقیقه', label: 'میانگین هر خودرو' },
 ];
 
 export const Hero = () => {
   const still = useReducedMotion();
-  const [showCar, setShowCar] = useState(false);
-  const [carReady, setCarReady] = useState(false);
-  const scene = useRef<HTMLDivElement>(null);
 
-  // Hold the model back until the browser is idle and the hero is in view, so the first
-  // screen paints on its own budget.
-  useEffect(() => {
-    // Only where it will actually be seen and can be afforded: the model is hidden below
-    // 640px by CSS, and three.js is a third of a megabyte that a phone on a metered
-    // connection should never be asked to download for decoration.
-    const roomy = window.matchMedia('(min-width: 1024px)').matches;
-    const thrifty = (navigator as unknown as { connection?: { saveData?: boolean } }).connection?.saveData;
-    if (!roomy || thrifty) return;
-
-    const idle = (window as unknown as { requestIdleCallback?: (cb: () => void) => number }).requestIdleCallback;
-    const start = () => setShowCar(true);
-    const id = idle ? idle(start) : window.setTimeout(start, 1200);
-    return () => { if (!idle) window.clearTimeout(id as number); };
-  }, []);
+  const line = (content: React.ReactNode, i: number) => (
+    <span className="sw-mask-line" key={i}>
+      <motion.span
+        className="block"
+        initial={still ? { opacity: 0 } : { y: '110%' }}
+        animate={still ? { opacity: 1 } : { y: '0%' }}
+        transition={{ delay: 0.07 * i, duration: 0.55, ease: [0.2, 0, 0, 1] }}
+      >
+        {content}
+      </motion.span>
+    </span>
+  );
 
   return (
-    <section className="sw-hero" id="hero">
-      <MeshBackdrop />
-      <div className="sw-grid-texture" aria-hidden />
-      <BubbleField count={16} />
+    <section className="relative overflow-hidden pb-14 pt-28 md:pb-20 md:pt-36" id="hero">
+      <div className="sw-page-glow" aria-hidden />
+      <div className="sw-grid-bg" aria-hidden />
 
       <Container className="relative">
-        <div className="grid items-center gap-10 pb-6 pt-28 md:pt-36 lg:grid-cols-[1fr_1.1fr] lg:gap-8">
+        <div className="grid items-center gap-12 lg:grid-cols-[0.95fr_1.15fr] lg:gap-14">
           <div>
             <Reveal>
-              <span className="sw-pill">
-                <Sparkles size={13} />
-                <span>نسخه‌ی تازه: صف رزرو، مسیر خودرو و گزارش هر جایگاه</span>
-              </span>
+              <span className="sw-eyebrow-line">سامانه‌ی مدیریت کارواش</span>
             </Reveal>
 
-            <h1 className="mt-6 text-balance text-[2.6rem] font-black leading-[1.18] tracking-tight text-slate-900 md:text-6xl">
-              {TITLE_WORDS.map((w, i) => (
-                <motion.span
-                  key={w}
-                  className={w === 'معطلی.' ? 'sw-title-accent' : undefined}
-                  initial={still ? { opacity: 0 } : { opacity: 0, y: 22, x: 14, filter: 'blur(6px)' }}
-                  animate={{ opacity: 1, y: 0, x: 0, filter: 'blur(0px)' }}
-                  transition={{ delay: 0.08 * i, type: 'spring', stiffness: 220, damping: 26 }}
-                  style={{ display: 'inline-block', marginInlineEnd: '0.28em' }}
-                >
-                  {w}
-                </motion.span>
-              ))}
+            <h1 className="sw-display mt-5 text-[2.7rem] md:text-[3.5rem]">
+              {line('کارواش شما،', 0)}
+              {line(<>بدون <span className="text-brand-600">معطلی.</span></>, 1)}
             </h1>
 
-            <Reveal delay={0.25}>
-              <p className="mt-5 max-w-lg text-pretty text-[15px] leading-8 text-slate-600 md:text-[17px]">
-                از لحظه‌ای که خودرو وارد جایگاه می‌شود تا تسویه و تحویل، همه‌چیز روی یک تابلوی زنده است:
-                جایگاه‌ها، صف رزروها، پرسنل، مشتری و پول. بدون دفتر، بدون تماس، بدون «نوبت کی بود؟».
+            <Reveal delay={0.18}>
+              <p className="sw-lead mt-6 max-w-md">
+                جایگاه‌ها، صف رزرو، پرسنل و پول — روی یک تابلو که همیشه می‌گوید هر خودرو
+                کجای کار است. بدون دفتر، بدون تماس، بدون «نوبت کی بود؟».
               </p>
             </Reveal>
 
-            <Reveal delay={0.32}>
-              <div className="mt-8 flex flex-wrap items-center gap-3">
-                <Magnetic>
-                  <Link to="/register" className="sw-btn sw-btn-primary sw-btn-lg">
-                    <span>۱۴ روز رایگان شروع کنید</span>
-                    <ArrowLeft size={16} />
-                  </Link>
-                </Magnetic>
-                <a href="#board" className="sw-btn sw-btn-ghost sw-btn-lg">
-                  <PlayCircle size={16} />
+            <Reveal delay={0.24}>
+              <div className="mt-8 flex flex-wrap items-center gap-2.5">
+                <Link to="/register" className="sw-cta sw-cta-primary">
+                  <span>۱۴ روز رایگان</span>
+                  <ArrowLeft size={15} />
+                </Link>
+                <a href="#board" className="sw-cta sw-cta-quiet">
                   <span>تابلو را امتحان کنید</span>
                 </a>
               </div>
             </Reveal>
 
-            <Reveal delay={0.4}>
-              <div className="mt-7 flex flex-wrap items-center gap-x-6 gap-y-3 text-[12px] font-bold text-slate-500">
-                <span className="flex items-center gap-1.5"><ShieldCheck size={14} className="text-emerald-500" />بدون کارت بانکی</span>
-                <span className="flex items-center gap-1.5">
-                  <span className="sw-live-dot" />
-                  <CountUp to={250} suffix="+" className="text-slate-900" /> کارواش فعال
-                </span>
-                <span className="flex items-center gap-1.5"><Drop size={13} className="text-sky-500" />راه‌اندازی در {fa(1)} روز</span>
+            <Reveal delay={0.3}>
+              <div className="mt-10 flex items-center gap-7 border-t border-[var(--line-soft)] pt-5">
+                {PROOF.map(p => (
+                  <div key={p.label}>
+                    <div className="sw-num text-[17px] font-extrabold">
+                      <CountUp to={p.value} suffix={p.suffix} />
+                    </div>
+                    <div className="mt-0.5 text-[11px] text-[var(--ink-3)]">{p.label}</div>
+                  </div>
+                ))}
               </div>
+            </Reveal>
+
+            <Reveal delay={0.34}>
+              <p className="mt-5 flex items-center gap-1.5 text-[11.5px] text-[var(--ink-3)]">
+                <ShieldCheck size={13} className="text-[var(--money)]" />
+                بدون کارت بانکی · راه‌اندازی با تیم ما · لغو هر زمان
+              </p>
             </Reveal>
           </div>
 
-          <Reveal delay={0.15} x={-18} y={10}>
-            <div className="relative">
-              <LaptopFrame className="relative z-10">
-                <div id="board">
-                  <LiveBoard />
-                </div>
-              </LaptopFrame>
-              {/* the bay the board is describing, drawn underneath it */}
-              <CarWashScene className="sw-hero-scene" withCar={!carReady} />
-
-              {/* The modelled car stands in the drawn bay, turning. It arrives after the page
-                  is usable and simply never appears if WebGL is unavailable. */}
-              {showCar && (
-                <Suspense fallback={null}>
-                  <CarModel className="sw-hero-car" onReady={() => setCarReady(true)} />
-                </Suspense>
-              )}
-
-              {/* two small cards that lift off the screen, the way the product actually speaks */}
-              <motion.div
-                className="sw-float-card sw-float-ready"
-                initial={still ? { opacity: 0 } : { opacity: 0, y: 14, scale: 0.9 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{ delay: 0.9, type: 'spring', stiffness: 220, damping: 22 }}
-              >
-                <span className="sw-float-dot bg-emerald-500" />
-                <span>
-                  <b className="block text-[11.5px] text-slate-900">۱۲ ب ۳۴۵ آماده‌ی تحویل</b>
-                  <span className="text-[10px] text-slate-500">پیامک برای مشتری رفت</span>
+          <Reveal delay={0.12} x={-16}>
+            <div id="board" className="sw-console-frame">
+              <div className="sw-console-bar">
+                <span className="sw-console-dots" aria-hidden><i /><i /><i /></span>
+                <span className="font-mono text-[10px] tracking-wide opacity-70" dir="ltr">
+                  appsmartwash.com/app/bays
                 </span>
-              </motion.div>
-
-              <motion.div
-                className="sw-float-card sw-float-money"
-                initial={still ? { opacity: 0 } : { opacity: 0, y: 14, scale: 0.9 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{ delay: 1.15, type: 'spring', stiffness: 220, damping: 22 }}
-              >
-                <span className="sw-float-dot bg-brand-500" />
-                <span>
-                  <b className="block text-[11.5px] text-slate-900">فروش امروز {fa('۴٬۲۸۰٬۰۰۰')} ت</b>
-                  <span className="text-[10px] text-slate-500">{fa(45)} خودرو تا این لحظه</span>
+                <span className="flex items-center gap-1.5 text-[10px] opacity-80">
+                  <span className="sw-live-dot" />زنده
                 </span>
-              </motion.div>
+              </div>
+              <div className="bg-[var(--paper-2)] p-3">
+                <LiveBoard />
+              </div>
             </div>
+
+            <p className="mt-3 text-center text-[11px] text-[var(--ink-4)]">
+              همین تابلو با همان دکمه‌ها — {faNum(3)} جایگاه و یک صف نمونه. دست بزنید.
+            </p>
           </Reveal>
         </div>
       </Container>
-
-      <div className="relative mt-10 md:mt-14">
-        <Marquee items={PROOF.map(p => <span key={p}>{p}</span>)} />
-      </div>
     </section>
   );
 };
