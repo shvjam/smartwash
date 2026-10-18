@@ -24,8 +24,10 @@ export const Register = () => {
   // اگر از صفحه pricing آمده باشد، planId و cycle در URL هستند
   const planId = searchParams.get('planId') ?? null;
   const planCycle = parseInt(searchParams.get('cycle') ?? '0', 10); // 0=Monthly, 1=Yearly
+  // The landing page's closing sentence asks for the carwash's name; carry it here so the
+  // first thing a new owner sees is their own name already filled in.
   const [form, setForm] = useState({
-    displayName: '', slug: '',
+    displayName: (searchParams.get('name') ?? '').slice(0, 120), slug: '',
     ownerDisplayName: '', ownerEmail: '', ownerPhone: '', ownerPassword: '',
     acceptTerms: false,
   });

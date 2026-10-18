@@ -75,6 +75,27 @@ public sealed class Tenant : AggregateRoot<Guid>
         Raise(new TenantEnteredGraceEvent(Id));
     }
 
+    /// <summary>
+    /// Puts a tenant back on its trial after a suspension.
+    ///
+    /// Activate needs a subscription id, which a carwash on its free trial does not have —
+    /// so without this, suspending a trial tenant was a one-way door: the platform could
+    /// switch them off and then had no way to switch them back on short of editing the
+    /// database by hand.
+    /// </summary>
+    public void ResumeTrial()
+    {
+        if (Status == TenantStatus.Archived) throw new DomainException("Tenant.Archived", "مستاجر آرشیو شده قابل فعال‌سازی نیست.");
+        if (TrialEndsAtUtc is null || TrialEndsAtUtc <= DateTime.UtcNow)
+            throw new DomainException("Tenant.TrialOver", "دوره‌ی آزمایشی این مستاجر به پایان رسیده است.");
+
+        Status = TenantStatus.Trial;
+        SuspendedAtUtc = null;
+        SuspendReason = null;
+        UpdatedAtUtc = DateTime.UtcNow;
+        Raise(new TenantActivatedEvent(Id));
+    }
+
     public void Suspend(string reason)
     {
         Status = TenantStatus.Suspended;

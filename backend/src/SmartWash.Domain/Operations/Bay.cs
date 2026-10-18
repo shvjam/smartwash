@@ -55,6 +55,11 @@ public sealed class Bay : TenantAggregateRoot<Guid>
     public void Update(string name, int number, string? notes,
         BayType? type = null, int? serviceCapacity = null, int? queueCapacity = null)
     {
+        // A car's stage is decided by the kind of bay it is in. Turning a wash bay into a dry
+        // bay with a car half-washed in it would move that car to a stage nobody advanced it to.
+        if (type.HasValue && type.Value != Type && CurrentOrderId is not null)
+            throw new DomainException("Bay.Occupied", "تا وقتی خودرویی روی جایگاه است، نوع آن تغییر نمی‌کند.");
+
         Name = name.Trim();
         Number = number;
         Notes = notes?.Trim();
@@ -74,7 +79,24 @@ public sealed class Bay : TenantAggregateRoot<Guid>
         UpdatedAtUtc = DateTime.UtcNow;
     }
 
+    /// <summary>
+    /// Puts a bay back into service.
+    ///
+    /// It used to clear whatever was in the bay as well, so calling it on an occupied bay
+    /// emptied the bay record — the one place the system looks to see where a car is — while
+    /// the order went on believing it was still there. Cars leave a bay by moving on or being
+    /// cancelled, both of which release the bay themselves; this only ends a period out of use.
+    /// </summary>
     public void Free()
+    {
+        if (CurrentOrderId is not null)
+            throw new DomainException("Bay.Occupied",
+                "این جایگاه خودرو دارد؛ ابتدا مرحله‌ی خودرو را جلو ببرید یا سفارش را لغو کنید.");
+
+        Vacate();
+    }
+
+    private void Vacate()
     {
         Status = BayStatus.Free;
         CurrentOrderId = null;
@@ -92,12 +114,18 @@ public sealed class Bay : TenantAggregateRoot<Guid>
     public bool ReleaseIfHeldBy(Guid orderId)
     {
         if (CurrentOrderId != orderId) return false;
-        Free();
+        Vacate();
         return true;
     }
 
     public void EnterMaintenance(string? notes = null)
     {
+        // A bay with a car in it cannot be taken out of service under that car: the car would
+        // sit in a bay the floor board shows as closed, and freeing it later would erase it.
+        if (CurrentOrderId is not null)
+            throw new DomainException("Bay.Occupied",
+                "این جایگاه خودرو دارد؛ پیش از خارج‌کردن از سرویس، خودرو را جابه‌جا یا تحویل دهید.");
+
         Status = BayStatus.Maintenance;
         if (notes is not null) Notes = notes;
         UpdatedAtUtc = DateTime.UtcNow;

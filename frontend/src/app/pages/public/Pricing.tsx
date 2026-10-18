@@ -6,60 +6,21 @@ import { CtaBanner, SectionHeading } from '../../components/public/PublicLayout'
 import { publicPlansApi, PlanDto, PlanBillingModel, auth } from '../../api';
 import { clsx } from 'clsx';
 import { visiblePlanFeatureLabels } from '../../lib/planFeatures';
+import { tomanNumber } from '../../lib/money';
 
-const fmt = (n: number) => new Intl.NumberFormat('fa-IR').format(n);
-
-const fallbackPlans: PlanDto[] = [
-  {
-    id: 'starter', code: 'starter', displayName: 'پایه', description: 'مناسب کارواش‌های تک‌شعبه',
-    billingModel: PlanBillingModel.Subscription, setupFeeRials: 0, monthlyPriceRials: 4_900_000, yearlyPriceRials: 49_000_000,
-    perCarPriceRials: 0, includedCarsPerMonth: 500, sortOrder: 1, isActive: true, isPublic: true,
-    features: [
-      { key: 'bays', value: 'تا ۴ جایگاه' },
-      { key: 'workers', value: 'تا ۱۰ پرسنل' },
-      { key: 'reservations', value: 'رزرو آنلاین' },
-      { key: 'reports', value: 'گزارش‌های پایه' },
-      { key: 'support', value: 'پشتیبانی ایمیلی' },
-    ],
-  },
-  {
-    id: 'pro', code: 'pro', displayName: 'حرفه‌ای', description: 'بیشترین انتخاب کارواش‌های متوسط',
-    billingModel: PlanBillingModel.Subscription, setupFeeRials: 0, monthlyPriceRials: 9_900_000, yearlyPriceRials: 99_000_000,
-    perCarPriceRials: 0, includedCarsPerMonth: 2000, sortOrder: 2, isActive: true, isPublic: true,
-    features: [
-      { key: 'bays', value: 'جایگاه نامحدود' },
-      { key: 'workers', value: 'پرسنل نامحدود' },
-      { key: 'loyalty', value: 'باشگاه مشتریان' },
-      { key: 'sms', value: 'پنل پیامکی' },
-      { key: 'campaigns', value: 'کمپین‌های هدفمند' },
-      { key: 'reports', value: 'گزارش‌های پیشرفته' },
-      { key: 'support', value: 'پشتیبانی ۲۴/۷' },
-    ],
-  },
-  {
-    id: 'enterprise', code: 'enterprise', displayName: 'سازمانی', description: 'برای زنجیره‌های چندشعبه',
-    billingModel: PlanBillingModel.Hybrid, setupFeeRials: 50_000_000, monthlyPriceRials: 24_900_000, yearlyPriceRials: 249_000_000,
-    perCarPriceRials: 0, includedCarsPerMonth: null, sortOrder: 3, isActive: true, isPublic: true,
-    features: [
-      { key: 'all-pro', value: 'تمام امکانات حرفه‌ای' },
-      { key: 'multibranch', value: 'مدیریت چندشعبه‌ای' },
-      { key: 'roles', value: 'نقش‌های سفارشی' },
-      { key: 'api', value: 'API اختصاصی' },
-      { key: 'sla', value: 'SLA سازمانی ۹۹.۹٪' },
-      { key: 'manager', value: 'حساب‌مدیر اختصاصی' },
-    ],
-  },
-];
 
 export const Pricing = () => {
-  const [plans, setPlans] = useState<PlanDto[]>(fallbackPlans);
+  // No invented fallback: a pricing page that shows made-up prices while the real ones load —
+  // or forever, if they fail to — is quoting figures nobody will honour.
+  const [plans, setPlans] = useState<PlanDto[]>([]);
+  const [failed, setFailed] = useState(false);
   const [cycle, setCycle] = useState<'monthly' | 'yearly'>('monthly');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     publicPlansApi.list()
-      .then(p => { if (p.length) setPlans(p); })
-      .catch(() => { /* keep fallback */ })
+      .then(p => setPlans(p))
+      .catch(() => setFailed(true))
       .finally(() => setLoading(false));
   }, []);
 
@@ -127,15 +88,21 @@ export const Pricing = () => {
                 <div className="mb-6">
                   {price > 0 ? (
                     <>
-                      <span className={clsx('text-4xl font-black', featured ? 'text-white' : 'text-gray-900')}>{fmt(price)}</span>
+                      <span className={clsx('text-4xl font-black', featured ? 'text-white' : 'text-gray-900')}>{tomanNumber(price)}</span>
                       <span className={clsx('text-sm mr-1', featured ? 'text-gray-400' : 'text-gray-500')}>تومان / {cycle === 'monthly' ? 'ماه' : 'سال'}</span>
+                    </>
+                  ) : p.perCarPriceRials > 0 ? (
+                    // A usage-priced plan has no monthly fee to show; its price is per car.
+                    <>
+                      <span className={clsx('text-4xl font-black', featured ? 'text-white' : 'text-gray-900')}>{tomanNumber(p.perCarPriceRials)}</span>
+                      <span className={clsx('text-sm mr-1', featured ? 'text-gray-400' : 'text-gray-500')}>تومان / هر خودرو</span>
                     </>
                   ) : (
                     <span className={clsx('text-3xl font-black', featured ? 'text-white' : 'text-gray-900')}>تماس بگیرید</span>
                   )}
                   {p.setupFeeRials > 0 && (
                     <div className={clsx('text-[11px] mt-1', featured ? 'text-gray-400' : 'text-gray-500')}>
-                      هزینه راه‌اندازی: {fmt(p.setupFeeRials)} تومان
+                      هزینه راه‌اندازی: {tomanNumber(p.setupFeeRials)} تومان
                     </div>
                   )}
                 </div>
@@ -173,7 +140,18 @@ export const Pricing = () => {
             );
           })}
         </div>
-        {loading && <div className="text-center text-xs text-gray-400 mt-4">به‌روزرسانی تعرفه‌ها…</div>}
+        {loading && <div className="text-center text-sm text-gray-400 py-10">در حال دریافت تعرفه‌ها…</div>}
+        {!loading && (failed || plans.length === 0) && (
+          <div className="mx-auto max-w-md rounded-3xl border border-gray-100 bg-white p-8 text-center">
+            <div className="font-bold text-gray-900">تعرفه‌ها در حال حاضر در دسترس نیست</div>
+            <p className="mt-2 text-sm leading-7 text-gray-500">
+              لطفاً چند دقیقه‌ی دیگر دوباره سر بزنید، یا برای دریافت تعرفه با ما تماس بگیرید.
+            </p>
+            <Link to="/contact" className="mt-5 inline-block rounded-2xl bg-gray-900 px-5 py-2.5 text-sm font-bold text-white">
+              تماس با ما
+            </Link>
+          </div>
+        )}
       </section>
 
       {/* FAQ */}

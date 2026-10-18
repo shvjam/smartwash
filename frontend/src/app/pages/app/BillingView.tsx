@@ -5,7 +5,7 @@ import { PageHeader, Card, EmptyState } from '../../components/app/PageHeader';
 import { billingApi, type CurrentSubscriptionDto, type TenantInvoiceDto, ApiException, API_CONFIG } from '../../api';
 
 const toFa = (v: string | number) => String(v).replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[+d]);
-const formatRials = (n: number) => toFa(n.toLocaleString('fa-IR'));
+import { tomanNumber } from '../../lib/money';
 const formatDate = (iso: string) => {
   try {
     const d = new Date(iso);
@@ -81,7 +81,7 @@ export const BillingView: React.FC = () => {
                   {toFa(daysUntil(sub.currentPeriodEndUtc))} روز تا پایان دوره
                 </p>
                 <div className="grid grid-cols-3 gap-3 mb-6">
-                  <Stat label="مبلغ" value={formatRials(sub.priceRials)} sub="ریال" />
+                  <Stat label="مبلغ" value={tomanNumber(sub.priceRials)} sub="تومان" />
                   <Stat label="سررسید" value={formatDate(sub.currentPeriodEndUtc)} />
                   <Stat label="تمدید خودکار" value={sub.autoRenew ? 'فعال' : 'غیرفعال'} />
                 </div>
@@ -150,7 +150,7 @@ export const BillingView: React.FC = () => {
                     <td className="px-4 py-3 font-mono text-sm">{inv.number}</td>
                     <td className="px-4 py-3">{formatDate(inv.issuedAtUtc)}</td>
                     <td className="px-4 py-3">{formatDate(inv.dueAtUtc)}</td>
-                    <td className="px-4 py-3">{formatRials(inv.totalRials)} ریال</td>
+                    <td className="px-4 py-3">{tomanNumber(inv.totalRials)} تومان</td>
                     <td className="px-4 py-3">
                       {/* InvoiceStatus: Open=0, Paid=1, Overdue=2, Void=3 */}
                       <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${

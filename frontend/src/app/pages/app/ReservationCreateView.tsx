@@ -7,7 +7,7 @@ import type { BranchDto, BayDto, ServiceDto, CustomerDto } from '../../api/types
 import { localIsoDate, localIsoDateIn } from '../../lib/dates';
 
 const toFa = (v: number | string) => String(v).replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[+d]);
-const fmtRials = (n: number) => toFa(n.toLocaleString('fa-IR'));
+import { tomanNumber } from '../../lib/money';
 
 type Step = 1 | 2 | 3 | 4;
 
@@ -227,7 +227,7 @@ export const ReservationCreateView: React.FC = () => {
 
         {step === 4 && (
           <>
-            <SectionTitle icon={Sparkles} title="خدمات و یادداشت" hint={`جمع تخمینی: ${fmtRials(total)} ﷼ • ${toFa(totalDuration)} د`} />
+            <SectionTitle icon={Sparkles} title="خدمات و یادداشت" hint={`جمع تخمینی: ${tomanNumber(total)} تومان • ${toFa(totalDuration)} د`} />
             <div className="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-[40vh] overflow-y-auto mb-3">
               {services.map(s => {
                 const active = serviceIds.includes(s.id);
@@ -236,7 +236,7 @@ export const ReservationCreateView: React.FC = () => {
                     onClick={() => setServiceIds(prev => active ? prev.filter(x => x !== s.id) : [...prev, s.id])}
                     className={`text-right rounded-xl border p-3 ${active ? 'bg-brand-50 border-brand-500' : 'bg-white border-gray-200'}`}>
                     <div className="font-bold text-sm">{s.name}</div>
-                    <div className="text-[10px] text-gray-500 font-mono">{fmtRials(s.priceRials)} ﷼ • {toFa(s.durationMinutes)}د</div>
+                    <div className="text-[10px] text-gray-500 font-mono">{tomanNumber(s.priceRials)} تومان • {toFa(s.durationMinutes)}د</div>
                   </button>
                 );
               })}

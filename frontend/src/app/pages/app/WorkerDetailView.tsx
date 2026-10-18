@@ -9,7 +9,7 @@ import type { WorkerDto, WorkerPerformanceRow } from '../../api/types';
 import { localIsoDate, localIsoDateIn } from '../../lib/dates';
 
 const toFa = (v: number | string) => String(v).replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[+d]);
-const fmtRials = (n: number) => toFa(n.toLocaleString('fa-IR'));
+import { tomanNumber } from '../../lib/money';
 const today = () => localIsoDate();
 const daysAgo = (n: number) => localIsoDateIn(-n);
 
@@ -141,8 +141,8 @@ export const WorkerDetailView: React.FC = () => {
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
         <StatCard label="سفارش‌های بازه" value={toFa(myPerf?.orderCount ?? 0)} accent="sky" />
-        <StatCard label="درآمد بازه" value={`${fmtRials(myPerf?.revenueRials ?? 0)} ﷼`} accent="emerald" />
-        <StatCard label="کمیسیون بازه" value={`${fmtRials(myPerf?.commissionRials ?? 0)} ﷼`} accent="violet" />
+        <StatCard label="درآمد بازه" value={`${tomanNumber(myPerf?.revenueRials ?? 0)} تومان`} accent="emerald" />
+        <StatCard label="کمیسیون بازه" value={`${tomanNumber(myPerf?.commissionRials ?? 0)} تومان`} accent="violet" />
         <StatCard label="نرخ کمیسیون" value={`${toFa(Math.round(worker.commissionRate * 100))}٪`} accent="amber" />
       </div>
 
@@ -176,12 +176,12 @@ export const WorkerDetailView: React.FC = () => {
                 <div className="text-2xl font-black mt-1">{toFa(myPerf.orderCount)}</div>
               </div>
               <div>
-                <div className="text-[10px] text-gray-300">درآمد کل</div>
-                <div className="text-2xl font-black mt-1 font-mono">{fmtRials(myPerf.revenueRials)}</div>
+                <div className="text-[10px] text-gray-300">درآمد کل (تومان)</div>
+                <div className="text-2xl font-black mt-1 font-mono">{tomanNumber(myPerf.revenueRials)}</div>
               </div>
               <div>
-                <div className="text-[10px] text-gray-300">کمیسیون</div>
-                <div className="text-2xl font-black mt-1 font-mono text-emerald-300">{fmtRials(myPerf.commissionRials)}</div>
+                <div className="text-[10px] text-gray-300">کمیسیون (تومان)</div>
+                <div className="text-2xl font-black mt-1 font-mono text-emerald-300">{tomanNumber(myPerf.commissionRials)}</div>
               </div>
             </div>
           )}

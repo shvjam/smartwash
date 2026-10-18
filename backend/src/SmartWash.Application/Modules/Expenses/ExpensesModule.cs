@@ -95,12 +95,54 @@ public sealed class UpdateExpenseHandler : IRequestHandler<UpdateExpenseCommand,
         var delta = newCashContribution - oldCashContribution;
         if (delta != 0)
         {
-            var openShift = await _db.Shifts.Where(s => s.BranchId == branchId && s.Status == ShiftStatus.Open).FirstOrDefaultAsync(ct);
-            openShift?.AdjustExpense(delta);
+            var shift = await ExpenseShift.OwningOpenShiftAsync(_db, e, ct);
+            shift?.AdjustExpense(delta);
         }
 
         await _db.SaveChangesAsync(ct);
         return ExpenseMap.ToDto(e);
     }
+}
+
+public sealed record DeleteExpenseCommand(Guid Id) : IRequest<Result>, ITransactionalRequest;
+public sealed class DeleteExpenseHandler : IRequestHandler<DeleteExpenseCommand, Result>
+{
+    private readonly IAppDbContext _db;
+    public DeleteExpenseHandler(IAppDbContext db) => _db = db;
+    public async Task<Result> Handle(DeleteExpenseCommand c, CancellationToken ct)
+    {
+        var e = await _db.Expenses.FirstOrDefaultAsync(x => x.Id == c.Id, ct);
+        if (e is null) return Result.Failure(Error.NotFound("Expense.NotFound", "هزینه یافت نشد."));
+
+        // A cash expense took money out of the till; removing it puts that money back in the
+        // shift it came out of — but only while that shift is still open. A closed shift has
+        // already been counted and signed off, and rewriting it would make its variance lie.
+        if (e.PaymentMethod == PaymentMethod.Cash)
+        {
+            var shift = await ExpenseShift.OwningOpenShiftAsync(_db, e, ct);
+            shift?.AdjustExpense(-e.AmountRials);
+        }
+
+        _db.Expenses.Remove(e);
+        await _db.SaveChangesAsync(ct);
+        return Result.Success();
+    }
+}
+
+/// <summary>
+/// The open shift an expense was recorded in, if it is still open.
+///
+/// Editing or deleting an expense has to correct the till it came out of. The first version
+/// corrected whichever shift happened to be open at the time of the edit, so changing an
+/// expense from last week moved today's cash variance by the difference — a till that was
+/// right in the morning became wrong without anyone touching it. An expense belongs to the
+/// shift that was open when it was recorded, and only that one.
+/// </summary>
+internal static class ExpenseShift
+{
+    public static Task<Shift?> OwningOpenShiftAsync(IAppDbContext db, Expense e, CancellationToken ct) =>
+        db.Shifts
+            .Where(s => s.BranchId == e.BranchId && s.Status == ShiftStatus.Open && s.OpenedAtUtc <= e.CreatedAtUtc)
+            .FirstOrDefaultAsync(ct);
 }
 // resync-marker

@@ -72,6 +72,7 @@ const AuditLogView = lazyPage(() => import('./pages/platform/AuditLogView'), 'Au
 const TenantDetailView = lazyPage(() => import('./pages/platform/TenantDetailView'), 'TenantDetailView');
 const PlatformSmsView = lazyPage(() => import('./pages/platform/PlatformSmsView'), 'PlatformSmsView');
 const TicketsAdmin = lazyPage(() => import('./pages/platform/TicketsAdmin'), 'TicketsAdmin');
+const CronHealthView = lazyPage(() => import('./pages/platform/CronHealthView'), 'CronHealthView');
 const SupportView = lazyPage(() => import('./pages/app/SupportView'), 'SupportView');
 const SmsView = lazyPage(() => import('./pages/app/SmsView'), 'SmsView');
 const SupportTicketDetailView = lazyPage(() => import('./pages/app/SupportTicketDetailView'), 'SupportTicketDetailView');
@@ -170,6 +171,7 @@ const router = createBrowserRouter([
       { path: 'audit', Component: AuditLogView },
       { path: 'sms', Component: PlatformSmsView },
       { path: 'tickets', Component: TicketsAdmin },
+      { path: 'jobs', Component: CronHealthView },
       { path: '*', element: <Navigate to="/platform/tenants" replace /> },
     ],
   },

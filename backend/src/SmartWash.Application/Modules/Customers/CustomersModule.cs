@@ -164,9 +164,16 @@ public sealed class AdjustWalletValidator : AbstractValidator<AdjustWalletComman
 public sealed class AdjustWalletHandler : IRequestHandler<AdjustWalletCommand, Result<long>>
 {
     private readonly IAppDbContext _db;
-    public AdjustWalletHandler(IAppDbContext db) => _db = db;
+    private readonly ITenantFeatureService _features;
+    public AdjustWalletHandler(IAppDbContext db, ITenantFeatureService features) { _db = db; _features = features; }
     public async Task<Result<long>> Handle(AdjustWalletCommand c, CancellationToken ct)
     {
+        // Every plan screen lists the wallet as something a plan does or does not include,
+        // and nothing read the flag: a carwash on the plan that excludes it could top up and
+        // spend customer balances exactly like one paying for it.
+        if (!await _features.HasFeatureAsync("wallet", ct))
+            return Result.Failure<long>(Error.Forbidden("Feature.NotAvailable", "کیف پول مشتری در پلن اشتراک شما فعال نیست."));
+
         var cust = await _db.Customers.FirstOrDefaultAsync(x => x.Id == c.CustomerId, ct);
         if (cust is null) return Result.Failure<long>(Error.NotFound("Customer.NotFound", "مشتری یافت نشد."));
         cust.AdjustWallet(c.AmountRials);

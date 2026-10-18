@@ -22,6 +22,16 @@ public static class AppConstants
     public const int AccessTokenMinutes = 60;
     public const int TrialDays = 14;
     public const int GracePeriodDays = 3;
+
+    /// <summary>
+    /// The plan a carwash is treated as being on during its free trial.
+    ///
+    /// A trial has no subscription, and plan features are read off the subscription, so
+    /// without this a tenant on trial resolved to no features at all: no reservations, no
+    /// loyalty, no branding, no campaigns, no SMS — a fortnight of a product with its
+    /// features switched off, sold as a free trial of the product.
+    /// </summary>
+    public const string TrialPlanCode = "pro";
 }
 
 public static class Roles

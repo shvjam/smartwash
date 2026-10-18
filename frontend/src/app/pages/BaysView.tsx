@@ -11,7 +11,8 @@ import { InvoiceModal } from '../components/InvoiceModal';
 import { IranPlateInput, formatIranPlate } from '../components/forms/IranPlateInput';
 import { PageHeader } from '../components/app/PageHeader';
 import { BayType, OrderStage, PaymentMethod } from '../api/types';
-import { baysApi, customersApi } from '../api';
+import { baysApi, customersApi, ApiException } from '../api';
+import { toast } from 'sonner';
 import type { BayDto } from '../api/types';
 import { WorkerAvatar } from '../components/WorkerAvatar';
 import { OrderStageControl } from '../components/OrderStageControl';
@@ -274,8 +275,14 @@ export const BaysDashboard = () => {
                     <button
                       onClick={async () => {
                         if (!selectedBay) return;
-                        await baysApi.free(selectedBay);
-                        setSelectedBay(null);
+                        try {
+                          await baysApi.free(selectedBay);
+                          toast.success('جایگاه به چرخه‌ی کار برگشت');
+                          setSelectedBay(null);
+                          await reloadAll();
+                        } catch (e) {
+                          toast.error(e instanceof ApiException ? e.message : 'آزادکردن جایگاه انجام نشد');
+                        }
                       }}
                       className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-2xl flex items-center justify-center gap-2 text-sm"
                     >
@@ -410,9 +417,17 @@ export const BaysDashboard = () => {
                       type="button"
                       onClick={async () => {
                         if (!selectedBay) return;
-                        const notes = window.prompt('دلیل تعمیر (اختیاری)') ?? null;
-                        await baysApi.maintenance(selectedBay, notes);
-                        setSelectedBay(null);
+                        const notes = window.prompt('دلیل تعمیر (اختیاری)');
+                        // Cancel on the prompt means "do not", not "no reason given".
+                        if (notes === null) return;
+                        try {
+                          await baysApi.maintenance(selectedBay, notes || null);
+                          toast.success('جایگاه در وضعیت تعمیر قرار گرفت');
+                          setSelectedBay(null);
+                          await reloadAll();
+                        } catch (e) {
+                          toast.error(e instanceof ApiException ? e.message : 'قراردادن جایگاه در تعمیر انجام نشد');
+                        }
                       }}
                       className="w-full border border-amber-300 text-amber-700 hover:bg-amber-50 text-xs font-bold py-2.5 rounded-2xl transition-all flex items-center justify-center gap-2 mt-1"
                     >

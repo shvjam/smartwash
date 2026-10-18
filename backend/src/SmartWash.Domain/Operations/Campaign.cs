@@ -1,4 +1,5 @@
 using SmartWash.Domain.Common;
+using SmartWash.Shared.Exceptions;
 
 namespace SmartWash.Domain.Operations;
 
@@ -48,11 +49,58 @@ public sealed class Campaign : TenantAggregateRoot<Guid>
         UpdatedAtUtc = DateTime.UtcNow;
     }
 
-    public void Schedule(DateTime scheduledAtUtc) { ScheduledAtUtc = scheduledAtUtc; Status = CampaignStatus.Scheduled; UpdatedAtUtc = DateTime.UtcNow; }
-    public void Start() { Status = CampaignStatus.Sending; StartedAtUtc = DateTime.UtcNow; UpdatedAtUtc = DateTime.UtcNow; }
-    public void Complete(int success, int failed, long actualCost) { Status = CampaignStatus.Completed; SuccessCount = success; FailedCount = failed; ActualCostRials = actualCost; CompletedAtUtc = DateTime.UtcNow; UpdatedAtUtc = DateTime.UtcNow; }
+    /*
+      A campaign is the one thing in this system that reaches every customer at once and bills
+      the tenant per message, so its status is not a label — it is the gate the dispatcher
+      reads. The dispatcher sends anything that is Scheduled and due, which means a status
+      that can be set from anywhere can send the same blast twice. These three transitions
+      therefore state where they may be entered from.
+    */
+
+    public void Schedule(DateTime scheduledAtUtc)
+    {
+        if (Status is not (CampaignStatus.Draft or CampaignStatus.Scheduled))
+            throw new DomainException("Campaign.NotSchedulable",
+                "فقط کمپین پیش‌نویس یا زمان‌بندی‌شده را می‌توان زمان‌بندی کرد.");
+
+        ScheduledAtUtc = scheduledAtUtc;
+        Status = CampaignStatus.Scheduled;
+        UpdatedAtUtc = DateTime.UtcNow;
+    }
+
+    public void Start()
+    {
+        if (Status != CampaignStatus.Scheduled)
+            throw new DomainException("Campaign.NotScheduled", "کمپین زمان‌بندی نشده است.");
+
+        Status = CampaignStatus.Sending;
+        StartedAtUtc = DateTime.UtcNow;
+        UpdatedAtUtc = DateTime.UtcNow;
+    }
+
+    public void Complete(int success, int failed, long actualCost)
+    {
+        Status = CampaignStatus.Completed;
+        SuccessCount = success;
+        FailedCount = failed;
+        ActualCostRials = actualCost;
+        CompletedAtUtc = DateTime.UtcNow;
+        UpdatedAtUtc = DateTime.UtcNow;
+    }
+
     public void SetRecipientCount(int count, long estimatedCost) { RecipientCount = count; EstimatedCostRials = estimatedCost; UpdatedAtUtc = DateTime.UtcNow; }
-    public void Cancel() { Status = CampaignStatus.Cancelled; UpdatedAtUtc = DateTime.UtcNow; }
+
+    public void Cancel()
+    {
+        // A campaign that has already gone out cannot be recalled, and saying otherwise on a
+        // screen is worse than refusing.
+        if (Status is CampaignStatus.Completed or CampaignStatus.Sending)
+            throw new DomainException("Campaign.AlreadySent", "کمپین ارسال شده است و لغو نمی‌شود.");
+        if (Status == CampaignStatus.Cancelled) return;
+
+        Status = CampaignStatus.Cancelled;
+        UpdatedAtUtc = DateTime.UtcNow;
+    }
 }
 
 public enum CampaignType { Sms = 0, Email = 1, Push = 2 }

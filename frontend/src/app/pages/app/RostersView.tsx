@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { CalendarDays, Plus, Trash2, UserPlus, X, Loader2, Users, Info } from 'lucide-react';
+import { CalendarDays, Plus, Trash2, UserPlus, X, Loader2, Users, Info, Pencil, Check } from 'lucide-react';
 import clsx from 'clsx';
 import { PageHeader, Card, EmptyState } from '../../components/app/PageHeader';
 import { WorkerAvatar } from '../../components/WorkerAvatar';
@@ -104,6 +104,26 @@ export const RostersView = () => {
     if (!branchId) throw new ApiException(400, 'Branch.Missing', 'شعبه‌ای برای این کارواش یافت نشد.');
     await rostersApi.create({ branchId, ...form });
     setCreating(false);
+  });
+
+  // A shift that was planned wrong could only be deleted and rebuilt, losing everyone already
+  // put on it; the API has always accepted a change of name and hours.
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState({ name: '', startsAt: '', endsAt: '' });
+
+  const startEdit = (r: ShiftRosterDto) => {
+    setEditingId(r.id);
+    setEditForm({ name: r.name, startsAt: r.startsAt.slice(0, 5), endsAt: r.endsAt.slice(0, 5) });
+  };
+
+  const saveEdit = (rosterId: string) => wrap(async () => {
+    if (!editForm.name.trim()) throw new ApiException(400, 'Roster.NameRequired', 'نام شیفت را وارد کنید.');
+    const current = rosters.find(r => r.id === rosterId);
+    await rostersApi.update(rosterId, {
+      name: editForm.name.trim(), startsAt: editForm.startsAt, endsAt: editForm.endsAt,
+      notes: current?.notes ?? null,
+    });
+    setEditingId(null);
   });
 
   const submitAssign = (rosterId: string) => wrap(async () => {
@@ -223,6 +243,24 @@ export const RostersView = () => {
                 <div className="space-y-2">
                   {forDay.map(r => (
                     <Card key={r.id} className="p-4">
+                      {editingId === r.id ? (
+                        <div className="mb-3 grid grid-cols-2 gap-2 rounded-xl bg-gray-50 p-3 sm:grid-cols-4">
+                          <input value={editForm.name} onChange={e => setEditForm({ ...editForm, name: e.target.value })}
+                            className="col-span-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm" placeholder="نام شیفت" />
+                          <input type="time" value={editForm.startsAt} onChange={e => setEditForm({ ...editForm, startsAt: e.target.value })}
+                            className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm" />
+                          <input type="time" value={editForm.endsAt} onChange={e => setEditForm({ ...editForm, endsAt: e.target.value })}
+                            className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm" />
+                          <div className="col-span-2 flex gap-2 sm:col-span-4">
+                            <button disabled={busy} onClick={() => saveEdit(r.id)}
+                              className="flex items-center gap-1 rounded-xl bg-brand-600 px-3 py-1.5 text-xs font-bold text-white disabled:opacity-50">
+                              <Check size={13} />ذخیره
+                            </button>
+                            <button onClick={() => setEditingId(null)}
+                              className="rounded-xl bg-white px-3 py-1.5 text-xs font-bold text-gray-700">انصراف</button>
+                          </div>
+                        </div>
+                      ) : (
                       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                         <div>
                           <b className="text-sm text-gray-900">{r.name}</b>
@@ -238,12 +276,17 @@ export const RostersView = () => {
                             className="rounded-lg bg-brand-50 p-1.5 text-brand-600 hover:bg-brand-100" title="افزودن نفر">
                             <UserPlus size={14} />
                           </button>
-                          <button onClick={() => wrap(() => rostersApi.remove(r.id))}
+                          <button onClick={() => startEdit(r)}
+                            className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700" title="ویرایش شیفت">
+                            <Pencil size={14} />
+                          </button>
+                          <button onClick={() => confirm(`شیفت «${r.name}» و همه‌ی تخصیص‌هایش حذف شود؟`) && wrap(() => rostersApi.remove(r.id))}
                             className="rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600" title="حذف شیفت">
                             <Trash2 size={14} />
                           </button>
                         </div>
                       </div>
+                      )}
 
                       {assigningTo === r.id && (
                         <div className="mb-3 grid grid-cols-2 gap-2 rounded-xl bg-gray-50 p-3 sm:grid-cols-4">

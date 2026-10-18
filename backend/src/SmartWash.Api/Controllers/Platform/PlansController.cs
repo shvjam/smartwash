@@ -19,9 +19,11 @@ public sealed class PlansController : ControllerBase
 
     public sealed record CreatePlanBody(string Code, string DisplayName, string? Description, PlanBillingModel BillingModel,
         long SetupFeeRials, long MonthlyPriceRials, long YearlyPriceRials, long PerCarPriceRials,
-        int SortOrder, bool IsPublic, IReadOnlyList<PlanFeatureDto>? Features);
+        int SortOrder, bool IsPublic, IReadOnlyList<PlanFeatureDto>? Features,
+        int IncludedSmsPerMonth = 0, int IncludedSmsTemplateCount = 0, long SmsOverageUnitPriceRials = 0);
     public sealed record UpdatePlanBody(string DisplayName, string? Description, long SetupFeeRials, long MonthlyPriceRials,
-        long YearlyPriceRials, long PerCarPriceRials, int SortOrder, bool IsPublic, IReadOnlyList<PlanFeatureDto>? Features);
+        long YearlyPriceRials, long PerCarPriceRials, int SortOrder, bool IsPublic, IReadOnlyList<PlanFeatureDto>? Features,
+        int? IncludedSmsPerMonth = null, int? IncludedSmsTemplateCount = null, long? SmsOverageUnitPriceRials = null);
     public sealed record ActiveBody(bool IsActive);
 
     [HttpGet]
@@ -38,13 +40,15 @@ public sealed class PlansController : ControllerBase
     [HasPermission(Permissions.PlansWrite)]
     public async Task<IActionResult> Create([FromBody] CreatePlanBody b, CancellationToken ct)
         => (await _sender.Send(new CreatePlanCommand(b.Code, b.DisplayName, b.Description, b.BillingModel, b.SetupFeeRials,
-            b.MonthlyPriceRials, b.YearlyPriceRials, b.PerCarPriceRials, b.SortOrder, b.IsPublic, b.Features), ct)).ToCreatedResult();
+            b.MonthlyPriceRials, b.YearlyPriceRials, b.PerCarPriceRials, b.SortOrder, b.IsPublic, b.Features,
+            b.IncludedSmsPerMonth, b.IncludedSmsTemplateCount, b.SmsOverageUnitPriceRials), ct)).ToCreatedResult();
 
     [HttpPut("{id:guid}")]
     [HasPermission(Permissions.PlansWrite)]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdatePlanBody b, CancellationToken ct)
         => (await _sender.Send(new UpdatePlanCommand(id, b.DisplayName, b.Description, b.SetupFeeRials, b.MonthlyPriceRials,
-            b.YearlyPriceRials, b.PerCarPriceRials, b.SortOrder, b.IsPublic, b.Features), ct)).ToActionResult();
+            b.YearlyPriceRials, b.PerCarPriceRials, b.SortOrder, b.IsPublic, b.Features,
+            b.IncludedSmsPerMonth, b.IncludedSmsTemplateCount, b.SmsOverageUnitPriceRials), ct)).ToActionResult();
 
     [HttpPost("{id:guid}/active")]
     [HasPermission(Permissions.PlansWrite)]

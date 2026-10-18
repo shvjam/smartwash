@@ -197,6 +197,14 @@ async function performRequest<T>(path: string, opts: RequestOptions): Promise<T>
     if (err.status === 403 && (err.code === 'Tenant.ReadOnly' || err.code === 'Tenant.Inactive')) {
       toast.error(err.message);
     }
+
+    // حسابِ کاربر غیرفعال شده: توکن هنوز معتبر است ولی سرور هر درخواست را رد می‌کند،
+    // پس به‌جای رگبارِ خطا در هر صفحه، نشست را همین‌جا پایان می‌دهیم.
+    if (err.status === 403 && err.code === 'Auth.UserInactive') {
+      toast.error(err.message);
+      auth.clear();
+      window.location.assign('/login');
+    }
     throw err;
   }
   return data as T;

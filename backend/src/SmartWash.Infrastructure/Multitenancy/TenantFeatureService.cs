@@ -1,7 +1,7 @@
 using SmartWash.Application.Abstractions.Caching;
 using SmartWash.Application.Abstractions.Multitenancy;
 using SmartWash.Application.Abstractions.Persistence;
-using SmartWash.Domain.Billing;
+using SmartWash.Application.Abstractions.Billing;
 using Microsoft.EntityFrameworkCore;
 
 namespace SmartWash.Infrastructure.Multitenancy;
@@ -26,12 +26,11 @@ public sealed class TenantFeatureService : ITenantFeatureService
         var tid = _tenant.TenantId.Value;
         var box = await _cache.GetOrCreateAsync(KeyFor(tid), async token =>
         {
-            var planId = await _db.Subscriptions.AsNoTracking().IgnoreQueryFilters()
-                .Where(s => s.TenantId == tid &&
-                    (s.Status == SubscriptionStatus.Active || s.Status == SubscriptionStatus.PastDue))
-                .OrderByDescending(s => s.CurrentPeriodEndUtc)
-                .Select(s => (Guid?)s.PlanId)
-                .FirstOrDefaultAsync(token);
+            // Includes the trial plan while a trial is running, which is what stops a new
+            // carwash spending its fortnight unable to take a reservation or print its own
+            // logo — and means the plan's limits apply instead of a missing limit reading as
+            // "unlimited".
+            var planId = await GoverningPlan.ResolveIdAsync(_db, tid, token);
             if (planId is null) return new FeatureBox(new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase));
             var feats = await _db.PlanFeatures.AsNoTracking().IgnoreQueryFilters()
                 .Where(f => f.PlanId == planId.Value)
@@ -63,6 +62,7 @@ public sealed class TenantFeatureService : ITenantFeatureService
     }
 
     public Task InvalidateAsync(Guid tenantId, CancellationToken ct = default) => _cache.RemoveAsync(KeyFor(tenantId), ct);
+
 
     private sealed class FeatureBox
     {

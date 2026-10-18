@@ -15,14 +15,15 @@ public sealed record ReservationDto(Guid Id, Guid BranchId, Guid? CustomerId, st
     string VehiclePlate, string? VehicleBrand, string? VehicleModel,
     DateTime ScheduledAtUtc, int EstimatedDurationMinutes, Guid? PreferredBayId,
     ReservationStatus Status, Guid? ConvertedOrderId, string? Notes,
-    IReadOnlyList<ReservationServiceDto> Services);
+    IReadOnlyList<ReservationServiceDto> Services, DateTime CreatedAtUtc);
 
 public static class ReservationMap
 {
     public static ReservationDto ToDto(Reservation r) => new(r.Id, r.BranchId, r.CustomerId, r.CustomerName, r.CustomerPhone,
         r.VehiclePlate, r.VehicleBrand, r.VehicleModel, r.ScheduledAtUtc, r.EstimatedDurationMinutes, r.PreferredBayId,
         r.Status, r.ConvertedOrderId, r.Notes,
-        r.Services.Select(s => new ReservationServiceDto(s.Id, s.ServiceId, s.ServiceName, s.PriceRials, s.DurationMinutes)).ToArray());
+        r.Services.Select(s => new ReservationServiceDto(s.Id, s.ServiceId, s.ServiceName, s.PriceRials, s.DurationMinutes)).ToArray(),
+        r.CreatedAtUtc);
 }
 
 public sealed record SearchReservationsQuery(Guid? BranchId, ReservationStatus? Status, DateTime? FromUtc, DateTime? ToUtc, int Page, int PageSize)

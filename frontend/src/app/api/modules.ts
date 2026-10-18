@@ -1,6 +1,6 @@
 import { api, auth } from './client';
 import type {
-  AuthResponse, BranchDto, BayDto, WorkerDto, ServiceDto, CustomerDto, CustomerVehicleDto,
+  AuthResponse, CronJobHealthDto, PeriodSummary, BranchDto, BayDto, WorkerDto, ServiceDto, CustomerDto, CustomerVehicleDto,
   OrderDto, ReservationDto, ExpenseDto, ShiftDto, TenantSettingsDto, NotificationDto, CampaignDto,
   DashboardDto, DailyRevenuePoint, WorkerPerformanceRow, PunctualityReport, WorkerScorecardReport,
   OrderArchiveRow, PagedList, Guid,
@@ -301,11 +301,14 @@ export const platformPlansApi = {
     billingModel: PlanBillingModel; setupFeeRials: number; monthlyPriceRials: number;
     yearlyPriceRials: number; perCarPriceRials: number; sortOrder: number;
     isPublic: boolean; features?: PlanFeatureDto[];
+    includedSmsPerMonth?: number; includedSmsTemplateCount?: number; smsOverageUnitPriceRials?: number;
   }) => api.post<PlanDto>('/plans', body, 'platform'),
   update: (id: Guid, body: {
     displayName: string; description?: string | null; setupFeeRials: number;
     monthlyPriceRials: number; yearlyPriceRials: number; perCarPriceRials: number;
     sortOrder: number; isPublic: boolean; features?: PlanFeatureDto[];
+    // در صورت ارسال‌نشدن، سرور مقدارِ فعلیِ پلن را دست‌نخورده نگه می‌دارد.
+    includedSmsPerMonth?: number; includedSmsTemplateCount?: number; smsOverageUnitPriceRials?: number;
   }) => api.put<PlanDto>(`/plans/${id}`, body, 'platform'),
   setActive: (id: Guid, isActive: boolean) =>
     api.post<void>(`/plans/${id}/active`, { isActive }, 'platform'),
@@ -449,6 +452,8 @@ export const usersApi = {
 // ---------- REPORTS ----------
 export const reportsApi = {
   dashboard: (branchId?: Guid) => api.get<DashboardDto>('/reports/dashboard', { branchId }),
+  periodSummary: (fromDate: string, toDate: string, branchId?: Guid) =>
+    api.get<PeriodSummary>('/reports/period-summary', { fromDate, toDate, branchId }),
   revenueSeries: (fromDate: string, toDate: string, branchId?: Guid) =>
     api.get<DailyRevenuePoint[]>('/reports/revenue-series', { fromDate, toDate, branchId }),
   workerPerformance: (fromDate: string, toDate: string) =>
@@ -612,4 +617,9 @@ export const tipsApi = {
   ledger: (branchId?: Guid) => api.get<TipLedger>('/tips/ledger', { branchId }),
   settle: (body: { workerId: Guid; branchId: Guid; throughUtc: string; paidRials: number; note?: string | null }) =>
     api.post<TipSettlementRow>('/tips/settle', body),
+};
+
+// ---------- PLATFORM: SCHEDULED JOBS ----------
+export const platformCronApi = {
+  health: () => api.get<CronJobHealthDto[]>('/cron-health', undefined, 'platform'),
 };

@@ -60,6 +60,12 @@ public sealed class CreateCampaignHandler : IRequestHandler<CreateCampaignComman
 
         var camp = Campaign.Create(Guid.Empty, c.Name, c.Type, c.Target, c.MessageTemplate, c.ScheduledAtUtc);
         camp.SetSegmentFilters(c.MinVisits, c.DaysSinceLastVisit, c.MinTier);
+
+        // A send time given at creation is a request to send. The aggregate starts every
+        // campaign as a draft and the dispatcher only sends scheduled ones, so without this a
+        // campaign created with a time on the panel's form stayed a draft for ever — the form
+        // asked "when should this go out" and then never sent it.
+        if (c.ScheduledAtUtc.HasValue) camp.Schedule(c.ScheduledAtUtc.Value);
         _db.Campaigns.Add(camp);
         await _db.SaveChangesAsync(ct);
         return CampaignMap.ToDto(camp);

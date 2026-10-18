@@ -55,6 +55,9 @@ public sealed class DatabaseSeeder
         starter.AddFeature("campaigns", "false");
         starter.AddFeature("wallet", "false");
         starter.AddFeature("branding", "false");
+        // Starter does not sell SMS, so it gets no allowance and no overage rate: the
+        // dispatcher refuses the send rather than quietly billing for it.
+        starter.UpdateSmsPolicy(includedSmsPerMonth: 0, includedSmsTemplateCount: 0, smsOverageUnitPriceRials: 0);
 
         var pro = Plan.Create("pro", "پلن حرفه‌ای", PlanBillingModel.Subscription,
             setupFee: 3_000_000_0, monthly: 15_000_000_0, yearly: 150_000_000_0, perCar: 0, sortOrder: 2);
@@ -69,6 +72,12 @@ public sealed class DatabaseSeeder
         pro.AddFeature("campaigns", "true");
         pro.AddFeature("wallet", "true");
         pro.AddFeature("branding", "true");
+        // Every plan that sells SMS needs all three numbers. The allowance is what the tenant
+        // may send in a period; the template count is how many of the platform's templates
+        // they may switch on; the overage price is what each message past the allowance
+        // costs — and a plan with an allowance but no overage price simply stops at the
+        // allowance instead of billing beyond it.
+        pro.UpdateSmsPolicy(includedSmsPerMonth: 2_000, includedSmsTemplateCount: 6, smsOverageUnitPriceRials: 1_500_0);
 
         var partnership = Plan.Create("partnership", "پلن مشارکتی", PlanBillingModel.UsageBased,
             setupFee: 0, monthly: 0, yearly: 0, perCar: 15_000_0, sortOrder: 3);
@@ -89,6 +98,7 @@ public sealed class DatabaseSeeder
         partnership.AddFeature("campaigns", "true");
         partnership.AddFeature("wallet", "true");
         partnership.AddFeature("branding", "true");
+        partnership.UpdateSmsPolicy(includedSmsPerMonth: 5_000, includedSmsTemplateCount: 12, smsOverageUnitPriceRials: 1_200_0);
 
         _db.Plans.AddRange(starter, pro, partnership);
         await _db.SaveChangesAsync(ct);

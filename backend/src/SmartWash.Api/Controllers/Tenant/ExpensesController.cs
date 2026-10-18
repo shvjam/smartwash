@@ -40,4 +40,9 @@ public sealed class ExpensesController : ControllerBase
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateExpenseRequest req, CancellationToken ct)
         => (await _sender.Send(new UpdateExpenseCommand(id, req.Category, req.Title, req.AmountRials,
             req.PaymentMethod, req.Date, req.Description), ct)).ToActionResult();
+
+    [HttpDelete("{id:guid}")]
+    [HasPermission(Permissions.ExpensesManage)]
+    public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
+        => (await _sender.Send(new DeleteExpenseCommand(id), ct)).ToActionResult();
 }

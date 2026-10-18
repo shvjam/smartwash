@@ -78,8 +78,23 @@ public sealed class ReactivateTenantHandler : IRequestHandler<ReactivateTenantCo
         var t = await _db.Tenants.IgnoreQueryFilters().FirstOrDefaultAsync(x => x.Id == c.TenantId, ct);
         if (t is null) return Result.Failure(Error.NotFound("Tenant.NotFound", "مستاجر یافت نشد."));
         var sub = await _db.Subscriptions.IgnoreQueryFilters().Where(s => s.TenantId == c.TenantId && s.Status == SubscriptionStatus.Active).FirstOrDefaultAsync(ct);
-        if (sub is null) return Result.Failure(Error.Validation("Subscription.NoneActive", "اشتراک فعالی برای این مستاجر وجود ندارد."));
-        t.Activate(sub.Id);
+
+        if (sub is not null)
+        {
+            t.Activate(sub.Id);
+        }
+        else if (t.TrialEndsAtUtc > DateTime.UtcNow)
+        {
+            // Suspending is allowed from any state, so insisting on a subscription to undo it
+            // made suspension a one-way door for every carwash still on its trial.
+            t.ResumeTrial();
+        }
+        else
+        {
+            return Result.Failure(Error.Validation("Subscription.NoneActive",
+                "اشتراک فعالی برای این مستاجر وجود ندارد؛ ابتدا پلنی به آن اختصاص دهید."));
+        }
+
         await _db.SaveChangesAsync(ct);
         return Result.Success();
     }

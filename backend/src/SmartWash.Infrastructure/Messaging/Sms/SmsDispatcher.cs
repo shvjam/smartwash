@@ -1,3 +1,4 @@
+using SmartWash.Application.Abstractions.Billing;
 using SmartWash.Application.Abstractions.Messaging;
 using SmartWash.Application.Abstractions.Persistence;
 using SmartWash.Domain.Billing;
@@ -175,9 +176,14 @@ public sealed class SmsDispatcher : ISmsDispatcher
         var periodStart = sub?.CurrentPeriodStartUtc ?? new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
         var periodEnd = sub?.CurrentPeriodEndUtc ?? periodStart.AddMonths(1);
 
-        var plan = sub is null
+        // A tenant on trial has no subscription, and reading the allowance only off one left
+        // the trial with an allowance of zero — which the send path treats as "already over
+        // quota", so not a single message went out during the fortnight that is supposed to
+        // be showing the product off.
+        var planId = sub?.PlanId ?? await GoverningPlan.ResolveIdAsync(_db, tenantId, ct);
+        var plan = planId is null
             ? null
-            : await _db.Plans.AsNoTracking().FirstOrDefaultAsync(p => p.Id == sub.PlanId, ct);
+            : await _db.Plans.AsNoTracking().IgnoreQueryFilters().FirstOrDefaultAsync(p => p.Id == planId.Value, ct);
 
         var used = await _db.SmsUsageRecords
             .IgnoreQueryFilters()

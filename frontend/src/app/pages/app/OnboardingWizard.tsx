@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { useNavigate } from 'react-router';
 import { CheckCircle2, Circle, Building2, Square, Sparkles, ArrowLeft, Loader2 } from 'lucide-react';
+import { tomanNumber } from '../../lib/money';
 import {
   onboardingApi, branchesApi, baysApi, servicesApi, ApiException,
   type OnboardingStateDto,
@@ -154,7 +155,7 @@ export const OnboardingWizard: React.FC = () => {
                     }} />
                     <div className="flex-1">
                       <div>{s.name}</div>
-                      <div className="text-muted-foreground">{toFa(s.priceRials.toLocaleString('fa-IR'))} ریال · {toFa(s.durationMinutes)} دقیقه</div>
+                      <div className="text-muted-foreground">{tomanNumber(s.priceRials)} تومان · {toFa(s.durationMinutes)} دقیقه</div>
                     </div>
                   </label>
                 ))}

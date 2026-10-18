@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
-import { Plus, Building2, Star, MapPin, Phone, Power, Pencil, X, Car, Wrench } from 'lucide-react';
+import { Plus, Building2, Star, MapPin, Phone, Power, Pencil, X, Car } from 'lucide-react';
 import { branchesApi, baysApi, type BranchDto, type BayDto, ApiException } from '../../api';
 import { BayType } from '../../api/types';
 import { BAY_TYPE_LABEL } from '../../lib/orderStages';
 import { PageHeader, Card, EmptyState } from '../../components/app/PageHeader';
+import { BayRow } from '../../components/app/BayRow';
 
 const emptyForm = () => ({ name: '', address: '', phone: '', isDefault: false });
 
@@ -29,7 +30,14 @@ export const BranchesView = () => {
     finally { setLoading(false); }
   };
   useEffect(() => { reload(); }, []);
-  const loadBays = async (branch: BranchDto) => { setSelectedBranch(branch); setBays(await baysApi.list(branch.id)); setBayNumber((await baysApi.list(branch.id)).length + 1); };
+  // Suggest the next free number, not the count: once a bay in the middle has been
+  // renumbered, "count + 1" is often a number that is already taken.
+  const loadBays = async (branch: BranchDto) => {
+    setSelectedBranch(branch);
+    const list = await baysApi.list(branch.id);
+    setBays(list);
+    setBayNumber(list.reduce((max, b) => Math.max(max, b.number), 0) + 1);
+  };
 
   const openCreate = () => { setMode('create'); setEditingId(null); setForm(emptyForm()); setErr(null); };
   const openEdit = (b: BranchDto) => {
@@ -105,7 +113,7 @@ export const BranchesView = () => {
             <button className="col-span-2 rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-bold text-white sm:col-span-1 sm:self-end"><Plus size={15} className="inline ml-1" />افزودن</button>
           </form>
           {err && <p className="mb-3 text-xs text-red-600">{err}</p>}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">{bays.map(b => <div key={b.id} className="flex items-center justify-between rounded-2xl bg-white border border-gray-100 p-3"><div className="flex items-center gap-2"><span className="grid size-9 place-items-center rounded-xl bg-brand-50 text-brand-600"><Car size={17}/></span><div><b className="text-sm">{b.name}</b><p className="text-[11px] text-gray-500">جایگاه {b.number} · {BAY_TYPE_LABEL[b.type]}{b.queueCapacity > 0 ? ` · صف ${b.queueLength}/${b.queueCapacity}` : ''}</p></div></div><button onClick={async () => { await baysApi.maintenance(b.id, 'غیرفعال‌سازی از پنل مدیریت'); await loadBays(selectedBranch); }} className="rounded-lg p-2 text-amber-600 hover:bg-amber-50" title="تعمیرات"><Wrench size={16}/></button></div>)}</div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">{bays.map(b => <BayRow key={b.id} bay={b} onChanged={() => loadBays(selectedBranch)} />)}</div>
         </Card>
       )}
 

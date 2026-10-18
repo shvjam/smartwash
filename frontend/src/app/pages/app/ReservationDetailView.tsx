@@ -6,7 +6,7 @@ import { reservationsApi, ApiException } from '../../api';
 import { ReservationStatus, type ReservationDto } from '../../api/types';
 
 const toFa = (v: number | string) => String(v).replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[+d]);
-const fmtRials = (n: number) => toFa(n.toLocaleString('fa-IR'));
+import { tomanNumber } from '../../lib/money';
 const fmtDateTime = (iso: string) => new Date(iso).toLocaleString('fa-IR', { dateStyle: 'full', timeStyle: 'short' });
 
 // منطبق با ReservationStatus: Pending=0, Confirmed=1, Arrived=2, NoShow=3, Cancelled=4
@@ -69,7 +69,7 @@ export const ReservationDetailView: React.FC = () => {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
         <StatCard label="مدت تخمینی" value={`${toFa(res.estimatedDurationMinutes)} د`} accent="sky" />
         <StatCard label="خدمات" value={toFa(res.services.length)} accent="violet" />
-        <StatCard label="جمع تخمینی" value={`${fmtRials(total)} ﷼`} accent="red" />
+        <StatCard label="جمع تخمینی" value={`${tomanNumber(total)} تومان`} accent="red" />
         <StatCard label="ایجاد در" value={new Date(res.createdAtUtc).toLocaleDateString('fa-IR')} accent="amber" />
       </div>
 
@@ -86,7 +86,7 @@ export const ReservationDetailView: React.FC = () => {
                     <div className="font-bold text-sm text-gray-900">{s.serviceName}</div>
                     <div className="text-[11px] text-gray-500">{toFa(s.durationMinutes)} دقیقه</div>
                   </div>
-                  <div className="font-mono font-bold text-sm">{fmtRials(s.priceRials)} ﷼</div>
+                  <div className="font-mono font-bold text-sm">{tomanNumber(s.priceRials)} تومان</div>
                 </div>
               ))}
             </div>

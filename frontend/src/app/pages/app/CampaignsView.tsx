@@ -3,6 +3,7 @@ import { Plus, MessageSquare, Send, CalendarClock, Users, X, AlertCircle, Lock }
 import { campaignsApi, CampaignDto, CampaignType, CampaignTarget, CampaignStatus, ApiException, LoyaltyTier } from '../../api';
 import { PageHeader, Card, EmptyState } from '../../components/app/PageHeader';
 import { clsx } from 'clsx';
+import { toast } from 'sonner';
 import { useFeature } from '../../lib/features';
 
 const targetLabel: Record<CampaignTarget, string> = {
@@ -33,6 +34,9 @@ export const CampaignsView = () => {
     messageTemplate: '', scheduledAt: '', minVisits: '', daysSinceLastVisit: '',
   });
   const [err, setErr] = useState<string | null>(null);
+  const [scheduling, setScheduling] = useState<string | null>(null);
+  const [scheduleAt, setScheduleAt] = useState('');
+  const [busyId, setBusyId] = useState<string | null>(null);
 
   const reload = async () => {
     try { setList(await campaignsApi.list()); }
@@ -40,6 +44,46 @@ export const CampaignsView = () => {
     finally { setLoading(false); }
   };
   useEffect(() => { reload(); }, []);
+
+  // A draft is only a draft until someone says when it goes: the dispatcher sends scheduled
+  // campaigns and nothing else, so these two buttons are the only way a campaign leaves.
+  const schedule = async (c: CampaignDto, at: string | null) => {
+    let when = new Date();
+    if (at) {
+      when = new Date(at);
+      if (Number.isNaN(when.getTime()) || when.getTime() <= Date.now()) {
+        toast.error('زمان ارسال باید در آینده باشد');
+        return;
+      }
+    } else if (!confirm(`کمپین «${c.name}» برای ${c.recipientCount || 'همه‌ی'} گیرنده‌ی هدف ارسال شود؟`)) {
+      return;
+    }
+    setBusyId(c.id);
+    try {
+      await campaignsApi.schedule(c.id, when.toISOString());
+      toast.success(at ? 'کمپین زمان‌بندی شد' : 'کمپین در صف ارسال قرار گرفت و در اجرای بعدیِ ارسال‌کننده فرستاده می‌شود');
+      setScheduling(null);
+      await reload();
+    } catch (e) {
+      toast.error(e instanceof ApiException ? e.message : 'زمان‌بندی کمپین انجام نشد');
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const cancel = async (c: CampaignDto) => {
+    if (!confirm(`کمپین «${c.name}» لغو شود؟`)) return;
+    setBusyId(c.id);
+    try {
+      await campaignsApi.cancel(c.id);
+      toast.success('کمپین لغو شد');
+      await reload();
+    } catch (e) {
+      toast.error(e instanceof ApiException ? e.message : 'لغو کمپین انجام نشد');
+    } finally {
+      setBusyId(null);
+    }
+  };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -180,12 +224,44 @@ export const CampaignsView = () => {
                   <div className="bg-emerald-50 rounded-xl p-2"><div className="text-emerald-700">موفق</div><div className="font-bold mt-0.5">{c.successCount}</div></div>
                   <div className="bg-red-50 rounded-xl p-2"><div className="text-red-700">ناموفق</div><div className="font-bold mt-0.5">{c.failedCount}</div></div>
                 </div>
+                {c.status === CampaignStatus.Scheduled && c.scheduledAtUtc && (
+                  <div className="mt-3 flex items-center gap-1.5 text-xs text-sky-700">
+                    <CalendarClock size={13} />
+                    ارسال در {new Date(c.scheduledAtUtc).toLocaleString('fa-IR', { dateStyle: 'medium', timeStyle: 'short' })}
+                  </div>
+                )}
+
                 {(c.status === CampaignStatus.Draft || c.status === CampaignStatus.Scheduled) && (
-                  <div className="flex gap-2 mt-4 pt-4 border-t border-gray-50">
-                    <button onClick={() => campaignsApi.cancel(c.id).then(reload)}
-                      className="text-xs px-3 py-1.5 rounded-xl bg-brand-50 text-brand-700 font-bold hover:bg-brand-100 flex items-center gap-1">
-                      <X size={12} />لغو
-                    </button>
+                  <div className="mt-4 pt-4 border-t border-gray-50">
+                    {scheduling === c.id ? (
+                      <div className="space-y-2">
+                        <input type="datetime-local" value={scheduleAt} onChange={e => setScheduleAt(e.target.value)}
+                          className="w-full text-xs px-3 py-2 rounded-xl border border-gray-200" />
+                        <div className="flex gap-2">
+                          <button disabled={busyId === c.id} onClick={() => schedule(c, scheduleAt)}
+                            className="text-xs px-3 py-1.5 rounded-xl bg-sky-600 text-white font-bold hover:bg-sky-700 disabled:opacity-50">
+                            ثبت زمان
+                          </button>
+                          <button onClick={() => setScheduling(null)}
+                            className="text-xs px-3 py-1.5 rounded-xl bg-gray-100 text-gray-700 font-bold">انصراف</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex flex-wrap gap-2">
+                        <button disabled={busyId === c.id} onClick={() => schedule(c, null)}
+                          className="text-xs px-3 py-1.5 rounded-xl bg-emerald-600 text-white font-bold hover:bg-emerald-700 disabled:opacity-50 flex items-center gap-1">
+                          <Send size={12} />ارسال اکنون
+                        </button>
+                        <button onClick={() => { setScheduling(c.id); setScheduleAt(''); }}
+                          className="text-xs px-3 py-1.5 rounded-xl bg-sky-50 text-sky-700 font-bold hover:bg-sky-100 flex items-center gap-1">
+                          <CalendarClock size={12} />{c.status === CampaignStatus.Scheduled ? 'تغییر زمان' : 'زمان‌بندی'}
+                        </button>
+                        <button disabled={busyId === c.id} onClick={() => cancel(c)}
+                          className="text-xs px-3 py-1.5 rounded-xl bg-brand-50 text-brand-700 font-bold hover:bg-brand-100 disabled:opacity-50 flex items-center gap-1">
+                          <X size={12} />لغو
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
               </Card>

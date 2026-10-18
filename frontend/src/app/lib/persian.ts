@@ -27,3 +27,20 @@ export function toJalaliLabel(iso: string): string {
     year: 'numeric', month: 'long', day: 'numeric', calendar: 'persian',
   }).format(d);
 }
+
+const JALALI_MONTHS = ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور', 'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'];
+
+/**
+ * The Jalali year and month a date falls in, as a sortable key ("1405-07") and a label ("مهر").
+ *
+ * Monthly reports used to group by the Gregorian month and then print a Persian name beside
+ * it, January as دی and so on — but Gregorian and Jalali months do not line up: دی ends on
+ * the twentieth of January. So two-thirds of every bar was filed under the wrong month name.
+ */
+export function jalaliMonth(date: string | Date): { key: string; label: string; year: number; month: number } {
+  const d = typeof date === 'string' ? new Date(date.length === 10 ? `${date}T12:00:00` : date) : date;
+  const parts = new Intl.DateTimeFormat('en-US-u-ca-persian', { year: 'numeric', month: 'numeric' }).formatToParts(d);
+  const year = Number(parts.find(p => p.type === 'year')?.value ?? 0);
+  const month = Number(parts.find(p => p.type === 'month')?.value ?? 1);
+  return { key: `${year}-${String(month).padStart(2, '0')}`, label: JALALI_MONTHS[month - 1] ?? '', year, month };
+}

@@ -1,3 +1,4 @@
+using SmartWash.Application.Abstractions.Caching;
 using SmartWash.Application.Abstractions.Identity;
 using SmartWash.Application.Abstractions.Multitenancy;
 using SmartWash.Application.Abstractions.Persistence;
@@ -122,7 +123,9 @@ public sealed class SetUserActiveHandler : IRequestHandler<SetUserActiveCommand,
 {
     private readonly IAppDbContext _db;
     private readonly ITenantContext _tenant;
-    public SetUserActiveHandler(IAppDbContext db, ITenantContext tenant) { _db = db; _tenant = tenant; }
+    private readonly IAppCache _cache;
+    public SetUserActiveHandler(IAppDbContext db, ITenantContext tenant, IAppCache cache)
+    { _db = db; _tenant = tenant; _cache = cache; }
     public async Task<Result> Handle(SetUserActiveCommand c, CancellationToken ct)
     {
         if (!_tenant.TenantId.HasValue) return Result.Failure(Error.Unauthorized("Tenant.None", "مستاجر مشخص نیست."));
@@ -134,6 +137,9 @@ public sealed class SetUserActiveHandler : IRequestHandler<SetUserActiveCommand,
             return Result.Failure(Error.Forbidden("User.NotInTenant", "این کاربر عضو این مجموعه نیست."));
         if (c.IsActive) u.Activate(); else u.Deactivate();
         await _db.SaveChangesAsync(ct);
+        // The request pipeline caches this flag, so switching someone off has to clear it or
+        // they keep working for as long as the cached answer lives.
+        await _cache.RemoveAsync(CacheKeys.UserActive(u.Id), ct);
         return Result.Success();
     }
 }

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Plus, Power, X, Pencil, Trash2 } from 'lucide-react';
 import { platformPlansApi, PlanDto, PlanFeatureDto, PlanBillingModel, ApiException } from '../../api';
+import { toToman, toRials, parseToman, tomanLabel } from '../../lib/money';
 import { clsx } from 'clsx';
 
 const fmt = (n: number) => new Intl.NumberFormat('fa-IR').format(n);
@@ -20,6 +21,9 @@ type FormState = {
   perCarPriceRials: string;
   sortOrder: number;
   isPublic: boolean;
+  includedSmsPerMonth: string;
+  includedSmsTemplateCount: string;
+  smsOverageUnitPriceRials: string;
   features: PlanFeatureDto[];
 };
 
@@ -27,23 +31,36 @@ const emptyForm = (): FormState => ({
   code: '', displayName: '', description: '',
   billingModel: PlanBillingModel.Subscription,
   setupFeeRials: '', monthlyPriceRials: '', yearlyPriceRials: '', perCarPriceRials: '',
-  sortOrder: 1, isPublic: true, features: [],
+  sortOrder: 1, isPublic: true,
+  includedSmsPerMonth: '0', includedSmsTemplateCount: '0', smsOverageUnitPriceRials: '0',
+  features: [],
 });
 
 const fromPlan = (p: PlanDto): FormState => ({
   code: p.code, displayName: p.displayName, description: p.description ?? '',
   billingModel: p.billingModel,
-  setupFeeRials: String(p.setupFeeRials), monthlyPriceRials: String(p.monthlyPriceRials),
-  yearlyPriceRials: String(p.yearlyPriceRials), perCarPriceRials: String(p.perCarPriceRials),
+  // The money fields hold what the operator types, in tomans; rials exist only on the wire.
+  setupFeeRials: String(toToman(p.setupFeeRials)), monthlyPriceRials: String(toToman(p.monthlyPriceRials)),
+  yearlyPriceRials: String(toToman(p.yearlyPriceRials)), perCarPriceRials: String(toToman(p.perCarPriceRials)),
   sortOrder: p.sortOrder, isPublic: p.isPublic,
+  includedSmsPerMonth: String(p.includedSmsPerMonth ?? 0),
+  includedSmsTemplateCount: String(p.includedSmsTemplateCount ?? 0),
+  smsOverageUnitPriceRials: String(toToman(p.smsOverageUnitPriceRials ?? 0)),
   features: p.features.map(f => ({ key: f.key, value: f.value })),
 });
 
+/*
+  These keys are read verbatim by the API, so a label that is right and a key that is wrong
+  produces a plan whose limit is simply never enforced — nothing fails, the ceiling just is
+  not there. Two of them were wrong: the server reads limit.branches and limit.vehicles,
+  while this list offered max_branches and max_vehicles, so every plan built on this screen
+  had unlimited branches and unlimited vehicles per customer whatever the operator typed.
+*/
 const FEATURE_PRESETS: Array<{ key: string; label: string; example: string }> = [
   { key: 'max_bays', label: 'حداکثر جایگاه', example: '5' },
   { key: 'max_users', label: 'حداکثر کاربر', example: '10' },
-  { key: 'max_branches', label: 'حداکثر شعبه', example: '3' },
-  { key: 'max_vehicles', label: 'حداکثر خودرو/مشتری', example: '50' },
+  { key: 'limit.branches', label: 'حداکثر شعبه', example: '3' },
+  { key: 'limit.vehicles', label: 'حداکثر خودرو برای هر مشتری', example: '10' },
   { key: 'reservations', label: 'رزرو آنلاین', example: 'true' },
   { key: 'sms', label: 'پیامک', example: 'true' },
   { key: 'loyalty', label: 'وفاداری', example: 'true' },
@@ -90,10 +107,15 @@ export const PlansAdmin = () => {
         .map(f => ({ key: f.key.trim(), value: f.value.trim() }))
         .filter(f => f.key);
       const numeric = {
-        setupFeeRials: Number(form.setupFeeRials) || 0,
-        monthlyPriceRials: Number(form.monthlyPriceRials) || 0,
-        yearlyPriceRials: Number(form.yearlyPriceRials) || 0,
-        perCarPriceRials: Number(form.perCarPriceRials) || 0,
+        setupFeeRials: toRials(parseToman(form.setupFeeRials)),
+        monthlyPriceRials: toRials(parseToman(form.monthlyPriceRials)),
+        yearlyPriceRials: toRials(parseToman(form.yearlyPriceRials)),
+        perCarPriceRials: toRials(parseToman(form.perCarPriceRials)),
+        // سهمیه‌ی پیامک همیشه فرستاده می‌شود؛ خالی‌گذاشتنِ آن یعنی صفر، و صفر یعنی
+        // هیچ پیامکی از این پلن ارسال نمی‌شود.
+        includedSmsPerMonth: Number(form.includedSmsPerMonth) || 0,
+        includedSmsTemplateCount: Number(form.includedSmsTemplateCount) || 0,
+        smsOverageUnitPriceRials: toRials(parseToman(form.smsOverageUnitPriceRials)),
       };
       if (editing.mode === 'create') {
         await platformPlansApi.create({
@@ -147,9 +169,9 @@ export const PlansAdmin = () => {
               <div className="font-extrabold text-white text-lg mb-1">{p.displayName}</div>
               <div className="text-xs text-gray-500 leading-6 mb-4 min-h-[3em] line-clamp-2">{p.description || '—'}</div>
               <div className="space-y-1.5 mb-4 text-sm">
-                <Row label="ماهانه" value={`${fmt(p.monthlyPriceRials)} ریال`} />
-                <Row label="سالانه" value={`${fmt(p.yearlyPriceRials)} ریال`} />
-                {p.setupFeeRials > 0 && <Row label="راه‌اندازی" value={`${fmt(p.setupFeeRials)} ریال`} />}
+                <Row label="ماهانه" value={tomanLabel(p.monthlyPriceRials)} />
+                <Row label="سالانه" value={tomanLabel(p.yearlyPriceRials)} />
+                {p.setupFeeRials > 0 && <Row label="راه‌اندازی" value={tomanLabel(p.setupFeeRials)} />}
                 <Row label="ویژگی‌ها" value={`${p.features.length} مورد`} />
               </div>
               {p.features.length > 0 && (
@@ -187,11 +209,20 @@ export const PlansAdmin = () => {
               <Input label="کد یکتا" value={form.code} onChange={v => setForm({ ...form, code: v })} dir="ltr" disabled={editing.mode === 'edit'} />
               <Input label="نام نمایشی" value={form.displayName} onChange={v => setForm({ ...form, displayName: v })} />
               <Input label="توضیحات" value={form.description} onChange={v => setForm({ ...form, description: v })} className="sm:col-span-2" />
-              <Input label="هزینه راه‌اندازی (ریال)" type="number" value={form.setupFeeRials} onChange={v => setForm({ ...form, setupFeeRials: v })} />
-              <Input label="ماهانه (ریال)" type="number" value={form.monthlyPriceRials} onChange={v => setForm({ ...form, monthlyPriceRials: v })} />
-              <Input label="سالانه (ریال)" type="number" value={form.yearlyPriceRials} onChange={v => setForm({ ...form, yearlyPriceRials: v })} />
-              <Input label="به ازای هر خودرو (ریال)" type="number" value={form.perCarPriceRials} onChange={v => setForm({ ...form, perCarPriceRials: v })} />
+              <Input label="هزینه راه‌اندازی (تومان)" type="number" value={form.setupFeeRials} onChange={v => setForm({ ...form, setupFeeRials: v })} />
+              <Input label="ماهانه (تومان)" type="number" value={form.monthlyPriceRials} onChange={v => setForm({ ...form, monthlyPriceRials: v })} />
+              <Input label="سالانه (تومان)" type="number" value={form.yearlyPriceRials} onChange={v => setForm({ ...form, yearlyPriceRials: v })} />
+              <Input label="به ازای هر خودرو (تومان)" type="number" value={form.perCarPriceRials} onChange={v => setForm({ ...form, perCarPriceRials: v })} />
               <Input label="ترتیب نمایش" type="number" value={String(form.sortOrder)} onChange={v => setForm({ ...form, sortOrder: Number(v) || 0 })} />
+
+              {/* سهمیه‌ی پیامک: سرور پیش از هر ارسال همین را می‌خواند. اگر صفر بماند،
+                  هیچ پیامکی برای مستاجرانِ این پلن ارسال نمی‌شود. */}
+              <Input label="پیامک شامل در ماه" type="number" value={form.includedSmsPerMonth}
+                onChange={v => setForm({ ...form, includedSmsPerMonth: v })} />
+              <Input label="تعداد قالب پیامک" type="number" value={form.includedSmsTemplateCount}
+                onChange={v => setForm({ ...form, includedSmsTemplateCount: v })} />
+              <Input label="نرخ هر پیامک مازاد (تومان)" type="number" value={form.smsOverageUnitPriceRials}
+                onChange={v => setForm({ ...form, smsOverageUnitPriceRials: v })} className="sm:col-span-2" />
               <label className="flex items-center gap-3 cursor-pointer">
                 <input type="checkbox" checked={form.isPublic} onChange={e => setForm({ ...form, isPublic: e.target.checked })} className="accent-violet-600 w-4 h-4" />
                 <span className="text-sm text-gray-300">نمایش در صفحه قیمت‌گذاری عمومی</span>

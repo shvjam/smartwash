@@ -9,15 +9,29 @@ using Microsoft.EntityFrameworkCore;
 namespace SmartWash.Application.Modules.Platform;
 
 public sealed record PlanFeatureDto(string Key, string Value);
+/*
+  The SMS policy travels with the plan.
+
+  It used to live only on the entity, where nothing ever set it: the seeder did not call
+  UpdateSmsPolicy and neither did create or update, so every plan carried an allowance of
+  zero. The dispatcher reads that allowance before every send and treats "used >= included"
+  as overage, which with an allowance of zero is true on the first message — so no tenant on
+  any plan could send a single reservation reminder, campaign message or receipt, while the
+  platform's own password-reset codes went out fine because those bypass the quota. The
+  feature looked configured and was inert.
+*/
 public sealed record PlanDto(Guid Id, string Code, string DisplayName, string? Description, PlanBillingModel BillingModel,
     long SetupFeeRials, long MonthlyPriceRials, long YearlyPriceRials, long PerCarPriceRials,
-    int? IncludedCarsPerMonth, int SortOrder, bool IsActive, bool IsPublic, IReadOnlyList<PlanFeatureDto> Features);
+    int? IncludedCarsPerMonth, int SortOrder, bool IsActive, bool IsPublic,
+    int IncludedSmsPerMonth, int IncludedSmsTemplateCount, long SmsOverageUnitPriceRials,
+    IReadOnlyList<PlanFeatureDto> Features);
 
 public static class PlanMap
 {
     public static PlanDto ToDto(Plan p) => new(p.Id, p.Code, p.DisplayName, p.Description, p.BillingModel,
         p.SetupFeeRials, p.MonthlyPriceRials, p.YearlyPriceRials, p.PerCarPriceRials,
         p.IncludedCarsPerMonth, p.SortOrder, p.IsActive, p.IsPublic,
+        p.IncludedSmsPerMonth, p.IncludedSmsTemplateCount, p.SmsOverageUnitPriceRials,
         p.Features.Select(f => new PlanFeatureDto(f.Key, f.Value)).ToArray());
 }
 
@@ -50,7 +64,9 @@ public sealed class GetPlanHandler : IRequestHandler<GetPlanQuery, Result<PlanDt
 
 public sealed record CreatePlanCommand(string Code, string DisplayName, string? Description, PlanBillingModel BillingModel,
     long SetupFeeRials, long MonthlyPriceRials, long YearlyPriceRials, long PerCarPriceRials,
-    int SortOrder, bool IsPublic, IReadOnlyList<PlanFeatureDto>? Features) : IRequest<Result<PlanDto>>, ITransactionalRequest;
+    int SortOrder, bool IsPublic, IReadOnlyList<PlanFeatureDto>? Features,
+    int IncludedSmsPerMonth = 0, int IncludedSmsTemplateCount = 0, long SmsOverageUnitPriceRials = 0)
+    : IRequest<Result<PlanDto>>, ITransactionalRequest;
 
 public sealed class CreatePlanValidator : AbstractValidator<CreatePlanCommand>
 {
@@ -74,6 +90,7 @@ public sealed class CreatePlanHandler : IRequestHandler<CreatePlanCommand, Resul
             return Result.Failure<PlanDto>(Error.Conflict("Plan.CodeTaken", "کد پلن تکراری است."));
         var plan = Plan.Create(c.Code, c.DisplayName, c.BillingModel, c.SetupFeeRials, c.MonthlyPriceRials, c.YearlyPriceRials, c.PerCarPriceRials, c.SortOrder, c.IsPublic);
         if (!string.IsNullOrEmpty(c.Description)) plan.SetDescription(c.Description);
+        plan.UpdateSmsPolicy(c.IncludedSmsPerMonth, c.IncludedSmsTemplateCount, c.SmsOverageUnitPriceRials);
         if (c.Features is not null) foreach (var f in c.Features) plan.AddFeature(f.Key, f.Value);
         _db.Plans.Add(plan);
         await _db.SaveChangesAsync(ct);
@@ -81,8 +98,15 @@ public sealed class CreatePlanHandler : IRequestHandler<CreatePlanCommand, Resul
     }
 }
 
+/// <remarks>
+/// The three SMS numbers are nullable and not defaulted to zero on purpose: a caller that
+/// does not know about them must leave the plan's policy alone, not quietly set it to zero
+/// and cut off every tenant on that plan.
+/// </remarks>
 public sealed record UpdatePlanCommand(Guid Id, string DisplayName, string? Description, long SetupFeeRials, long MonthlyPriceRials,
-    long YearlyPriceRials, long PerCarPriceRials, int SortOrder, bool IsPublic, IReadOnlyList<PlanFeatureDto>? Features) : IRequest<Result<PlanDto>>, ITransactionalRequest;
+    long YearlyPriceRials, long PerCarPriceRials, int SortOrder, bool IsPublic, IReadOnlyList<PlanFeatureDto>? Features,
+    int? IncludedSmsPerMonth = null, int? IncludedSmsTemplateCount = null, long? SmsOverageUnitPriceRials = null)
+    : IRequest<Result<PlanDto>>, ITransactionalRequest;
 public sealed class UpdatePlanHandler : IRequestHandler<UpdatePlanCommand, Result<PlanDto>>
 {
     private readonly IAppDbContext _db;
@@ -91,6 +115,16 @@ public sealed class UpdatePlanHandler : IRequestHandler<UpdatePlanCommand, Resul
     {
         if (string.IsNullOrWhiteSpace(c.DisplayName))
             return Result.Failure<PlanDto>(Error.Validation("Plan.NameRequired", "نام پلن الزامی است."));
+
+        // An omitted SMS number keeps whatever the plan already has.
+        var current = await _db.Plans.AsNoTracking().Where(p => p.Id == c.Id)
+            .Select(p => new { p.IncludedSmsPerMonth, p.IncludedSmsTemplateCount, p.SmsOverageUnitPriceRials })
+            .FirstOrDefaultAsync(ct);
+        if (current is null) return Result.Failure<PlanDto>(Error.NotFound("Plan.NotFound", "پلن یافت نشد."));
+
+        var smsPerMonth = Math.Max(0, c.IncludedSmsPerMonth ?? current.IncludedSmsPerMonth);
+        var smsTemplates = Math.Max(0, c.IncludedSmsTemplateCount ?? current.IncludedSmsTemplateCount);
+        var smsOverage = Math.Max(0, c.SmsOverageUnitPriceRials ?? current.SmsOverageUnitPriceRials);
 
         // Platform-plan edits are administrator commands, not optimistic document edits.
         // ExecuteUpdate avoids stale RowVersion failures caused by EF tracking the plan
@@ -103,7 +137,10 @@ public sealed class UpdatePlanHandler : IRequestHandler<UpdatePlanCommand, Resul
             .SetProperty(p => p.YearlyPriceRials, c.YearlyPriceRials)
             .SetProperty(p => p.PerCarPriceRials, c.PerCarPriceRials)
             .SetProperty(p => p.SortOrder, c.SortOrder)
-            .SetProperty(p => p.IsPublic, c.IsPublic), ct);
+            .SetProperty(p => p.IsPublic, c.IsPublic)
+            .SetProperty(p => p.IncludedSmsPerMonth, smsPerMonth)
+            .SetProperty(p => p.IncludedSmsTemplateCount, smsTemplates)
+            .SetProperty(p => p.SmsOverageUnitPriceRials, smsOverage), ct);
         if (changed == 0) return Result.Failure<PlanDto>(Error.NotFound("Plan.NotFound", "پلن یافت نشد."));
 
         if (c.Features is not null)

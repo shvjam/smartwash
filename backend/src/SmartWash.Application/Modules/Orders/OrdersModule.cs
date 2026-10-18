@@ -20,7 +20,10 @@ public sealed record OrderDto(Guid Id, Guid BranchId, string Number, Guid? BayId
     Guid? CurrentBayId, int? QueuePosition, int ExpectedDurationMinutes,
     long SubtotalRials, long DiscountRials, long WalletUsedRials, int LoyaltyPointsUsed, long TotalRials, long PaidRials, PaymentMethod? FinalPaymentMethod, string? Notes,
     IReadOnlyList<OrderLineDto> Lines, IReadOnlyList<OrderPaymentDto> Payments,
-    IReadOnlyList<OrderStageEventDto> StageEvents);
+    IReadOnlyList<OrderStageEventDto> StageEvents,
+    // Where the order came from: the customer's registered vehicle and, for a car that was
+    // booked ahead, the reservation it was made from.
+    Guid? VehicleId, Guid? ReservationId);
 
 public sealed record OrderStageEventDto(OrderStage Stage, DateTime AtUtc, string? Note);
 
@@ -33,7 +36,8 @@ public static class OrderMap
         o.SubtotalRials, o.DiscountRials, o.WalletUsedRials, o.LoyaltyPointsUsed, o.TotalRials, o.PaidRials, o.FinalPaymentMethod, o.Notes,
         o.Lines.Select(l => new OrderLineDto(l.Id, l.ServiceId, l.ServiceName, l.UnitPriceRials, l.Quantity, l.DurationMinutes, l.LineTotalRials, l.WorkerId, l.WorkerName, l.WorkerCommissionRate, l.WorkerCommissionRials, l.TipRials)).ToArray(),
         o.Payments.Select(p => new OrderPaymentDto(p.Id, p.Method, p.AmountRials, p.Reference, p.PaidAtUtc)).ToArray(),
-        o.StageEvents.OrderBy(e => e.AtUtc).Select(e => new OrderStageEventDto(e.Stage, e.AtUtc, e.Note)).ToArray());
+        o.StageEvents.OrderBy(e => e.AtUtc).Select(e => new OrderStageEventDto(e.Stage, e.AtUtc, e.Note)).ToArray(),
+        o.VehicleId, o.ReservationId);
 }
 
 public sealed record SearchOrdersQuery(Guid? BranchId, OrderStatus? Status, DateTime? FromUtc, DateTime? ToUtc, string? Search, int Page, int PageSize) : IRequest<Result<PagedList<OrderDto>>>;

@@ -6,6 +6,7 @@ import { resolveUploadUrl } from '../../api/adapters';
 import { PageHeader, Card } from '../../components/app/PageHeader';
 import { clsx } from 'clsx';
 import { useFeatures } from '../../lib/features';
+import { toToman, toRials, parseToman, tomanNumber } from '../../lib/money';
 
 type Tab = 'branding' | 'loyalty' | 'receipt' | 'sms' | 'reservation';
 
@@ -140,9 +141,26 @@ export const SettingsView = () => {
             {tab === 'loyalty' && (
               <div className="grid sm:grid-cols-2 gap-4">
                 <ToggleRow label="فعال‌سازی باشگاه وفاداری" value={data.loyaltyEnabled} onChange={v => set('loyaltyEnabled', v)} />
-                <Input label="امتیاز به ازای هر ریال" type="number" value={String(data.loyaltyPointsPerRial)} onChange={v => set('loyaltyPointsPerRial', Number(v) || 0)} />
-                <Input label="ارزش هر امتیاز (ریال)" type="number" value={String(data.loyaltyPointValueRials)} onChange={v => set('loyaltyPointValueRials', Number(v) || 0)} />
+                {/* The server earns points as (order total ÷ spend step) × points per step. These
+                    fields used to read "points per rial" and "value of one point (rials)", which
+                    described a redemption value the system has never had — the second number is
+                    the spend that earns points, and it is entered in tomans like every other
+                    amount on this panel. */}
+                <Input label="مبلغ هر پله‌ی خرید (تومان)" type="number"
+                  value={String(toToman(data.loyaltyPointValueRials))}
+                  onChange={v => set('loyaltyPointValueRials', toRials(parseToman(v)))} />
+                <Input label="امتیاز به ازای هر پله" type="number"
+                  value={String(data.loyaltyPointsPerRial)}
+                  onChange={v => set('loyaltyPointsPerRial', Math.max(0, Math.floor(Number(v) || 0)))} />
                 <Input label="انقضای امتیاز (روز)" type="number" value={String(data.loyaltyExpiryDays)} onChange={v => set('loyaltyExpiryDays', Number(v) || 0)} />
+                {data.loyaltyPointValueRials > 0 && data.loyaltyPointsPerRial > 0 && (
+                  <p className="sm:col-span-2 rounded-xl bg-amber-50 px-3 py-2 text-xs leading-6 text-amber-800">
+                    مثال: هر {tomanNumber(data.loyaltyPointValueRials)} تومان خرید،
+                    {' '}{data.loyaltyPointsPerRial.toLocaleString('fa-IR')} امتیاز —
+                    یک خرید {tomanNumber(data.loyaltyPointValueRials * 5)} تومانی
+                    {' '}{(data.loyaltyPointsPerRial * 5).toLocaleString('fa-IR')} امتیاز می‌گیرد.
+                  </p>
+                )}
               </div>
             )}
 

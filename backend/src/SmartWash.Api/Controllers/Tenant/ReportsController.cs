@@ -23,6 +23,13 @@ public sealed class ReportsController : ControllerBase
         CancellationToken ct = default)
         => (await _sender.Send(new GetDashboardQuery(branchId, fromDate, toDate), ct)).ToActionResult();
 
+    /// <summary>The period by day, worker, service and customer, from every completed order in it.</summary>
+    [HttpGet("period-summary")]
+    [HasPermission(Permissions.ReportsView)]
+    public async Task<IActionResult> PeriodSummary([FromQuery] DateOnly fromDate, [FromQuery] DateOnly toDate,
+        [FromQuery] Guid? branchId = null, CancellationToken ct = default)
+        => (await _sender.Send(new GetPeriodSummaryQuery(fromDate, toDate, branchId), ct)).ToActionResult();
+
     [HttpGet("revenue-series")]
     [HasPermission(Permissions.ReportsView)]
     public async Task<IActionResult> RevenueSeries([FromQuery] DateOnly fromDate, [FromQuery] DateOnly toDate,

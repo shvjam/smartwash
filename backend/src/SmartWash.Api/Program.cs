@@ -53,17 +53,21 @@ builder.Services.AddSwagger();
 // frontend (src/app/api/types.ts + adapters.ts) maps enum values by numeric
 // index, so a JsonStringEnumConverter here would break status/category
 // rendering across the whole UI. Do not add a string enum converter.
-builder.Services.AddControllers();
+// ActiveUserFilter runs on every action: an access token lives for an hour, so without it a
+// switched-off account keeps working until the token expires.
+builder.Services.AddControllers(o => o.Filters.Add<ActiveUserFilter>());
 builder.Services.AddProblemDetails();
 builder.Services.AddScoped<CronAuthFilter>();
+builder.Services.AddScoped<ActiveUserFilter>();
 
-// سرویس پس‌زمینه — اجرای خودکار cron jobs داخلی.
+// The scheduled jobs. CronJobs holds the work and is shared by the /api/cron endpoints and the
+// in-process scheduler, so both run the same code and record the same CronJobRun rows.
 //
-// Turn this off (Cron__UseInternalScheduler=false) wherever an external scheduler calls the
-// /api/cron/* endpoints instead — shared hosting, where the app pool sleeps and takes the
-// background service with it, is the usual reason. The two must not both be live: CronJobRun
-// only records that a job ran and enforces nothing, so a concurrent daily-billing on both
-// paths would bill the same subscription twice.
+// The in-process scheduler runs whatever is due rather than whatever time it is, so on shared
+// hosting, where the app pool sleeps, it catches up when the site next wakes. It can run
+// alongside an external scheduler calling /api/cron: a job that has just succeeded is not due
+// again, and a job already running is refused by CronJobs rather than started twice.
+builder.Services.AddScoped<SmartWash.Api.BackgroundServices.CronJobs>();
 if (builder.Configuration.GetValue("Cron:UseInternalScheduler", true))
 {
     builder.Services.AddHostedService<SmartWash.Api.BackgroundServices.CronSchedulerService>();

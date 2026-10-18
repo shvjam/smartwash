@@ -24,5 +24,10 @@ public sealed class CronHealthController : ControllerBase
     [HttpGet]
     [HasPermission(Permissions.AuditRead)]
     public async Task<IActionResult> Get(CancellationToken ct)
-        => (await _sender.Send(new GetCronHealthQuery(), ct)).ToActionResult();
+    {
+        var expected = SmartWash.Api.BackgroundServices.CronJobs.All
+            .Select(j => new CronJobExpectation(j.Name, j.EveryMinutes, j.DailyAtUtc))
+            .ToList();
+        return (await _sender.Send(new GetCronHealthQuery(expected), ct)).ToActionResult();
+    }
 }

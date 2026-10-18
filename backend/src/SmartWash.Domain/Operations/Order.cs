@@ -242,7 +242,9 @@ public sealed class Order : TenantAggregateRoot<Guid>
         if (needsBay)
         {
             BayId = bayId;
-            if (!stayingPut) _bayVisits.Add(new OrderBayVisit(Id, TenantId, bayId.Value, next));
+            // Order.BayRequired above refuses this stage without a bay, so by here there is
+            // one; the compiler cannot see that through the reassignment a few lines up.
+            if (!stayingPut) _bayVisits.Add(new OrderBayVisit(Id, TenantId, bayId!.Value, next));
             QueuePosition = null;
         }
 

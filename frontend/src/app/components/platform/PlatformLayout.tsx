@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, Outlet, useNavigate, useLocation, Navigate } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
-import { Shield, Building2, CreditCard, Layers, LogOut, Menu, X, ArrowLeft, ScrollText, MessageSquare, LifeBuoy } from 'lucide-react';
+import { Shield, Building2, CreditCard, Layers, LogOut, Menu, X, ArrowLeft, ScrollText, MessageSquare, LifeBuoy, Timer } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useCarWash } from '../../store';
 import { Logo, BRAND_NAME } from '../Logo';
@@ -12,6 +12,7 @@ const navItems = [
   { name: 'اشتراک‌ها', icon: CreditCard, path: '/platform/subscriptions' },
   { name: 'پیامک پلتفرم', icon: MessageSquare, path: '/platform/sms' },
   { name: 'تیکت‌های پشتیبانی', icon: LifeBuoy, path: '/platform/tickets' },
+  { name: 'کارهای زمان‌بندی‌شده', icon: Timer, path: '/platform/jobs' },
   { name: 'لاگ ممیزی', icon: ScrollText, path: '/platform/audit' },
 ];
 

@@ -45,6 +45,7 @@ export enum NotificationType { Info = 0, OrderOverdue = 1, ReservationReminder =
 export type BranchDto = {
   id: Guid; name: string; address?: string | null; phone?: string | null;
   latitude?: string | null; longitude?: string | null; isActive: boolean; isDefault: boolean;
+  createdAtUtc: DateTimeIso;
 };
 
 export type BayDto = {
@@ -61,6 +62,7 @@ export type BayDto = {
 export type WorkerDto = {
   id: Guid; branchId: Guid; fullName: string; role: string; phone?: string | null;
   nationalId?: string | null; commissionRate: number; isActive: boolean; avatarUrl?: string | null;
+  userId?: Guid | null; hiredAtUtc?: DateTimeIso | null; terminatedAtUtc?: DateTimeIso | null;
 };
 
 export type ServiceDto = {
@@ -89,8 +91,9 @@ export type CustomerDto = {
 
 export type OrderLineDto = {
   id: Guid; serviceId: Guid; serviceName: string; quantity: number;
-  unitPriceRials: number; lineTotalRials: number;
-  workerId?: Guid | null; workerName?: string | null; workerCommissionRials: number;
+  unitPriceRials: number; lineTotalRials: number; durationMinutes: number;
+  workerId?: Guid | null; workerName?: string | null;
+  workerCommissionRate: number; workerCommissionRials: number;
   tipRials: number; // انعام ثبت‌شده برای این خط
 };
 export type OrderPaymentDto = {
@@ -118,13 +121,15 @@ export type OrderDto = {
 
 export type OrderStageEventDto = { stage: OrderStage; atUtc: DateTimeIso; note?: string | null };
 
-export type ReservationServiceDto = { serviceId: Guid; serviceName: string; priceRials: number; durationMinutes: number };
+export type ReservationServiceDto = { id: Guid; serviceId: Guid; serviceName: string; priceRials: number; durationMinutes: number };
 export type ReservationDto = {
   id: Guid; branchId: Guid; customerId?: Guid | null; customerName: string; customerPhone: string;
   vehiclePlate: string; vehicleBrand?: string | null; vehicleModel?: string | null;
   scheduledAtUtc: DateTimeIso; estimatedDurationMinutes: number;
   preferredBayId?: Guid | null; notes?: string | null; status: ReservationStatus;
   services: ReservationServiceDto[]; createdAtUtc: DateTimeIso;
+  /** سفارشی که این رزرو به آن تبدیل شد — پس از ورودِ خودرو. */
+  convertedOrderId?: Guid | null;
 };
 
 export type ExpenseDto = {
@@ -199,6 +204,11 @@ export type PlanDto = {
   setupFeeRials: number; monthlyPriceRials: number; yearlyPriceRials: number; perCarPriceRials: number;
   includedCarsPerMonth?: number | null;
   sortOrder: number; isActive: boolean; isPublic: boolean;
+  // سیاستِ پیامکِ پلن. سرور پیش از هر ارسال همین اعداد را می‌خواند: سهمیه‌ی صفر یعنی
+  // اولین پیامکِ همان دوره هم «فراتر از سهمیه» شمرده و رد می‌شود.
+  includedSmsPerMonth: number;
+  includedSmsTemplateCount: number;
+  smsOverageUnitPriceRials: number;
   features: PlanFeatureDto[];
 };
 
@@ -558,4 +568,44 @@ export type CustomerSegmentFilter = {
   minVisits?: number; maxVisits?: number;
   minTier?: LoyaltyTier; serviceId?: Guid;
   minTotalSpentRials?: number; take?: number;
+};
+
+// ---------- PLATFORM: SCHEDULED JOBS ----------
+export enum CronJobStatus { Running = 0, Succeeded = 1, Failed = 2 }
+
+/** وضعیتِ یک کارِ زمان‌بندی‌شده — شامل کارهایی که هرگز اجرا نشده‌اند. */
+export type CronJobHealthDto = {
+  jobName: string;
+  /** هر چند دقیقه یک‌بار (برای کارهای پرتکرار). */
+  everyMinutes?: number | null;
+  /** ساعتِ اجرای روزانه به وقت UTC، به شکل HH:mm:ss (برای کارهای روزانه). */
+  dailyAtUtc?: string | null;
+  lastRunAtUtc?: DateTimeIso | null;
+  lastSuccessAtUtc?: DateTimeIso | null;
+  lastStatus?: CronJobStatus | null;
+  lastItemsProcessed?: number | null;
+  lastError?: string | null;
+  runsLast24h: number;
+  failuresLast24h: number;
+  hoursSinceLastSuccess?: number | null;
+  /** در بازه‌ای که برنامه‌اش وعده می‌دهد، اجرای موفق نداشته است. */
+  isLate: boolean;
+};
+
+// ---------- REPORTS: PERIOD SUMMARY ----------
+// همه‌ی سفارش‌های تکمیل‌شده‌ی بازه — نه فقط سفارش‌هایی که در حافظه‌ی پنل هستند.
+export type PeriodDayRow = { date: string; revenueRials: number; tipsRials: number; orders: number };
+export type PeriodWorkerRow = {
+  workerId: Guid; fullName: string; avatarUrl?: string | null;
+  revenueRials: number; tipsRials: number; orders: number; services: number;
+};
+export type PeriodServiceRow = { serviceId: Guid; serviceName: string; count: number; revenueRials: number };
+export type PeriodCustomerRow = {
+  customerId: Guid; fullName: string; phone: string; plate?: string | null;
+  revenueRials: number; orders: number; services: number; totalVisits: number; lifetimeSpendRials: number;
+  freeServicesEarned: number; freeServicesUsed: number;
+};
+export type PeriodSummary = {
+  revenueRials: number; tipsRials: number; discountRials: number; orders: number; services: number;
+  days: PeriodDayRow[]; workers: PeriodWorkerRow[]; serviceRows: PeriodServiceRow[]; customers: PeriodCustomerRow[];
 };

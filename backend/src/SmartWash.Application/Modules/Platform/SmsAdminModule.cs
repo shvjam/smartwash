@@ -1,4 +1,5 @@
 using System.Text.Json;
+using SmartWash.Application.Abstractions.Billing;
 using SmartWash.Application.Abstractions.Identity;
 using SmartWash.Application.Abstractions.Messaging;
 using SmartWash.Application.Abstractions.Persistence;
@@ -281,12 +282,7 @@ public static class TenantSmsTemplateToggle
 
     private static async Task<int> ResolveTemplateLimitAsync(IAppDbContext db, Guid tenantId, CancellationToken ct)
     {
-        var planId = await db.Subscriptions.IgnoreQueryFilters()
-            .Where(s => s.TenantId == tenantId
-                        && (s.Status == SubscriptionStatus.Active || s.Status == SubscriptionStatus.PastDue))
-            .OrderByDescending(s => s.CurrentPeriodEndUtc)
-            .Select(s => (Guid?)s.PlanId)
-            .FirstOrDefaultAsync(ct);
+        var planId = await GoverningPlan.ResolveIdAsync(db, tenantId, ct);
         if (planId is null) return 0;
         return await db.Plans.AsNoTracking().Where(p => p.Id == planId).Select(p => p.IncludedSmsTemplateCount)
             .FirstOrDefaultAsync(ct);

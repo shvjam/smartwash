@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useCarWash } from '../store';
-import { reportsApi, type DashboardDto } from '../api';
+import { reportsApi, type DashboardDto, type PeriodSummary } from '../api';
 import { PunctualityTab } from './reports/PunctualityTab';
 import { OrderArchive } from './reports/OrderArchive';
 import { BayPerformanceTab, WaitingTab, StaffingTab, RevenueTab, ActivityLogTab } from './reports/OperationsTabs';
@@ -16,14 +16,15 @@ import {
 import { clsx } from 'clsx';
 import { PageHeader, Card, StatCard } from '../components/app/PageHeader';
 import { WorkerAvatar } from '../components/WorkerAvatar';
+import { tomanLabel, tomanNumber } from '../lib/money';
 import { localIsoDate } from '../lib/dates';
+import { jalaliMonth } from '../lib/persian';
 
 const PERSIAN_MONTHS = [
   'فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور',
   'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'
 ];
 // Approximate Gregorian month -> Persian month label
-const MONTH_LABELS = ['دی', 'بهمن', 'اسفند', 'فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور', 'مهر', 'آبان', 'آذر'];
 
 const PIE_COLORS = ['#dc2626', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#06b6d4'];
 
@@ -31,7 +32,7 @@ type Tab = 'overview' | 'revenue' | 'archive' | 'bays' | 'waiting' | 'staffing'
   | 'workers' | 'scorecards' | 'punctuality' | 'activity' | 'customers' | 'monthly' | 'services';
 
 export const ReportsView = () => {
-  const { orders, workers, services, customers, getOrderTotals, branchId } = useCarWash();
+  const { workers, services, branchId } = useCarWash();
   const [tab, setTab] = useState<Tab>('overview');
   const [rangeMonths, setRangeMonths] = useState(9);
   // داده‌های دقیق از API (فقط برای tab=overview)
@@ -40,12 +41,7 @@ export const ReportsView = () => {
     reportsApi.dashboard(branchId ?? undefined).then(setDashboard).catch(() => {});
   }, [branchId]);
 
-  // fallback: اگر API هنوز لود نشده، از store استفاده می‌کنیم
-  const ORDERS_CACHE_LIMIT = 100;
-  const isCacheLimited = orders.filter(o => o.status === 'completed').length >= ORDERS_CACHE_LIMIT;
-
-  // The punctuality report is computed server-side, so the page's range selector is
-  // translated into the from/to dates that endpoint expects.
+  // The selected range, as the dates the report endpoints expect.
   const apiRange = useMemo(() => {
     const from = new Date();
     from.setMonth(from.getMonth() - rangeMonths);
@@ -53,104 +49,87 @@ export const ReportsView = () => {
     return { fromDate: iso(from), toDate: iso(new Date()) };
   }, [rangeMonths]);
 
-  const completedOrders = useMemo(() => {
-    const cutoff = new Date();
-    cutoff.setMonth(cutoff.getMonth() - rangeMonths);
-    return orders.filter(o => o.status === 'completed' && new Date(o.createdAt) >= cutoff);
-  }, [orders, rangeMonths]);
+  /*
+    Everything on the overview, monthly, worker, customer and service tabs comes from the
+    server's period summary. These tabs used to be computed in the browser from the orders the
+    panel had in memory — the two hundred most recent — so on a busy floor "the last nine
+    months" meant the last few days, and nothing on the page said so.
+  */
+  const [summary, setSummary] = useState<PeriodSummary | null>(null);
+  const [summaryError, setSummaryError] = useState<string | null>(null);
+  useEffect(() => {
+    let alive = true;
+    setSummaryError(null);
+    reportsApi.periodSummary(apiRange.fromDate, apiRange.toDate, branchId ?? undefined)
+      .then(r => { if (alive) setSummary(r); })
+      .catch(e => { if (alive) setSummaryError(e?.message ?? 'دریافت گزارش انجام نشد'); });
+    return () => { alive = false; };
+  }, [apiRange.fromDate, apiRange.toDate, branchId]);
 
-  // Aggregations
-  const agg = useMemo(() => {
-    const totals = { revenue: 0, tips: 0, discounts: 0, freeValue: 0, orders: 0, services: 0 };
-    const byWorker: Record<string, { revenue: number; tips: number; orders: Set<string>; services: number }> = {};
-    const byCustomer: Record<string, { revenue: number; orders: number; services: number }> = {};
-    const byService: Record<string, { count: number; revenue: number }> = {};
-    const byMonth: Record<string, { revenue: number; orders: number; tips: number }> = {};
+  const agg = useMemo(() => ({
+    totals: { revenue: summary?.revenueRials ?? 0, orders: summary?.orders ?? 0 },
+  }), [summary]);
 
-    for (const o of completedOrders) {
-      const t = getOrderTotals(o);
-      totals.revenue += t.total - t.tips; // revenue without tips
-      totals.tips += t.tips;
-      totals.discounts += t.discount;
-      totals.freeValue += t.freeDiscount;
-      totals.orders += 1;
-      totals.services += o.lineItems.length;
-
-      const monthKey = new Date(o.createdAt).toISOString().slice(0, 7);
-      if (!byMonth[monthKey]) byMonth[monthKey] = { revenue: 0, orders: 0, tips: 0 };
-      byMonth[monthKey].revenue += t.total - t.tips;
-      byMonth[monthKey].tips += t.tips;
-      byMonth[monthKey].orders += 1;
-
-      if (o.customerId) {
-        if (!byCustomer[o.customerId]) byCustomer[o.customerId] = { revenue: 0, orders: 0, services: 0 };
-        byCustomer[o.customerId].revenue += t.total;
-        byCustomer[o.customerId].orders += 1;
-        byCustomer[o.customerId].services += o.lineItems.length;
-      }
-
-      for (const li of o.lineItems) {
-        if (!byService[li.serviceId]) byService[li.serviceId] = { count: 0, revenue: 0 };
-        byService[li.serviceId].count += 1;
-        if (!li.isFree) byService[li.serviceId].revenue += li.price;
-
-        if (li.workerId) {
-          if (!byWorker[li.workerId]) byWorker[li.workerId] = { revenue: 0, tips: 0, orders: new Set(), services: 0 };
-          if (!li.isFree) byWorker[li.workerId].revenue += li.price;
-          byWorker[li.workerId].tips += li.tipAmount;
-          byWorker[li.workerId].orders.add(o.id);
-          byWorker[li.workerId].services += 1;
-        }
-      }
-    }
-
-    return { totals, byWorker, byCustomer, byService, byMonth };
-  }, [completedOrders, getOrderTotals]);
-
+  // Grouped by the Jalali month each day falls in, not by the Gregorian month renamed.
   const monthlySeries = useMemo(() => {
-    const keys = Object.keys(agg.byMonth).sort();
-    return keys.map(k => {
-      const [y, m] = k.split('-');
-      const idx = parseInt(m, 10) - 1;
-      return {
-        key: k,
-        name: MONTH_LABELS[idx],
-        درآمد: Math.round(agg.byMonth[k].revenue / 1000000 * 10) / 10,
-        انعام: Math.round(agg.byMonth[k].tips / 1000000 * 10) / 10,
-        سفارش: agg.byMonth[k].orders,
-      };
-    });
-  }, [agg.byMonth]);
+    const byMonth = new Map<string, { label: string; revenue: number; tips: number; orders: number }>();
+    for (const d of summary?.days ?? []) {
+      const m = jalaliMonth(d.date);
+      const row = byMonth.get(m.key) ?? { label: m.label, revenue: 0, tips: 0, orders: 0 };
+      row.revenue += d.revenueRials; row.tips += d.tipsRials; row.orders += d.orders;
+      byMonth.set(m.key, row);
+    }
+    return [...byMonth.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([key, m]) => ({
+      key,
+      name: m.label,
+      درآمد: Math.round(m.revenue / 10_000_000 * 10) / 10,
+      انعام: Math.round(m.tips / 10_000_000 * 10) / 10,
+      سفارش: m.orders,
+      // Exact figures for the table; the chart values above are rounded to a tenth of a million.
+      revenueRials: m.revenue,
+      tipsRials: m.tips,
+    }));
+  }, [summary]);
 
   const workerSeries = useMemo(() => {
+    const byId = new Map((summary?.workers ?? []).map(w => [w.workerId, w]));
     return workers.map(w => {
-      const a = agg.byWorker[w.id] ?? { revenue: 0, tips: 0, orders: new Set(), services: 0 };
+      const a = byId.get(w.id);
+      const orders = a?.orders ?? 0;
       return {
         ...w,
-        revenue: a.revenue,
-        tips: a.tips,
-        orders: a.orders.size,
-        services: a.services,
-        avgPerOrder: a.orders.size > 0 ? Math.round(a.revenue / a.orders.size) : 0,
+        revenue: a?.revenueRials ?? 0,
+        tips: a?.tipsRials ?? 0,
+        orders,
+        services: a?.services ?? 0,
+        avgPerOrder: orders > 0 ? Math.round((a?.revenueRials ?? 0) / orders) : 0,
       };
     }).sort((a, b) => b.revenue - a.revenue);
-  }, [workers, agg.byWorker]);
+  }, [workers, summary]);
 
-  const customerSeries = useMemo(() => {
-    return customers.map(c => ({
-      ...c,
-      monthRevenue: agg.byCustomer[c.id]?.revenue ?? 0,
-      monthOrders: agg.byCustomer[c.id]?.orders ?? 0,
-    })).sort((a, b) => b.monthRevenue - a.monthRevenue);
-  }, [customers, agg.byCustomer]);
+  const customerSeries = useMemo(() => (summary?.customers ?? []).map(c => ({
+    id: c.customerId,
+    name: c.fullName,
+    phone: c.phone,
+    plate: c.plate ?? '',
+    totalVisits: c.totalVisits,
+    totalSpent: c.lifetimeSpendRials,
+    isLoyal: c.totalVisits >= 10,
+    monthRevenue: c.revenueRials,
+    monthOrders: c.orders,
+    freeServicesEarned: c.freeServicesEarned,
+    freeServicesUsed: c.freeServicesUsed,
+  })), [summary]);
 
   const serviceSeries = useMemo(() => {
-    return services.map(s => ({
-      name: s.name,
-      count: agg.byService[s.id]?.count ?? 0,
-      revenue: agg.byService[s.id]?.revenue ?? 0,
-    })).sort((a, b) => b.revenue - a.revenue);
-  }, [services, agg.byService]);
+    const sold = new Map((summary?.serviceRows ?? []).map(r => [r.serviceId, r]));
+    const rows = services.map(s => ({ name: s.name, count: sold.get(s.id)?.count ?? 0, revenue: sold.get(s.id)?.revenueRials ?? 0 }));
+    // A service sold in the period but since deleted from the menu still earned that money.
+    for (const r of summary?.serviceRows ?? []) {
+      if (!services.some(s => s.id === r.serviceId)) rows.push({ name: r.serviceName, count: r.count, revenue: r.revenueRials });
+    }
+    return rows.sort((a, b) => b.revenue - a.revenue);
+  }, [services, summary]);
 
   const lastMonthDelta = useMemo(() => {
     if (monthlySeries.length < 2) return 0;
@@ -181,10 +160,10 @@ export const ReportsView = () => {
         }
       />
 
-      {isCacheLimited && (
-        <div className="flex items-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800">
+      {summaryError && (
+        <div className="flex items-center gap-2 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-700">
           <BarChart3 size={14} className="flex-shrink-0" />
-          <span>این گزارش بر اساس آخرین ۱۰۰ سفارش حافظه محاسبه شده — ممکن است ناقص باشد. برای گزارش کامل از <a href="/app/orders" className="font-bold underline">صفحه سفارش‌ها</a> استفاده کنید.</span>
+          <span>گزارش این بازه دریافت نشد: {summaryError}</span>
         </div>
       )}
 
@@ -193,25 +172,25 @@ export const ReportsView = () => {
         <StatCard
           accent="emerald"
           label="درآمد امروز"
-          value={`${(dashboard?.todayRevenueRials ?? 0).toLocaleString('fa-IR')} ﷼`}
-          hint={`${dashboard?.todayOrders ?? 0} سفارش امروز`}
+          value={`${tomanLabel(dashboard?.todayRevenueRials ?? 0)}`}
+          hint={`${(dashboard?.todayOrders ?? 0).toLocaleString('fa-IR')} سفارش امروز`}
         />
         <StatCard
           accent="sky"
           label="درآمد این ماه"
-          value={`${(dashboard?.monthRevenueRials ?? agg.totals.revenue).toLocaleString('fa-IR')} ﷼`}
-          hint={`${dashboard?.monthOrders ?? agg.totals.orders} سفارش`}
+          value={`${tomanLabel(dashboard?.monthRevenueRials ?? agg.totals.revenue)}`}
+          hint={`${(dashboard?.monthOrders ?? agg.totals.orders).toLocaleString('fa-IR')} سفارش`}
         />
         <StatCard
           accent="red"
           label="هزینه این ماه"
-          value={`${(dashboard?.monthExpensesRials ?? 0).toLocaleString('fa-IR')} ﷼`}
+          value={`${tomanLabel(dashboard?.monthExpensesRials ?? 0)}`}
           hint="هزینه‌های ثبت‌شده"
         />
         <StatCard
           accent="amber"
           label="سود خالص ماه"
-          value={`${(dashboard?.monthNetRials ?? 0).toLocaleString('fa-IR')} ﷼`}
+          value={`${tomanLabel(dashboard?.monthNetRials ?? 0)}`}
           hint="درآمد منهای هزینه"
         />
       </div>
@@ -252,7 +231,7 @@ export const ReportsView = () => {
 
       {tab === 'overview' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <ChartCard title="روند درآمد ماهانه" subtitle="میلیون ﷼" className="lg:col-span-2">
+          <ChartCard title="روند درآمد ماهانه" subtitle="میلیون تومان" className="lg:col-span-2">
             <div className="h-56 sm:h-72" dir="ltr">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={monthlySeries}>
@@ -288,7 +267,7 @@ export const ReportsView = () => {
                   >
                     {serviceSeries.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
                   </Pie>
-                  <Tooltip contentStyle={tooltipStyle} formatter={(v: any) => `${Number(v).toLocaleString('fa-IR')} ﷼`} />
+                  <Tooltip contentStyle={tooltipStyle} formatter={(v: any) => tomanLabel(Number(v))} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -304,11 +283,11 @@ export const ReportsView = () => {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="font-bold text-gray-900 text-sm truncate">{w.name}</div>
-                    <div className="text-[11px] text-gray-500">{w.orders} سفارش • {w.services} خدمت</div>
+                    <div className="text-[11px] text-gray-500">{w.orders.toLocaleString('fa-IR')} سفارش • {w.services.toLocaleString('fa-IR')} خدمت</div>
                   </div>
                   <div className="text-left">
-                    <div className="font-mono font-extrabold text-gray-900 text-sm">{w.revenue.toLocaleString('fa-IR')} <span className="text-[10px] font-normal text-gray-500">﷼</span></div>
-                    {w.tips > 0 && <div className="text-[10px] text-blue-600 font-mono">+{w.tips.toLocaleString('fa-IR')} انعام</div>}
+                    <div className="font-mono font-extrabold text-gray-900 text-sm">{tomanNumber(w.revenue)} <span className="text-[10px] font-normal text-gray-500">تومان</span></div>
+                    {w.tips > 0 && <div className="text-[10px] text-blue-600 font-mono">+{tomanNumber(w.tips)} انعام</div>}
                   </div>
                 </div>
               ))}
@@ -325,10 +304,10 @@ export const ReportsView = () => {
                     </div>
                     <div className="min-w-0">
                       <div className="font-bold text-gray-900 text-xs truncate">{c.name}</div>
-                      <div className="text-[10px] text-gray-500">{c.monthOrders} سفارش</div>
+                      <div className="text-[10px] text-gray-500">{c.monthOrders.toLocaleString('fa-IR')} سفارش</div>
                     </div>
                   </div>
-                  <div className="font-mono text-xs font-bold text-gray-900">{(c.monthRevenue / 1000).toFixed(0)}ک</div>
+                  <div className="font-mono text-xs font-bold text-gray-900">{Math.round(c.monthRevenue / 10_000).toLocaleString('fa-IR')} هزار ت</div>
                 </div>
               ))}
             </div>
@@ -338,7 +317,7 @@ export const ReportsView = () => {
 
       {tab === 'monthly' && (
         <div className="space-y-4">
-          <ChartCard title="مقایسه درآمد و انعام به تفکیک ماه" subtitle="میلیون ﷼">
+          <ChartCard title="مقایسه درآمد و انعام به تفکیک ماه" subtitle="میلیون تومان">
             <div className="h-64 sm:h-80" dir="ltr">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={monthlySeries}>
@@ -369,14 +348,14 @@ export const ReportsView = () => {
           </ChartCard>
 
           <ChartCard title="جدول جزئیات ماهانه">
-            <Table head={['ماه', 'سفارش', 'درآمد', 'انعام', 'میانگین هر سفارش']}>
+            <Table head={['ماه', 'سفارش', 'درآمد (تومان)', 'انعام (تومان)', 'میانگین هر سفارش']}>
               {monthlySeries.slice().reverse().map(m => (
                 <tr key={m.key} className="border-b border-gray-50 last:border-0">
                   <td className="py-2.5 px-3 font-bold text-gray-900">{m.name}</td>
-                  <td className="py-2.5 px-3 text-gray-700">{m.سفارش}</td>
-                  <td className="py-2.5 px-3 font-mono text-gray-900">{(m.درآمد * 1000000).toLocaleString('fa-IR')}</td>
-                  <td className="py-2.5 px-3 font-mono text-blue-600">{(m.انعام * 1000000).toLocaleString('fa-IR')}</td>
-                  <td className="py-2.5 px-3 font-mono text-gray-600">{m.سفارش > 0 ? Math.round(m.درآمد * 1000000 / m.سفارش).toLocaleString('fa-IR') : '—'}</td>
+                  <td className="py-2.5 px-3 text-gray-700">{m.سفارش.toLocaleString('fa-IR')}</td>
+                  <td className="py-2.5 px-3 font-mono text-gray-900">{tomanNumber(m.revenueRials)}</td>
+                  <td className="py-2.5 px-3 font-mono text-blue-600">{tomanNumber(m.tipsRials)}</td>
+                  <td className="py-2.5 px-3 font-mono text-gray-600">{m.سفارش > 0 ? tomanNumber(m.revenueRials / m.سفارش) : '—'}</td>
                 </tr>
               ))}
             </Table>
@@ -418,10 +397,10 @@ export const ReportsView = () => {
 
       {tab === 'workers' && (
         <div className="space-y-4">
-          <ChartCard title="درآمد پرسنل" subtitle="میلیون ﷼">
+          <ChartCard title="درآمد پرسنل" subtitle="میلیون تومان">
             <div className="h-56 sm:h-72" dir="ltr">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={workerSeries.map(w => ({ name: w.name, درآمد: w.revenue / 1000000, انعام: w.tips / 1000000 }))} layout="vertical">
+                <BarChart data={workerSeries.map(w => ({ name: w.name, درآمد: w.revenue / 10_000_000, انعام: w.tips / 10_000_000 }))} layout="vertical">
                   <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f3f4f6" />
                   <XAxis type="number" axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 11 }} />
                   <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fill: '#374151', fontSize: 11 }} width={70} />
@@ -435,7 +414,7 @@ export const ReportsView = () => {
           </ChartCard>
 
           <ChartCard title="جدول جامع پرسنل">
-            <Table head={['پرسنل', 'سفارش', 'خدمات', 'درآمد', 'انعام', 'میانگین/سفارش']}>
+            <Table head={['پرسنل', 'سفارش', 'خدمات', 'درآمد (تومان)', 'انعام (تومان)', 'میانگین/سفارش']}>
               {workerSeries.map((w, i) => (
                 <tr key={w.id} className="border-b border-gray-50 last:border-0">
                   <td className="py-2.5 px-3">
@@ -448,11 +427,11 @@ export const ReportsView = () => {
                       </div>
                     </div>
                   </td>
-                  <td className="py-2.5 px-3 text-gray-700">{w.orders}</td>
-                  <td className="py-2.5 px-3 text-gray-700">{w.services}</td>
-                  <td className="py-2.5 px-3 font-mono font-bold text-gray-900">{w.revenue.toLocaleString('fa-IR')}</td>
-                  <td className="py-2.5 px-3 font-mono text-blue-600">{w.tips.toLocaleString('fa-IR')}</td>
-                  <td className="py-2.5 px-3 font-mono text-gray-600">{w.avgPerOrder.toLocaleString('fa-IR')}</td>
+                  <td className="py-2.5 px-3 text-gray-700">{w.orders.toLocaleString('fa-IR')}</td>
+                  <td className="py-2.5 px-3 text-gray-700">{w.services.toLocaleString('fa-IR')}</td>
+                  <td className="py-2.5 px-3 font-mono font-bold text-gray-900">{tomanNumber(w.revenue)}</td>
+                  <td className="py-2.5 px-3 font-mono text-blue-600">{tomanNumber(w.tips)}</td>
+                  <td className="py-2.5 px-3 font-mono text-gray-600">{tomanNumber(w.avgPerOrder)}</td>
                 </tr>
               ))}
             </Table>
@@ -462,7 +441,7 @@ export const ReportsView = () => {
 
       {tab === 'customers' && (
         <ChartCard title="جدول جامع مشتریان">
-          <Table head={['مشتری', 'پلاک', 'مراجعات', 'مجموع خرید', 'این بازه', 'وفاداری']}>
+          <Table head={['مشتری', 'پلاک', 'مراجعات', 'مجموع خرید (تومان)', 'این بازه (تومان)', 'وفاداری']}>
             {customerSeries.map(c => (
               <tr key={c.id} className="border-b border-gray-50 last:border-0">
                 <td className="py-2.5 px-3">
@@ -480,9 +459,9 @@ export const ReportsView = () => {
                   </div>
                 </td>
                 <td className="py-2.5 px-3 font-mono text-xs text-gray-600">{c.plate}</td>
-                <td className="py-2.5 px-3 text-gray-700">{c.totalVisits}</td>
-                <td className="py-2.5 px-3 font-mono text-gray-900 font-bold">{c.totalSpent.toLocaleString('fa-IR')}</td>
-                <td className="py-2.5 px-3 font-mono text-emerald-600">{c.monthRevenue.toLocaleString('fa-IR')}</td>
+                <td className="py-2.5 px-3 text-gray-700">{c.totalVisits.toLocaleString('fa-IR')}</td>
+                <td className="py-2.5 px-3 font-mono text-gray-900 font-bold">{tomanNumber(c.totalSpent)}</td>
+                <td className="py-2.5 px-3 font-mono text-emerald-600">{tomanNumber(c.monthRevenue)}</td>
                 <td className="py-2.5 px-3">
                   <div className="flex items-center gap-1">
                     {[0, 1, 2].map(i => (
@@ -503,7 +482,7 @@ export const ReportsView = () => {
           <ChartCard title="پرفروش‌ترین خدمات">
             <div className="h-56 sm:h-72" dir="ltr">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={serviceSeries.map(s => ({ name: s.name, درآمد: s.revenue / 1000000 }))} layout="vertical">
+                <BarChart data={serviceSeries.map(s => ({ name: s.name, درآمد: s.revenue / 10_000_000 }))} layout="vertical">
                   <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f3f4f6" />
                   <XAxis type="number" axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 11 }} />
                   <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fill: '#374151', fontSize: 10 }} width={70} />
@@ -515,12 +494,12 @@ export const ReportsView = () => {
           </ChartCard>
 
           <ChartCard title="جدول خدمات">
-            <Table head={['خدمت', 'تعداد', 'درآمد']}>
+            <Table head={['خدمت', 'تعداد', 'درآمد (تومان)']}>
               {serviceSeries.map(s => (
                 <tr key={s.name} className="border-b border-gray-50 last:border-0">
                   <td className="py-2.5 px-3 font-bold text-gray-900 text-xs">{s.name}</td>
-                  <td className="py-2.5 px-3 text-gray-700">{s.count}</td>
-                  <td className="py-2.5 px-3 font-mono font-bold">{s.revenue.toLocaleString('fa-IR')}</td>
+                  <td className="py-2.5 px-3 text-gray-700">{s.count.toLocaleString('fa-IR')}</td>
+                  <td className="py-2.5 px-3 font-mono font-bold">{tomanNumber(s.revenue)}</td>
                 </tr>
               ))}
             </Table>
