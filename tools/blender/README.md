@@ -1,62 +1,80 @@
 # Blender in this project
 
-Everything 3D on the public site is built here and written straight into the web app's public
-folder. There is no manual export step and no file to copy by hand.
+Every picture on the public landing page is a frame of one Blender shot, built by a script and
+written straight into the web app's public folder. There is no manual export and no file to
+copy by hand.
 
 ```
 tools/blender/
-  sw_blender.py      the house rules: materials, lighting, export, render
-  build_car.py       the car in the hero
+  build_wash.py      the wash: one macro shot of a red car's flank, foam to shine
+  run.mjs            runs a script headlessly, wherever Blender is installed
   setup_prefs.py     points Cycles at this machine's GPU (run once)
   install_addon.py   installs the MCP add-on into Blender (run once)
+  sw_blender.py      shared helpers from the earlier 3D work
   .venv/             the MCP server, installed not committed
 ```
 
-## Running a build
+## The shot
 
-Blender is at `C:\Program Files\Blender Foundation\Blender 5.2\blender.exe` on this machine
-and is not on PATH, so scripts are run with the full path — or through the shortcuts in
-`frontend/package.json`:
+One continuous camera move, no cuts. The camera tracks low along the flank of a red car while
+the foam slides off, the water beads up on the clear coat, and a strip light sweeps along the
+shoulder line. The landing page scrubs it with the reader's scroll.
+
+It is a macro of paint rather than a model of a car on purpose. A whole car at web size is
+either low-poly — which reads as a toy, and was rejected as one — or a photoreal model nobody
+here has rights to. A macro needs neither: the subject is a surface a few curves define, and
+everything that makes it look expensive comes from materials and light.
+
+What makes it work, so the next change does not undo it:
+
+- **The studio is black.** Strip lights of a few tens of watts. At 900 W the whole panel
+  washed out pink; the colour of car paint lives in its highlights, not its diffuse.
+- **The paint is three layers**: a dark red base, metallic flake as a faint Voronoi bump on the
+  base coat only, and a mirror-smooth clear coat over it.
+- **Foam is a blanket with bubbles on its skin**, not bubbles alone — bubbles alone leave
+  gaps the paint shows through. The bubbles are scattered on the blanket's own surface so
+  they ride its heaps, and the blanket thins to a film over the last 3 cm before the edge so
+  the cut never shows the grid.
+- **Focus is ray-cast.** At 85 mm and f/2.4 the depth of field is about a centimetre, so the
+  focus distance is keyed every four frames to wherever a ray from the lens hits — foam
+  while there is foam, paint after.
+- **Only the stretch near the camera is built.** Beads and foam are cropped to ±34 cm of the
+  camera in Geometry Nodes; building them along the whole panel was most of the render time.
+
+## Building
+
+Blender is at `C:\Program Files\Blender Foundation\Blender 5.2\blender.exe` and is not on
+PATH, so scripts go through `run.mjs`, which also starts Blender with `--factory-startup` so
+personal add-ons never load into a build.
 
 ```bash
-npm run assets:car      # rebuilds frontend/public/assets/3d/car.glb and its still
-npm run assets:gpu      # re-detects the GPU for Cycles
+npm run assets:wash:probe   # four draft frames, about a minute — look at these first
+npm run assets:wash         # everything at final quality
 ```
 
-Headless is the default. Blender never needs to be open for a build.
+Or one output at a time, which is how it is usually run:
 
-## The rules every asset follows
+```bash
+node tools/blender/run.mjs build_wash.py -- --stills --quality final
+node tools/blender/run.mjs build_wash.py -- --strip --quality final
+node tools/blender/run.mjs build_wash.py -- --shot --quality final
+```
 
-These are not preferences; they are what keeps a landing page loading in under a second.
+Outputs, in `frontend/public/assets/wash/`:
 
-**Low poly.** The car is about 1,900 triangles and 16 KB. Budget per asset: under 50 KB
-compressed. A visitor on a phone pays for every triangle twice, in download and in frame time.
-
-**Flat brand colour, not photoreal.** One Principled node per material, colours from
-`sw_blender.BRAND`, which are the same colours the site's CSS uses. A photoreal car dropped
-into a flat illustrated page reads as a stock photo someone pasted in.
-
-**glTF binary with Draco.** `.glb`, Draco on, level 6. The decoder is fetched from the CDN by
-the web component, so it costs nothing until a page actually shows a model.
-
-**+Y up, always.** Blender stands Z up and the web stands Y up. `export_yup=True` is not
-optional — without it every model arrives in three.js lying on its side.
-
-**Renders come out transparent.** `film_transparent`, PNG RGBA, so a still can be dropped on
-any section without carrying a background colour that will not match.
-
-**Real-world scale.** The car is 4.24 m long because a saloon is. Getting proportions wrong is
-what makes a low-poly model read as a toy, and no amount of material work fixes it afterwards.
-
-## Where things land
-
-| What | Where | Used by |
+| file | what it is | used by |
 |---|---|---|
-| Models | `frontend/public/assets/3d/*.glb` | `components/landing/CarModel.tsx` |
-| Stills | `frontend/public/assets/renders/*.png` | any section that wants a static image |
+| `wash.mp4` | the scrubbed shot, 1600×900, 144 frames, a keyframe every 8 frames | the pinned wash section |
+| `wash-poster.jpg`, `wash-end.jpg` | first and last frames | before the video plays; reduced motion |
+| `strip.mp4`, `strip-poster.jpg` | a 96-frame ping-pong loop along the shoulder line | the strip inside the hero sentence |
+| `still-*.jpg` | four moments of the shot, at the sizes the feature rows lay out | the feature rows |
 
-Both folders are served by Vite at `/assets/3d/…` and `/assets/renders/…`, so a rebuilt asset
-is live on the dev server the moment Blender finishes writing it.
+The shot is encoded with a short GOP and no B-frames because the page seeks it on every scroll
+tick; a long GOP would make every seek decode back to a distant keyframe.
+
+Blender 5 notes, each of which cost a failed run: the Random Value node has a single output;
+the compositor is a node group on `scene.compositing_node_group`; and video needs
+`image_settings.media_type = 'VIDEO'` before `FFMPEG` exists as a file format.
 
 ## Driving a running Blender from Claude
 

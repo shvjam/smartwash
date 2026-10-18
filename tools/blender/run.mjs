@@ -59,7 +59,7 @@ if (!blender) {
 }
 
 const scriptPath = path.isAbsolute(script) ? script : path.join(HERE, script);
-const child = spawn(blender, ['--background', '--python', scriptPath, ...process.argv.slice(3)], {
+const child = spawn(blender, ['--background', '--factory-startup', '--python', scriptPath, ...process.argv.slice(3)], {
   stdio: ['ignore', 'pipe', 'pipe'],
 });
 
