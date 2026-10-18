@@ -28,7 +28,9 @@ export const Register = () => {
   // first thing a new owner sees is their own name already filled in.
   const [form, setForm] = useState({
     displayName: (searchParams.get('name') ?? '').slice(0, 120), slug: '',
-    ownerDisplayName: '', ownerEmail: '', ownerPhone: '', ownerPassword: '',
+    ownerDisplayName: '', ownerEmail: '', ownerPassword: '',
+    // The landing's quick-start form asks for the mobile number too.
+    ownerPhone: (searchParams.get('phone') ?? '').replace(/[^0-9]/g, '').slice(0, 11),
     acceptTerms: false,
   });
   const [error, setError] = useState<string | null>(null);
